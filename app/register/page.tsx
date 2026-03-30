@@ -9,7 +9,7 @@ export default async function RegisterPage({
   const { error } = await searchParams;
 
   return (
-    <main className="hero-grid flex flex-1 flex-col items-center justify-center p-6">
+    <main className="flex flex-1 flex-col items-center justify-center p-6">
       {/* Radial fade */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"
