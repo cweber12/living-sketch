@@ -3,6 +3,7 @@
 
 export const ANCHOR_MAP = {
   torso: { topLeft: 5, topRight: 6, bottomLeft: 11, bottomRight: 12 },
+  midsection: { topLeft: 11, topRight: 12, bottomLeft: 23, bottomRight: 24 },
   head: { leftAnchor: 3, rightAnchor: 4 },
   leftUpperArm: { start: 5, end: 7 },
   leftLowerArm: { start: 7, end: 9 },
