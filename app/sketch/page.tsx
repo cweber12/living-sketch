@@ -6,15 +6,17 @@ import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 
-// CSS grid-template-areas — body laid out like a figure on an examination table
+// CSS grid-template-areas — 4-column body layout
+// Cols: [left-arm] [left-leg/half-torso] [right-leg/half-torso] [right-arm]
+// Head and torso both span the two centre columns; legs sit directly below.
 const GRID_TEMPLATE_AREAS = `
-  ". head ."
-  "luarm torso ruarm"
-  "llarm torso rlarm"
-  "lhand torso rhand"
-  "lulg . rulg"
-  "lllg . rllg"
-  "lfoot . rfoot"
+  ". head head ."
+  "luarm torso torso ruarm"
+  "llarm torso torso rlarm"
+  "lhand torso torso rhand"
+  ". lulg rulg ."
+  ". lllg rllg ."
+  ". lfoot rfoot ."
 `;
 
 // Grid area name per body part
@@ -122,14 +124,16 @@ export default function SketchPage() {
     }
   }, [exportAll]);
 
-  // Grid track sizes derived from the canvas-size slider
-  const sideCol = canvasSize;
-  const centerCol = Math.round(canvasSize * 1.5);
-  const rowHead = canvasSize;
-  const rowArm = Math.round(canvasSize * 1.6);
-  const rowHand = Math.round(canvasSize * 0.9);
-  const rowLeg = Math.round(canvasSize * 1.6);
-  const rowFoot = Math.round(canvasSize * 0.65);
+  // Grid track sizes — all derived from the canvas-size slider (u = base unit)
+  const u = canvasSize;
+  const armCol = u; // arm column (outer)
+  const legCol = Math.round(u * 1.15); // leg/half-torso column (inner ×2)
+  const rowHead = Math.round(u * 1.0); // head — roughly square relative to legCol
+  const rowArm = Math.round(u * 1.3); // upper/lower arm rows (×2)
+  const rowHand = Math.round(u * 0.7); // hand row
+  const rowULeg = Math.round(u * 1.75); // upper leg
+  const rowLLeg = Math.round(u * 1.6); // lower leg
+  const rowFoot = Math.round(u * 0.45); // foot
 
   return (
     <main className="flex flex-col flex-1 px-4 py-6 max-w-screen-2xl mx-auto w-full gap-6">
@@ -312,13 +316,13 @@ export default function SketchPage() {
         ImageData is preserved when toggling sides. Only the active side
         is visible; the inactive set is hidden via display:none.
       */}
-      <div className="overflow-auto pb-6">
+      <div className="overflow-auto pb-6 flex justify-center">
         <div
           style={{
             display: 'grid',
             gridTemplateAreas: GRID_TEMPLATE_AREAS,
-            gridTemplateColumns: `${sideCol}px ${centerCol}px ${sideCol}px`,
-            gridTemplateRows: `${rowHead}px ${rowArm}px ${rowArm}px ${rowHand}px ${rowLeg}px ${rowLeg}px ${rowFoot}px`,
+            gridTemplateColumns: `${armCol}px ${legCol}px ${legCol}px ${armCol}px`,
+            gridTemplateRows: `${rowHead}px ${rowArm}px ${rowArm}px ${rowHand}px ${rowULeg}px ${rowLLeg}px ${rowFoot}px`,
             gap: '6px',
           }}
         >
