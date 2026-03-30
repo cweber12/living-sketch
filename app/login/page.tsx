@@ -9,30 +9,58 @@ export default async function LoginPage({
   const { error, message } = await searchParams;
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Sign In</h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Sign in to your Living Sketch account
+    <main className="hero-grid flex flex-1 flex-col items-center justify-center p-6">
+      {/* Radial fade */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 20%, var(--bg) 100%)',
+        }}
+      />
+
+      <div className="card-themed w-full max-w-sm rounded-xl p-8 space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-1">
+          <Link
+            href="/"
+            className="font-display font-black uppercase text-sm tracking-[0.3em] block mb-4 transition-opacity hover:opacity-70"
+            style={{ color: 'var(--accent)' }}
+          >
+            Living Sketch
+          </Link>
+          <h1
+            className="font-display font-bold uppercase tracking-widest text-2xl"
+            style={{ color: 'var(--fg)' }}
+          >
+            Sign In
+          </h1>
+          <p
+            className="text-xs tracking-wide"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            The laboratory awaits
           </p>
         </div>
 
+        {/* Alerts */}
         {error && (
-          <div className="rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
-            {error}
-          </div>
+          <div className="alert-danger rounded px-4 py-3 text-xs">{error}</div>
         )}
-
         {message && (
-          <div className="rounded-lg bg-green-100 px-4 py-3 text-sm text-green-700 dark:bg-green-900/30 dark:text-green-400">
+          <div className="alert-success rounded px-4 py-3 text-xs">
             {message}
           </div>
         )}
 
+        {/* Form */}
         <form action={login} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+            <label
+              htmlFor="email"
+              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
+              style={{ color: 'var(--fg-muted)' }}
+            >
               Email
             </label>
             <input
@@ -40,13 +68,18 @@ export default async function LoginPage({
               name="email"
               type="email"
               required
-              className="mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder-zinc-500 focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground dark:border-zinc-700"
+              autoComplete="email"
+              className="input-themed block w-full rounded px-3 py-2.5 text-sm"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+            <label
+              htmlFor="password"
+              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
+              style={{ color: 'var(--fg-muted)' }}
+            >
               Password
             </label>
             <input
@@ -54,26 +87,33 @@ export default async function LoginPage({
               name="password"
               type="password"
               required
-              className="mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder-zinc-500 focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground dark:border-zinc-700"
+              autoComplete="current-password"
+              className="input-themed block w-full rounded px-3 py-2.5 text-sm"
               placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-colors hover:opacity-90"
+            className="btn-primary w-full rounded py-3 text-xs uppercase tracking-widest mt-2"
           >
-            Sign In
+            Enter
           </button>
         </form>
 
-        <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-          Don&apos;t have an account?{' '}
+        <div className="divider-accent" />
+
+        <p
+          className="text-center text-xs tracking-wide"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          No account?{' '}
           <Link
             href="/register"
-            className="font-medium text-foreground underline underline-offset-4 hover:opacity-80"
+            className="font-semibold transition-opacity hover:opacity-70"
+            style={{ color: 'var(--accent)' }}
           >
-            Sign up
+            Create one
           </Link>
         </p>
       </div>

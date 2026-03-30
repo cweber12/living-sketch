@@ -9,24 +9,53 @@ export default async function RegisterPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Sign up for a Living Sketch account
+    <main className="hero-grid flex flex-1 flex-col items-center justify-center p-6">
+      {/* Radial fade */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 20%, var(--bg) 100%)',
+        }}
+      />
+
+      <div className="card-themed w-full max-w-sm rounded-xl p-8 space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-1">
+          <Link
+            href="/"
+            className="font-display font-black uppercase text-sm tracking-[0.3em] block mb-4 transition-opacity hover:opacity-70"
+            style={{ color: 'var(--accent)' }}
+          >
+            Living Sketch
+          </Link>
+          <h1
+            className="font-display font-bold uppercase tracking-widest text-2xl"
+            style={{ color: 'var(--fg)' }}
+          >
+            Create Account
+          </h1>
+          <p
+            className="text-xs tracking-wide"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            Begin your experiment
           </p>
         </div>
 
+        {/* Alert */}
         {error && (
-          <div className="rounded-lg bg-red-100 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
-            {error}
-          </div>
+          <div className="alert-danger rounded px-4 py-3 text-xs">{error}</div>
         )}
 
+        {/* Form */}
         <form action={register} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+            <label
+              htmlFor="email"
+              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
+              style={{ color: 'var(--fg-muted)' }}
+            >
               Email
             </label>
             <input
@@ -34,13 +63,18 @@ export default async function RegisterPage({
               name="email"
               type="email"
               required
-              className="mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder-zinc-500 focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground dark:border-zinc-700"
+              autoComplete="email"
+              className="input-themed block w-full rounded px-3 py-2.5 text-sm"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+            <label
+              htmlFor="password"
+              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
+              style={{ color: 'var(--fg-muted)' }}
+            >
               Password
             </label>
             <input
@@ -49,24 +83,34 @@ export default async function RegisterPage({
               type="password"
               required
               minLength={6}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm placeholder-zinc-500 focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground dark:border-zinc-700"
+              autoComplete="new-password"
+              className="input-themed block w-full rounded px-3 py-2.5 text-sm"
               placeholder="••••••••"
             />
+            <p className="mt-1.5 text-xs" style={{ color: 'var(--fg-muted)' }}>
+              Minimum 6 characters
+            </p>
           </div>
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-colors hover:opacity-90"
+            className="btn-primary w-full rounded py-3 text-xs uppercase tracking-widest mt-2"
           >
-            Sign Up
+            Reanimate
           </button>
         </form>
 
-        <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-          Already have an account?{' '}
+        <div className="divider-accent" />
+
+        <p
+          className="text-center text-xs tracking-wide"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          Already animated?{' '}
           <Link
             href="/login"
-            className="font-medium text-foreground underline underline-offset-4 hover:opacity-80"
+            className="font-semibold transition-opacity hover:opacity-70"
+            style={{ color: 'var(--accent)' }}
           >
             Sign in
           </Link>
