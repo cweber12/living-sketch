@@ -38,5 +38,14 @@ You are a test engineer for the Living Sketch project. Your job is to create and
 ## Output Format
 
 - List of test files created/modified
+
+## Git Workflow
+
+After completing test files, always commit and push:
+
+```bash
+git add -A && git commit -m "test(scope): description" && git push
+```
+
 - Test count and pass/fail summary
 - Coverage delta if available

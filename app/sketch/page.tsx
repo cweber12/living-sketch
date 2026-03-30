@@ -1,47 +1,100 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { SketchCanvas } from '@/components/canvas/sketch-canvas';
 import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 
-// Display labels and aspect ratios (width:height) for each body part
-const PART_META: Record<BodyPartName, { label: string; aspect: string }> = {
-  head: { label: 'Head', aspect: '1 / 1' },
-  torso: { label: 'Torso', aspect: '3 / 4' },
-  leftUpperArm: { label: 'L Upper Arm', aspect: '1 / 2' },
-  leftLowerArm: { label: 'L Lower Arm', aspect: '1 / 2' },
-  leftHand: { label: 'L Hand', aspect: '4 / 5' },
-  rightUpperArm: { label: 'R Upper Arm', aspect: '1 / 2' },
-  rightLowerArm: { label: 'R Lower Arm', aspect: '1 / 2' },
-  rightHand: { label: 'R Hand', aspect: '4 / 5' },
-  leftUpperLeg: { label: 'L Upper Leg', aspect: '1 / 2' },
-  leftLowerLeg: { label: 'L Lower Leg', aspect: '1 / 2' },
-  leftFoot: { label: 'L Foot', aspect: '5 / 3' },
-  rightUpperLeg: { label: 'R Upper Leg', aspect: '1 / 2' },
-  rightLowerLeg: { label: 'R Lower Leg', aspect: '1 / 2' },
-  rightFoot: { label: 'R Foot', aspect: '5 / 3' },
+// CSS grid-template-areas — body laid out like a figure on an examination table
+const GRID_TEMPLATE_AREAS = `
+  ". head ."
+  "luarm torso ruarm"
+  "llarm torso rlarm"
+  "lhand torso rhand"
+  "lulg . rulg"
+  "lllg . rllg"
+  "lfoot . rfoot"
+`;
+
+// Grid area name per body part
+const GRID_AREA: Record<BodyPartName, string> = {
+  head: 'head',
+  torso: 'torso',
+  leftUpperArm: 'luarm',
+  leftLowerArm: 'llarm',
+  leftHand: 'lhand',
+  rightUpperArm: 'ruarm',
+  rightLowerArm: 'rlarm',
+  rightHand: 'rhand',
+  leftUpperLeg: 'lulg',
+  leftLowerLeg: 'lllg',
+  leftFoot: 'lfoot',
+  rightUpperLeg: 'rulg',
+  rightLowerLeg: 'rllg',
+  rightFoot: 'rfoot',
+};
+
+const PART_LABEL: Record<BodyPartName, string> = {
+  head: 'Head',
+  torso: 'Torso',
+  leftUpperArm: 'L Upper Arm',
+  leftLowerArm: 'L Lower Arm',
+  leftHand: 'L Hand',
+  rightUpperArm: 'R Upper Arm',
+  rightLowerArm: 'R Lower Arm',
+  rightHand: 'R Hand',
+  leftUpperLeg: 'L Upper Leg',
+  leftLowerLeg: 'L Lower Leg',
+  leftFoot: 'L Foot',
+  rightUpperLeg: 'R Upper Leg',
+  rightLowerLeg: 'R Lower Leg',
+  rightFoot: 'R Foot',
 };
 
 const DEFAULT_COLOR = '#39ff14'; // volt green (accent)
 const DEFAULT_BRUSH = 6;
+const DEFAULT_CANVAS_SIZE = 110; // px – side column width
+const MIN_CANVAS_SIZE = 60;
+const MAX_CANVAS_SIZE = 220;
+
+function ToolDivider() {
+  return (
+    <div
+      className="w-px h-6 shrink-0"
+      style={{ backgroundColor: 'var(--border)' }}
+    />
+  );
+}
 
 export default function SketchPage() {
   const [side, setSide] = useState<Side>('front');
   const [color, setColor] = useState(DEFAULT_COLOR);
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH);
   const [isEraser, setIsEraser] = useState(false);
+  const [canvasSize, setCanvasSize] = useState(DEFAULT_CANVAS_SIZE);
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
 
+  // Track the very last stroke so Undo only reverts that one canvas
+  const lastDrawnRef = useRef<{ side: Side; part: BodyPartName } | null>(null);
+
   const { setCanvasRef, pushUndoSnapshot, undo, clearAll, exportAll } =
     useSketchCanvasRig();
 
+  const handleStrokeStart = useCallback(
+    (strokeSide: Side, part: BodyPartName) => {
+      lastDrawnRef.current = { side: strokeSide, part };
+      pushUndoSnapshot(strokeSide, part);
+    },
+    [pushUndoSnapshot],
+  );
+
   const handleUndo = useCallback(() => {
-    for (const part of BODY_PARTS) undo(side, part);
-  }, [side, undo]);
+    if (!lastDrawnRef.current) return;
+    undo(lastDrawnRef.current.side, lastDrawnRef.current.part);
+  }, [undo]);
 
   const handleSave = useCallback(async () => {
     setSaveStatus('saving');
@@ -56,7 +109,7 @@ export default function SketchPage() {
       });
 
       if (!res.ok) {
-        const json = await res.json();
+        const json = (await res.json()) as { error?: string };
         throw new Error(json.error ?? 'Upload failed');
       }
 
@@ -68,6 +121,15 @@ export default function SketchPage() {
       setTimeout(() => setSaveStatus('idle'), 4000);
     }
   }, [exportAll]);
+
+  // Grid track sizes derived from the canvas-size slider
+  const sideCol = canvasSize;
+  const centerCol = Math.round(canvasSize * 1.5);
+  const rowHead = canvasSize;
+  const rowArm = Math.round(canvasSize * 1.6);
+  const rowHand = Math.round(canvasSize * 0.9);
+  const rowLeg = Math.round(canvasSize * 1.6);
+  const rowFoot = Math.round(canvasSize * 0.65);
 
   return (
     <main className="flex flex-col flex-1 px-4 py-6 max-w-screen-2xl mx-auto w-full gap-6">
@@ -108,7 +170,7 @@ export default function SketchPage() {
           backgroundColor: 'var(--surface)',
         }}
       >
-        {/* Color picker */}
+        {/* Color */}
         <label
           className="flex items-center gap-2 cursor-pointer"
           title="Brush color"
@@ -131,18 +193,15 @@ export default function SketchPage() {
           />
         </label>
 
-        <div
-          className="w-px h-6 shrink-0"
-          style={{ backgroundColor: 'var(--border)' }}
-        />
+        <ToolDivider />
 
-        {/* Stroke width */}
+        {/* Brush size */}
         <label className="flex items-center gap-2" title="Brush size">
           <span
             className="text-xs tracking-widest uppercase"
             style={{ color: 'var(--fg-muted)' }}
           >
-            Size
+            Brush
           </span>
           <input
             type="range"
@@ -160,43 +219,29 @@ export default function SketchPage() {
           </span>
         </label>
 
-        <div
-          className="w-px h-6 shrink-0"
-          style={{ backgroundColor: 'var(--border)' }}
-        />
+        <ToolDivider />
 
-        {/* Brush / Eraser toggle */}
+        {/* Brush / Eraser */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setIsEraser(false)}
-            className={`px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors ${!isEraser ? '' : 'btn-ghost'}`}
-            style={
-              !isEraser
-                ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                : {}
-            }
-          >
-            Brush
-          </button>
-          <button
-            onClick={() => setIsEraser(true)}
-            className={`px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors ${isEraser ? '' : 'btn-ghost'}`}
-            style={
-              isEraser
-                ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                : {}
-            }
-          >
-            Eraser
-          </button>
+          {([false, true] as const).map((erase) => (
+            <button
+              key={String(erase)}
+              onClick={() => setIsEraser(erase)}
+              className="px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost"
+              style={
+                isEraser === erase
+                  ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                  : {}
+              }
+            >
+              {erase ? 'Eraser' : 'Brush'}
+            </button>
+          ))}
         </div>
 
-        <div
-          className="w-px h-6 shrink-0"
-          style={{ backgroundColor: 'var(--border)' }}
-        />
+        <ToolDivider />
 
-        {/* Undo */}
+        {/* Undo last stroke */}
         <button
           onClick={handleUndo}
           className="btn-ghost rounded px-3 py-1.5 text-xs uppercase tracking-widest"
@@ -212,6 +257,32 @@ export default function SketchPage() {
         >
           Clear All
         </button>
+
+        <ToolDivider />
+
+        {/* Canvas scale */}
+        <label className="flex items-center gap-2" title="Canvas scale">
+          <span
+            className="text-xs tracking-widest uppercase"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            Scale
+          </span>
+          <input
+            type="range"
+            min={MIN_CANVAS_SIZE}
+            max={MAX_CANVAS_SIZE}
+            value={canvasSize}
+            onChange={(e) => setCanvasSize(Number(e.target.value))}
+            className="w-24 accent-accent"
+          />
+          <span
+            className="text-xs w-9 text-right"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            {canvasSize}px
+          </span>
+        </label>
       </div>
 
       {/* ── Front / Back toggle ───────────────────────────────────── */}
@@ -235,40 +306,58 @@ export default function SketchPage() {
         ))}
       </div>
 
-      {/* ── Canvas grid ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-        {BODY_PARTS.map((part) => {
-          const meta = PART_META[part];
-          return (
-            <div key={part} className="flex flex-col gap-1">
-              <p
-                className="text-xs font-semibold uppercase tracking-widest text-center truncate"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                {meta.label}
-              </p>
+      {/* ── Body layout ───────────────────────────────────────────── */}
+      {/*
+        All 28 canvases (14 × front + back) are always mounted so their
+        ImageData is preserved when toggling sides. Only the active side
+        is visible; the inactive set is hidden via display:none.
+      */}
+      <div className="overflow-auto pb-6">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateAreas: GRID_TEMPLATE_AREAS,
+            gridTemplateColumns: `${sideCol}px ${centerCol}px ${sideCol}px`,
+            gridTemplateRows: `${rowHead}px ${rowArm}px ${rowArm}px ${rowHand}px ${rowLeg}px ${rowLeg}px ${rowFoot}px`,
+            gap: '6px',
+          }}
+        >
+          {(['front', 'back'] as Side[]).flatMap((s) =>
+            BODY_PARTS.map((part) => (
               <div
-                className="rounded-lg overflow-hidden border"
+                key={`${s}-${part}`}
                 style={{
-                  aspectRatio: meta.aspect,
+                  gridArea: GRID_AREA[part],
+                  display: s === side ? 'block' : 'none',
+                  position: 'relative',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
                   borderColor: 'var(--border)',
                   backgroundColor: 'var(--surface)',
                 }}
               >
                 <SketchCanvas
-                  key={`${side}-${part}`}
-                  side={side}
+                  side={s}
                   part={part}
                   brushSize={brushSize}
                   color={color}
                   isEraser={isEraser}
                   onMount={setCanvasRef}
-                  onStrokeStart={pushUndoSnapshot}
+                  onStrokeStart={handleStrokeStart}
                 />
+                {/* Floating part label */}
+                <span
+                  className="absolute bottom-1 left-0 right-0 text-center text-[9px] font-bold uppercase tracking-widest pointer-events-none select-none"
+                  style={{ color: 'var(--fg-muted)', opacity: 0.6 }}
+                >
+                  {PART_LABEL[part]}
+                </span>
               </div>
-            </div>
-          );
-        })}
+            )),
+          )}
+        </div>
       </div>
     </main>
   );
