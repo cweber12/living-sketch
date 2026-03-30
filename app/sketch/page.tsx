@@ -64,7 +64,7 @@ const PART_LABEL: Record<BodyPartName, string> = {
 
 /* Relative proportions (w × h) per part – matches arms-down grid cell sizes */
 const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
-  head: { w: 2.3, h: 1 },
+  head: { w: 1, h: 1 },
   torso: { w: 2.3, h: 2.6 },
   leftUpperArm: { w: 1, h: 1.3 },
   leftLowerArm: { w: 1, h: 1.3 },
@@ -74,10 +74,10 @@ const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
   rightHand: { w: 1, h: 1.75 },
   leftUpperLeg: { w: 1.15, h: 1.75 },
   leftLowerLeg: { w: 1.15, h: 1.6 },
-  leftFoot: { w: 1.15, h: 0.5 },
+  leftFoot: { w: 1.15, h: 1.6 },
   rightUpperLeg: { w: 1.15, h: 1.75 },
   rightLowerLeg: { w: 1.15, h: 1.6 },
-  rightFoot: { w: 1.15, h: 0.5 },
+  rightFoot: { w: 1.15, h: 1.6 },
 };
 
 /* Ordered list for single-part navigation (top-to-bottom body order) */
@@ -98,7 +98,7 @@ const PARTS_ORDER: BodyPartName[] = [
   'rightFoot',
 ];
 
-const DEFAULT_COLOR = '#39ff14';
+const DEFAULT_COLOR = '#e4ff30';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;
@@ -160,7 +160,14 @@ function BodyThumbnail({
           display: 'grid',
           gridTemplateAreas: GRID_ARMS_DOWN,
           gridTemplateColumns: `${ac}px ${lc}px ${lc}px ${ac}px`,
-          gridTemplateRows: [t, t * 1.3, t * 1.3, t * 1.75, t * 1.6, t * 0.5]
+          gridTemplateRows: [
+            t * 2.3,
+            t * 1.3,
+            t * 1.3,
+            t * 1.75,
+            t * 1.6,
+            t * 1.6,
+          ]
             .map((v) => `${Math.round(v)}px`)
             .join(' '),
           gap: '1px',
@@ -299,30 +306,31 @@ export default function SketchPage() {
 
   const armCol = effectiveU;
   const legCol = Math.round(effectiveU * 1.15);
-  const armSmCol = Math.round(effectiveU * 0.7); // narrow cols for arms-up
+  const handColUp = Math.round(effectiveU * 1.75); // hand col width = arms-down hand height
+  const armColUp = Math.round(effectiveU * 1.3); // upper/lower arm col width = arms-down arm height
 
   const gridCols = armsUp
-    ? `${armSmCol}px ${armSmCol}px ${armSmCol}px ${legCol}px ${legCol}px ${armSmCol}px ${armSmCol}px ${armSmCol}px`
+    ? `${handColUp}px ${armColUp}px ${armColUp}px ${legCol}px ${legCol}px ${armColUp}px ${armColUp}px ${handColUp}px`
     : `${armCol}px ${legCol}px ${legCol}px ${armCol}px`;
 
   const gridRows = armsUp
     ? [
+        effectiveU * 2.3,
         effectiveU,
-        effectiveU * 0.9,
         effectiveU * 1.5,
         effectiveU * 1.75,
         effectiveU * 1.6,
-        effectiveU * 0.5,
+        effectiveU * 1.6,
       ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ')
     : [
-        effectiveU,
+        effectiveU * 2.3,
         effectiveU * 1.3,
         effectiveU * 1.3,
         effectiveU * 1.75,
         effectiveU * 1.6,
-        effectiveU * 0.5,
+        effectiveU * 1.6,
       ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ');
@@ -416,6 +424,21 @@ export default function SketchPage() {
             ))}
           </div>
 
+          <div className="flex items-center gap-0.5 shrink-0">
+            <PillButton
+              active={viewMode === 'body'}
+              onClick={() => setViewMode('body')}
+            >
+              Body
+            </PillButton>
+            <PillButton
+              active={viewMode === 'single'}
+              onClick={() => setViewMode('single')}
+            >
+              Single
+            </PillButton>
+          </div>
+
           <div
             className="w-px h-5 hidden sm:block"
             style={{ backgroundColor: 'var(--border)' }}
@@ -428,8 +451,7 @@ export default function SketchPage() {
               setColor(e.target.value);
               setIsEraser(false);
             }}
-            className="w-7 h-7 rounded cursor-pointer border-0 p-0 shrink-0"
-            style={{ backgroundColor: 'transparent' }}
+            className="color-swatch"
             title="Color"
           />
 
@@ -511,24 +533,8 @@ export default function SketchPage() {
             />
           </label>
 
-          {/* View mode — mobile */}
-          <div className="flex sm:hidden items-center gap-0.5">
-            <PillButton
-              active={viewMode === 'body'}
-              onClick={() => setViewMode('body')}
-            >
-              Body
-            </PillButton>
-            <PillButton
-              active={viewMode === 'single'}
-              onClick={() => setViewMode('single')}
-            >
-              Single
-            </PillButton>
-          </div>
-
-          {/* Part dropdown — mobile single mode */}
-          {isMobile && viewMode === 'single' && (
+          {/* Part dropdown — single mode */}
+          {viewMode === 'single' && (
             <select
               value={focusIdx}
               onChange={(e) => setFocusIdx(Number(e.target.value))}
@@ -554,9 +560,7 @@ export default function SketchPage() {
         {/* ── BODY MODE ── */}
         <div
           className={
-            isMobile && viewMode === 'single'
-              ? 'hidden'
-              : 'flex-1 flex flex-col min-h-0'
+            viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
           }
         >
           {/* Scroll up */}
@@ -611,8 +615,8 @@ export default function SketchPage() {
           )}
         </div>
 
-        {/* ── SINGLE-PART MODE (mobile) ── */}
-        {isMobile && viewMode === 'single' && (
+        {/* ── SINGLE-PART MODE ── */}
+        {viewMode === 'single' && (
           <>
             <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
               {/* Prev */}

@@ -9,38 +9,40 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Light mode – aged parchment / laboratory journal */
-  --bg: #f0e8d0;
-  --surface: #e4d8bc;
-  --surface-raised: #d8cab0;
-  --surface-hover: #ccba9c;
-  --border: #b0a07a;
-  --border-strong: #8a7850;
-  --fg: #180e04;
-  --fg-muted: #5a4830;
-  --accent: #3a7005;
-  --accent-hover: #2a5004;
-  --accent-faint: rgba(58, 112, 5, 0.1);
-  --danger: #8b1414;
-  --danger-muted: rgba(139, 20, 20, 0.12);
+  /* Dark mode – deepspace purple / electric neon (default) */
+  --bg: #1c1826;
+  --surface: #262238;
+  --surface-raised: #362f4f;
+  --surface-hover: #3e3958;
+  --border: #3a3358;
+  --border-strong: #5b23ff;
+  --fg: #f4f2ff;
+  --fg-muted: #8a82b8;
+  --accent: #e4ff30;
+  --accent-hover: #ecff66;
+  --accent-faint: rgba(228, 255, 48, 0.12);
+  --accent-secondary: #008bff;
+  --danger: #ff4a6b;
+  --danger-muted: rgba(255, 74, 107, 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    /* Dark mode – lab at night + volt green + blood red */
-    --bg: #050a05;
-    --surface: #0c1a0a;
-    --surface-raised: #122008;
-    --surface-hover: #183010;
-    --border: #1d3816;
-    --border-strong: #2e5c22;
-    --fg: #d0ecbc;
-    --fg-muted: #5f8052;
-    --accent: #7ffe00;
-    --accent-hover: #9dff33;
-    --accent-faint: rgba(127, 254, 0, 0.08);
-    --danger: #c42828;
-    --danger-muted: rgba(196, 40, 40, 0.15);
+    /* Light mode – soft lavender / electric violet */
+    --bg: #f0ecff;
+    --surface: #e5dfff;
+    --surface-raised: #d8d0ff;
+    --surface-hover: #c8bcff;
+    --border: #b8b0e8;
+    --border-strong: #7b6bd0;
+    --fg: #1c1826;
+    --fg-muted: #5a4e88;
+    --accent: #5b23ff;
+    --accent-hover: #4015d4;
+    --accent-faint: rgba(91, 35, 255, 0.1);
+    --accent-secondary: #008bff;
+    --danger: #d6194b;
+    --danger-muted: rgba(214, 25, 75, 0.12);
   }
 }
 
@@ -97,6 +99,31 @@ body {
     0 0 0 1px var(--border-strong),
     0 8px 24px var(--accent-faint);
   transform: translateY(-2px);
+}
+
+/* ── Color swatch input ──────────────────────────────────────────────────── */
+.color-swatch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+.color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+.color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
 }
 
 /* ── Primary CTA button ──────────────────────────────────────────────────── */
