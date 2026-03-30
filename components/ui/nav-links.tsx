@@ -13,14 +13,14 @@ export function NavLinks() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex items-center gap-1 w-full">
       {TABS.map(({ href, label }) => {
         const active = pathname.startsWith(href);
         return (
           <Link
             key={href}
             href={href}
-            className="px-4 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors"
+            className="flex-1 text-center py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors"
             style={{
               color: active ? 'var(--bg)' : 'var(--fg-muted)',
               backgroundColor: active ? 'var(--accent)' : 'transparent',

@@ -33,7 +33,7 @@ const GRID_ARMS_DOWN = `
 
 type BodyPartKey = BodyPartName | 'midsection';
 
-const GRID_AREA_OUT: Record<BodyPartKey, string> = {
+const GRID_AREA: Record<BodyPartKey, string> = {
   head: 'head',
   torso: 'torso',
   midsection: 'mid',
@@ -49,10 +49,6 @@ const GRID_AREA_OUT: Record<BodyPartKey, string> = {
   rightUpperLeg: 'rulg',
   rightLowerLeg: 'rllg',
   rightFoot: 'rfoot',
-};
-
-const GRID_AREA_DOWN: Record<BodyPartKey, string> = {
-  ...GRID_AREA_OUT,
 };
 
 const PART_LABEL: Record<BodyPartKey, string> = {
@@ -73,40 +69,52 @@ const PART_LABEL: Record<BodyPartKey, string> = {
   rightFoot: 'R Foot',
 };
 
+/* Ordered list for single-part navigation (top-to-bottom body order) */
+const PARTS_ORDER: BodyPartName[] = [
+  'head',
+  'torso',
+  'midsection' as BodyPartName,
+  'leftUpperArm',
+  'rightUpperArm',
+  'leftLowerArm',
+  'rightLowerArm',
+  'leftHand',
+  'rightHand',
+  'leftUpperLeg',
+  'rightUpperLeg',
+  'leftLowerLeg',
+  'rightLowerLeg',
+  'leftFoot',
+  'rightFoot',
+];
+
 const DEFAULT_COLOR = '#39ff14';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;
 const MAX_CANVAS_SIZE = 220;
-const ARMS_OUT_MIN_WIDTH = 640; // below this → force arms down
+const MOBILE_BREAKPOINT = 640; // sm
 
 type ArmPose = 'out' | 'down';
 type ViewMode = 'body' | 'single';
 
 /* ─── Helpers ─────────────────────────────────────────────────────── */
 
-function ToolDivider() {
-  return (
-    <div
-      className="w-px h-6 shrink-0 hidden sm:block"
-      style={{ backgroundColor: 'var(--border)' }}
-    />
-  );
-}
-
 function PillButton({
   active,
   onClick,
   children,
+  className = '',
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className="px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost"
+      className={`px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost ${className}`}
       style={
         active ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' } : {}
       }
@@ -126,25 +134,26 @@ export default function SketchPage() {
   const [canvasSize, setCanvasSize] = useState(DEFAULT_CANVAS_SIZE);
   const [armPose, setArmPose] = useState<ArmPose>('out');
   const [viewMode, setViewMode] = useState<ViewMode>('body');
-  const [focusPart, setFocusPart] = useState<BodyPartName>(BODY_PARTS[0]);
+  const [focusIdx, setFocusIdx] = useState(0);
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
 
-  // Track whether viewport is too narrow for arms-out
-  const [isNarrow, setIsNarrow] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${ARMS_OUT_MIN_WIDTH - 1}px)`);
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const handle = (e: MediaQueryListEvent | MediaQueryList) =>
-      setIsNarrow(e.matches);
+      setIsMobile(e.matches);
     handle(mq);
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  // Effective arm pose: force 'down' on narrow viewports
-  const effectiveArms: ArmPose = isNarrow ? 'down' : armPose;
+  // Force arms down on mobile
+  const effectiveArms: ArmPose = isMobile ? 'down' : armPose;
+  const focusPart = PARTS_ORDER[focusIdx];
 
   const lastDrawnRef = useRef<{ side: Side; part: BodyPartName } | null>(null);
   const { setCanvasRef, pushUndoSnapshot, undo, clearAll, exportAll } =
@@ -168,23 +177,17 @@ export default function SketchPage() {
     try {
       const images = exportAll();
       const setName = new Date().toISOString().replace(/[:.]/g, '-');
-
       const res = await fetch('/api/storage/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images, setName }),
       });
-
       const json = (await res.json()) as {
         error?: string;
         details?: string[];
         paths?: string[];
       };
-
-      if (!res.ok) {
-        throw new Error(json.error ?? 'Upload failed');
-      }
-
+      if (!res.ok) throw new Error(json.error ?? 'Upload failed');
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -194,48 +197,79 @@ export default function SketchPage() {
     }
   }, [exportAll]);
 
-  /* ---- grid sizing ---- */
+  /* ── Prev / Next for single mode ── */
+  const goPrev = useCallback(
+    () => setFocusIdx((i) => (i > 0 ? i - 1 : PARTS_ORDER.length - 1)),
+    [],
+  );
+  const goNext = useCallback(
+    () => setFocusIdx((i) => (i < PARTS_ORDER.length - 1 ? i + 1 : 0)),
+    [],
+  );
+
+  /* ── Body-mode scroll buttons ── */
+  const scrollBody = useCallback((dir: 'up' | 'down') => {
+    const el = bodyScrollRef.current;
+    if (!el) return;
+    const step = el.clientHeight * 0.7;
+    el.scrollBy({ top: dir === 'up' ? -step : step, behavior: 'smooth' });
+  }, []);
+
+  /* ── Grid sizing ── */
   const u = canvasSize;
   const armsOut = effectiveArms === 'out';
-
   const gridTemplate = armsOut ? GRID_ARMS_OUT : GRID_ARMS_DOWN;
-  const gridAreas = armsOut ? GRID_AREA_OUT : GRID_AREA_DOWN;
 
-  const armCol = u;
-  const legCol = Math.round(u * 1.15);
+  // On mobile body mode: compute u from screen width
+  const mobileU =
+    typeof window !== 'undefined'
+      ? Math.floor((window.innerWidth - 24) / 2)
+      : 160;
+  const effectiveU = isMobile && viewMode === 'body' ? mobileU : u;
+
+  const armCol = effectiveU;
+  const legCol = Math.round(effectiveU * 1.15);
   const gridCols = armsOut
     ? `${armCol}px ${legCol}px ${legCol}px ${armCol}px`
     : `${legCol}px ${legCol}px`;
 
   const gridRows = armsOut
-    ? [u, u * 1.3, u * 1.3, u * 0.8, u * 1.75, u * 1.6, u * 0.5]
+    ? [
+        effectiveU,
+        effectiveU * 1.3,
+        effectiveU * 1.3,
+        effectiveU * 0.8,
+        effectiveU * 1.75,
+        effectiveU * 1.6,
+        effectiveU * 0.5,
+      ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ')
     : [
-        u,
-        u * 1.3,
-        u * 1.3,
-        u * 0.8,
-        u * 0.9,
-        u * 0.9,
-        u * 0.7,
-        u * 1.75,
-        u * 1.6,
-        u * 0.5,
+        effectiveU,
+        effectiveU * 1.3,
+        effectiveU * 1.3,
+        effectiveU * 0.8,
+        effectiveU * 0.9,
+        effectiveU * 0.9,
+        effectiveU * 0.7,
+        effectiveU * 1.75,
+        effectiveU * 1.6,
+        effectiveU * 0.5,
       ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ');
 
-  /* ---- render helpers ---- */
+  /* ── Render helpers ── */
   function renderCanvas(s: Side, part: BodyPartName) {
     return (
       <div
         key={`${s}-${part}`}
         style={{
-          gridArea: gridAreas[part as BodyPartKey],
+          gridArea: GRID_AREA[part as BodyPartKey],
           display: s === side ? 'block' : 'none',
           position: 'relative',
-          borderRadius: '8px',
+          borderRadius: '6px',
           overflow: 'hidden',
           borderWidth: '1px',
           borderStyle: 'solid',
@@ -253,8 +287,8 @@ export default function SketchPage() {
           onStrokeStart={handleStrokeStart}
         />
         <span
-          className="absolute bottom-1 left-0 right-0 text-center text-[9px] font-bold uppercase tracking-widest pointer-events-none select-none"
-          style={{ color: 'var(--fg-muted)', opacity: 0.6 }}
+          className="absolute bottom-0.5 left-0 right-0 text-center text-[8px] font-bold uppercase tracking-widest pointer-events-none select-none"
+          style={{ color: 'var(--fg-muted)', opacity: 0.5 }}
         >
           {PART_LABEL[part as BodyPartKey]}
         </span>
@@ -263,18 +297,18 @@ export default function SketchPage() {
   }
 
   return (
-    <main className="flex flex-col flex-1 px-3 sm:px-4 py-4 sm:py-6 max-w-screen-2xl mx-auto w-full gap-4 sm:gap-6">
+    <main className="flex flex-col flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex items-center justify-between gap-2 px-3 sm:px-4 pt-3 sm:pt-5 pb-2 sm:pb-4">
+        <div className="min-w-0">
           <p
-            className="text-xs font-bold tracking-[0.35em] uppercase mb-1"
+            className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase mb-0.5"
             style={{ color: 'var(--accent)' }}
           >
             I — Sketch
           </p>
           <h1
-            className="font-display font-black uppercase tracking-wider text-xl sm:text-2xl"
+            className="font-display font-black uppercase tracking-wider text-lg sm:text-2xl truncate"
             style={{ color: 'var(--fg)' }}
           >
             The Laboratory
@@ -283,36 +317,44 @@ export default function SketchPage() {
         <button
           onClick={handleSave}
           disabled={saveStatus === 'saving'}
-          className="btn-primary rounded px-5 py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+          className="btn-primary rounded px-3 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-xs uppercase tracking-widest font-bold disabled:opacity-50 shrink-0"
         >
           {saveStatus === 'saving' && 'Saving…'}
           {saveStatus === 'saved' && 'Saved ✓'}
           {saveStatus === 'error' && 'Error — retry'}
-          {saveStatus === 'idle' && 'Save to Cloud'}
+          {saveStatus === 'idle' && 'Save'}
         </button>
       </div>
 
       {/* ── Toolbar ── */}
       <div
-        className="flex flex-wrap items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 rounded-lg border"
+        className="w-full px-3 sm:px-4 py-2 border-y flex flex-col gap-2"
         style={{
           borderColor: 'var(--border)',
           backgroundColor: 'var(--surface)',
         }}
       >
-        {/* Front / Back */}
-        <div className="flex items-center gap-1">
-          {(['front', 'back'] as Side[]).map((s) => (
-            <PillButton key={s} active={side === s} onClick={() => setSide(s)}>
-              {s}
-            </PillButton>
-          ))}
-        </div>
+        {/* Row 1: Side toggle + drawing tools */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Front / Back */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            {(['front', 'back'] as Side[]).map((s) => (
+              <PillButton
+                key={s}
+                active={side === s}
+                onClick={() => setSide(s)}
+              >
+                {s}
+              </PillButton>
+            ))}
+          </div>
 
-        <ToolDivider />
+          <div
+            className="w-px h-5 hidden sm:block"
+            style={{ backgroundColor: 'var(--border)' }}
+          />
 
-        {/* Color */}
-        <label className="flex items-center gap-2 cursor-pointer" title="Color">
+          {/* Color */}
           <input
             type="color"
             value={color}
@@ -320,216 +362,276 @@ export default function SketchPage() {
               setColor(e.target.value);
               setIsEraser(false);
             }}
-            className="w-7 h-7 rounded cursor-pointer border-0 p-0"
+            className="w-7 h-7 rounded cursor-pointer border-0 p-0 shrink-0"
             style={{ backgroundColor: 'transparent' }}
+            title="Color"
           />
-        </label>
 
-        {/* Brush size */}
-        <label className="flex items-center gap-1.5" title="Brush size">
+          {/* Brush size */}
           <input
             type="range"
             min={1}
             max={40}
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-16 sm:w-24 accent-accent"
+            className="w-16 sm:w-20 accent-accent shrink-0"
+            title="Brush size"
           />
           <span
-            className="text-xs w-5 text-right"
+            className="text-[10px] w-4 shrink-0"
             style={{ color: 'var(--fg-muted)' }}
           >
             {brushSize}
           </span>
-        </label>
 
-        <ToolDivider />
+          {/* Brush / Eraser */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <PillButton active={!isEraser} onClick={() => setIsEraser(false)}>
+              Brush
+            </PillButton>
+            <PillButton active={isEraser} onClick={() => setIsEraser(true)}>
+              Eraser
+            </PillButton>
+          </div>
 
-        {/* Brush / Eraser */}
-        <div className="flex items-center gap-1">
-          <PillButton active={!isEraser} onClick={() => setIsEraser(false)}>
-            Brush
-          </PillButton>
-          <PillButton active={isEraser} onClick={() => setIsEraser(true)}>
-            Eraser
-          </PillButton>
-        </div>
-
-        <ToolDivider />
-
-        <button
-          onClick={handleUndo}
-          className="btn-ghost rounded px-3 py-1.5 text-xs uppercase tracking-widest"
-        >
-          Undo
-        </button>
-        <button
-          onClick={clearAll}
-          className="btn-ghost rounded px-3 py-1.5 text-xs uppercase tracking-widest"
-          style={{ color: 'var(--danger)' }}
-        >
-          Clear
-        </button>
-
-        <ToolDivider />
-
-        {/* Arms pose — hidden on narrow */}
-        <div className="hidden sm:flex items-center gap-1">
-          <PillButton
-            active={effectiveArms === 'out'}
-            onClick={() => setArmPose('out')}
-          >
-            Arms Out
-          </PillButton>
-          <PillButton
-            active={effectiveArms === 'down'}
-            onClick={() => setArmPose('down')}
-          >
-            Arms Down
-          </PillButton>
-        </div>
-
-        {/* Scale */}
-        <label className="hidden sm:flex items-center gap-1.5" title="Scale">
-          <span
-            className="text-[10px] tracking-widest uppercase"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Scale
-          </span>
-          <input
-            type="range"
-            min={MIN_CANVAS_SIZE}
-            max={MAX_CANVAS_SIZE}
-            value={canvasSize}
-            onChange={(e) => setCanvasSize(Number(e.target.value))}
-            className="w-20 accent-accent"
-          />
-        </label>
-
-        {/* Mobile: Body / Single toggle */}
-        <div className="flex sm:hidden items-center gap-1 ml-auto">
-          <PillButton
-            active={viewMode === 'body'}
-            onClick={() => setViewMode('body')}
-          >
-            Body
-          </PillButton>
-          <PillButton
-            active={viewMode === 'single'}
-            onClick={() => setViewMode('single')}
-          >
-            Single
-          </PillButton>
-        </div>
-      </div>
-
-      {/* ── Mobile single-part selector ── */}
-      {viewMode === 'single' && (
-        <div className="flex sm:hidden overflow-x-auto gap-1.5 pb-1 -mx-1 px-1">
-          {BODY_PARTS.map((p) => (
+          {/* Undo + Clear */}
+          <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
             <button
-              key={p}
-              onClick={() => setFocusPart(p)}
-              className="shrink-0 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider transition-colors"
-              style={
-                focusPart === p
-                  ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                  : {
-                      color: 'var(--fg-muted)',
-                      border: '1px solid var(--border)',
-                    }
-              }
+              onClick={handleUndo}
+              className="btn-ghost rounded px-2 py-1 text-[10px] sm:text-xs uppercase tracking-widest"
             >
-              {PART_LABEL[p as BodyPartKey]}
+              Undo
             </button>
-          ))}
+            <button
+              onClick={clearAll}
+              className="btn-ghost rounded px-2 py-1 text-[10px] sm:text-xs uppercase tracking-widest"
+              style={{ color: 'var(--danger)' }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* ── Body layout ── */}
-      {/*
-        All canvases (front+back) are always mounted to preserve ImageData.
-        On mobile "single" mode, only the focused part is visible.
-        On desktop / mobile "body" mode, the full grid is shown.
-      */}
+        {/* Row 2: View controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Arms pose — desktop only */}
+          <div className="hidden sm:flex items-center gap-0.5">
+            <PillButton
+              active={effectiveArms === 'out'}
+              onClick={() => setArmPose('out')}
+            >
+              Arms Out
+            </PillButton>
+            <PillButton
+              active={effectiveArms === 'down'}
+              onClick={() => setArmPose('down')}
+            >
+              Arms Down
+            </PillButton>
+          </div>
 
-      {/* Desktop + mobile-body: full grid */}
-      <div
-        className={
-          viewMode === 'single'
-            ? 'hidden sm:flex justify-center overflow-auto pb-4'
-            : 'flex justify-center overflow-auto pb-4'
-        }
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateAreas: gridTemplate,
-            gridTemplateColumns: gridCols,
-            gridTemplateRows: gridRows,
-            gap: '5px',
-          }}
-        >
-          {(['front', 'back'] as Side[]).flatMap((s) =>
-            BODY_PARTS.map((part) => renderCanvas(s, part)),
+          {/* Canvas scale — desktop only */}
+          <label className="hidden sm:flex items-center gap-1.5" title="Scale">
+            <span
+              className="text-[10px] tracking-widest uppercase"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              Scale
+            </span>
+            <input
+              type="range"
+              min={MIN_CANVAS_SIZE}
+              max={MAX_CANVAS_SIZE}
+              value={canvasSize}
+              onChange={(e) => setCanvasSize(Number(e.target.value))}
+              className="w-20 accent-accent"
+            />
+          </label>
+
+          {/* View mode — mobile only */}
+          <div className="flex sm:hidden items-center gap-0.5">
+            <PillButton
+              active={viewMode === 'body'}
+              onClick={() => setViewMode('body')}
+            >
+              Body
+            </PillButton>
+            <PillButton
+              active={viewMode === 'single'}
+              onClick={() => setViewMode('single')}
+            >
+              Single
+            </PillButton>
+          </div>
+
+          {/* Single-part dropdown — mobile single mode */}
+          {isMobile && viewMode === 'single' && (
+            <select
+              value={focusIdx}
+              onChange={(e) => setFocusIdx(Number(e.target.value))}
+              className="ml-auto rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+              style={{
+                backgroundColor: 'var(--bg)',
+                color: 'var(--fg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {PARTS_ORDER.map((p, i) => (
+                <option key={p} value={i}>
+                  {PART_LABEL[p as BodyPartKey]}
+                </option>
+              ))}
+            </select>
           )}
         </div>
       </div>
 
-      {/* Mobile single: enlarged single canvas */}
-      <div
-        className={
-          viewMode === 'single'
-            ? 'flex sm:hidden flex-col items-center gap-2 pb-4'
-            : 'hidden'
-        }
-      >
-        <p
-          className="text-xs font-bold uppercase tracking-widest"
-          style={{ color: 'var(--accent)' }}
-        >
-          {PART_LABEL[focusPart as BodyPartKey]}
-        </p>
+      {/* ── Canvas area ── */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* ── BODY MODE ── */}
         <div
-          style={{
-            width: 'min(90vw, 360px)',
-            aspectRatio: '1',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid var(--border)',
-            backgroundColor: 'var(--surface)',
-            position: 'relative',
-          }}
+          className={
+            isMobile && viewMode === 'single'
+              ? 'hidden'
+              : 'flex-1 flex flex-col min-h-0'
+          }
         >
-          {/* Render both sides but only show active */}
-          {(['front', 'back'] as Side[]).map((s) => (
-            <div
-              key={`single-${s}-${focusPart}`}
+          {/* Scroll-up button (mobile body) */}
+          {isMobile && viewMode === 'body' && (
+            <button
+              onClick={() => scrollBody('up')}
+              className="w-full py-1.5 text-center shrink-0"
               style={{
-                display: s === side ? 'block' : 'none',
-                width: '100%',
-                height: '100%',
+                color: 'var(--fg-muted)',
+                backgroundColor: 'var(--surface)',
+                borderBottom: '1px solid var(--border)',
+              }}
+              aria-label="Scroll up"
+            >
+              <span className="text-lg leading-none">▲</span>
+            </button>
+          )}
+
+          {/* Scrollable grid */}
+          <div
+            ref={bodyScrollRef}
+            className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3 sm:py-4"
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateAreas: gridTemplate,
+                gridTemplateColumns: gridCols,
+                gridTemplateRows: gridRows,
+                gap: isMobile ? '3px' : '5px',
               }}
             >
-              <SketchCanvas
-                side={s}
-                part={focusPart}
-                brushSize={brushSize}
-                color={color}
-                isEraser={isEraser}
-                onMount={setCanvasRef}
-                onStrokeStart={handleStrokeStart}
-              />
+              {(['front', 'back'] as Side[]).flatMap((s) =>
+                BODY_PARTS.map((part) => renderCanvas(s, part)),
+              )}
             </div>
-          ))}
-          <span
-            className="absolute bottom-2 left-0 right-0 text-center text-[10px] font-bold uppercase tracking-widest pointer-events-none select-none"
-            style={{ color: 'var(--fg-muted)', opacity: 0.5 }}
-          >
-            {side}
-          </span>
+          </div>
+
+          {/* Scroll-down button (mobile body) */}
+          {isMobile && viewMode === 'body' && (
+            <button
+              onClick={() => scrollBody('down')}
+              className="w-full py-1.5 text-center shrink-0"
+              style={{
+                color: 'var(--fg-muted)',
+                backgroundColor: 'var(--surface)',
+                borderTop: '1px solid var(--border)',
+              }}
+              aria-label="Scroll down"
+            >
+              <span className="text-lg leading-none">▼</span>
+            </button>
+          )}
         </div>
+
+        {/* ── SINGLE-PART MODE (mobile only) ── */}
+        {isMobile && viewMode === 'single' && (
+          <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3">
+            {/* Prev arrow */}
+            <button
+              onClick={goPrev}
+              className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full"
+              style={{
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--fg)',
+              }}
+              aria-label="Previous part"
+            >
+              ◀
+            </button>
+
+            {/* Canvas */}
+            <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+              <p
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: 'var(--accent)' }}
+              >
+                {PART_LABEL[focusPart as BodyPartKey]}
+              </p>
+              <div
+                style={{
+                  width: 'min(75vw, 340px)',
+                  aspectRatio: '1',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--surface)',
+                  position: 'relative',
+                }}
+              >
+                {(['front', 'back'] as Side[]).map((s) => (
+                  <div
+                    key={`single-${s}-${focusPart}`}
+                    style={{
+                      display: s === side ? 'block' : 'none',
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  >
+                    <SketchCanvas
+                      side={s}
+                      part={focusPart}
+                      brushSize={brushSize}
+                      color={color}
+                      isEraser={isEraser}
+                      onMount={setCanvasRef}
+                      onStrokeStart={handleStrokeStart}
+                    />
+                  </div>
+                ))}
+                <span
+                  className="absolute bottom-1.5 left-0 right-0 text-center text-[10px] font-bold uppercase tracking-widest pointer-events-none select-none"
+                  style={{ color: 'var(--fg-muted)', opacity: 0.5 }}
+                >
+                  {side}
+                </span>
+              </div>
+              <p className="text-[10px]" style={{ color: 'var(--fg-muted)' }}>
+                {focusIdx + 1} / {PARTS_ORDER.length}
+              </p>
+            </div>
+
+            {/* Next arrow */}
+            <button
+              onClick={goNext}
+              className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full"
+              style={{
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--fg)',
+              }}
+              aria-label="Next part"
+            >
+              ▶
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
