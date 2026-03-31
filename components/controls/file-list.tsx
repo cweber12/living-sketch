@@ -15,10 +15,11 @@ export default function FileList({
   onSelect,
 }: FileListProps) {
   const [files, setFiles] = useState<FileEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     const load = async () => {
       try {
         const r = await fetch(`/api/storage/list?bucket=${bucket}`);

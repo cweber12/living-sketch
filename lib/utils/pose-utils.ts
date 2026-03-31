@@ -27,6 +27,30 @@ export function scaleLandmarkFrames(
   return frames.map((f) => scaleLandmarks(f, original, target));
 }
 
+/**
+ * Static mapping: keypoint index → shift-factor key name.
+ * Computed once at module load instead of per-frame.
+ */
+const SHIFT_KEY_BY_INDEX: string[] = (() => {
+  const arr: string[] = new Array(33).fill('');
+  for (let i = 0; i <= 10; i++) arr[i] = 'headShift';
+  arr[11] = 'shoulderShift';
+  arr[12] = 'shoulderShift';
+  arr[13] = 'elbowShift';
+  arr[14] = 'elbowShift';
+  arr[15] = 'wristShift';
+  arr[16] = 'wristShift';
+  for (let i = 17; i <= 22; i++) arr[i] = 'wristShift';
+  arr[23] = 'hipShift';
+  arr[24] = 'hipShift';
+  arr[25] = 'kneeShift';
+  arr[26] = 'kneeShift';
+  arr[27] = 'ankleShift';
+  arr[28] = 'ankleShift';
+  for (let i = 29; i <= 32; i++) arr[i] = 'footShift';
+  return arr;
+})();
+
 /** Apply shift factors to a landmark frame (mutate coordinates in-place for perf). */
 export function applyShiftsToFrame(
   frame: LandmarkFrame,
@@ -48,34 +72,10 @@ export function applyShiftsToFrame(
   const tw = avgTorsoWidth * factor;
   const th = avgTorsoHeight * factor;
 
-  // Map: keypoint index → shift key
-  // Shoulders: 11, 12
-  // Elbows: 13, 14
-  // Wrists: 15, 16
-  // Hips: 23, 24
-  // Knees: 25, 26
-  // Ankles: 27, 28
-  // Feet: 29-32
-  // Head: 0-10
-  const shiftMap: Record<number, { x: number; y: number }> = {};
-  for (let i = 0; i <= 10; i++) shiftMap[i] = shifts.headShift;
-  shiftMap[11] = shifts.shoulderShift;
-  shiftMap[12] = shifts.shoulderShift;
-  shiftMap[13] = shifts.elbowShift;
-  shiftMap[14] = shifts.elbowShift;
-  shiftMap[15] = shifts.wristShift;
-  shiftMap[16] = shifts.wristShift;
-  for (let i = 17; i <= 22; i++) shiftMap[i] = shifts.wristShift;
-  shiftMap[23] = shifts.hipShift;
-  shiftMap[24] = shifts.hipShift;
-  shiftMap[25] = shifts.kneeShift;
-  shiftMap[26] = shifts.kneeShift;
-  shiftMap[27] = shifts.ankleShift;
-  shiftMap[28] = shifts.ankleShift;
-  for (let i = 29; i <= 32; i++) shiftMap[i] = shifts.footShift;
-
   return frame.map((kp, i) => {
-    const s = shiftMap[i];
+    const key = SHIFT_KEY_BY_INDEX[i];
+    if (!key) return kp;
+    const s = shifts[key as keyof typeof shifts];
     if (!s) return kp;
     return {
       ...kp,

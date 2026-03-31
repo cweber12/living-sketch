@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type {
   LandmarkFrame,
   FileEntry,
@@ -42,15 +43,39 @@ export default function ConsolePage() {
   const [panel, setPanel] = useState<'files' | 'shift' | 'scale'>('files');
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
-  const shifts = useShiftFactorsStore((s) => s.getFactors());
-  const scales = useScaleFactorsStore((s) => s.getFactors());
+  const shifts = useShiftFactorsStore(
+    useShallow((s) => ({
+      torsoShift: s.torsoShift,
+      headShift: s.headShift,
+      shoulderShift: s.shoulderShift,
+      elbowShift: s.elbowShift,
+      wristShift: s.wristShift,
+      hipShift: s.hipShift,
+      kneeShift: s.kneeShift,
+      ankleShift: s.ankleShift,
+      footShift: s.footShift,
+    })),
+  );
+  const scales = useScaleFactorsStore(
+    useShallow((s) => ({
+      headScale: s.headScale,
+      armScale: s.armScale,
+      handScale: s.handScale,
+      legScale: s.legScale,
+      footScale: s.footScale,
+    })),
+  );
   const svgImages = useCacheSvgs(svgParts, torsoDimsVal);
 
-  // Scale landmarks to canvas dimensions
-  const scaledFrames = scaleLandmarkFrames(frames, origDims, {
-    width: CANVAS_W,
-    height: CANVAS_H,
-  });
+  // Scale landmarks to canvas dimensions (memoised — only recomputes when frames/dims change)
+  const scaledFrames = useMemo(
+    () =>
+      scaleLandmarkFrames(frames, origDims, {
+        width: CANVAS_W,
+        height: CANVAS_H,
+      }),
+    [frames, origDims],
+  );
 
   /* ── Load landmark file ─────────────────────────────────────────── */
   const loadLandmarks = useCallback(async (file: FileEntry) => {

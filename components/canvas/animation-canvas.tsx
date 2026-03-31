@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import type { LandmarkFrame, ShiftFactors, ScaleFactors } from '@/lib/types';
-import { renderFrame, type RenderContext } from '@/lib/utils/render-part-svg';
+import { renderFrame } from '@/lib/utils/render-part-svg';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import { EarDistance } from '@/lib/utils/ear-distance';
 
@@ -37,6 +37,7 @@ export default function AnimationCanvas({
 
   const drawRef = useRef<((now: number) => void) | null>(null);
 
+  // Keep drawRef up-to-date with latest props (inside useEffect to satisfy React 19)
   useEffect(() => {
     drawRef.current = (now: number) => {
       if (!canvasRef.current || frames.length === 0) return;
@@ -46,7 +47,7 @@ export default function AnimationCanvas({
         const ctx = canvasRef.current.getContext('2d');
         if (!ctx) return;
 
-        const rc: RenderContext = {
+        renderFrame(frames[frameIdx.current], svgImages, {
           ctx,
           width,
           height,
@@ -54,9 +55,7 @@ export default function AnimationCanvas({
           earDist: earDist.current,
           shifts,
           scales,
-        };
-
-        renderFrame(frames[frameIdx.current], svgImages, rc);
+        });
 
         frameIdx.current = (frameIdx.current + 1) % frames.length;
       }
@@ -64,11 +63,11 @@ export default function AnimationCanvas({
     };
   }, [frames, svgImages, shifts, scales, width, height]);
 
+  // Start / stop playback
   useEffect(() => {
     if (playing && frames.length > 0) {
       lastTime.current = performance.now();
       frameIdx.current = 0;
-      // Reset EMA trackers for new playback
       torsoDims.current = new TorsoDimensions();
       earDist.current = new EarDistance();
       rafId.current = requestAnimationFrame((t) => drawRef.current?.(t));
@@ -76,23 +75,21 @@ export default function AnimationCanvas({
     return () => cancelAnimationFrame(rafId.current);
   }, [playing, frames]);
 
-  // Re-render current frame when shifts/scales change (immediate feedback)
+  // Re-render current frame when shifts/scales change while paused
   useEffect(() => {
-    if (!playing && canvasRef.current && frames.length > 0) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (!ctx) return;
-      const rc: RenderContext = {
-        ctx,
-        width,
-        height,
-        torsoDims: torsoDims.current,
-        earDist: earDist.current,
-        shifts,
-        scales,
-      };
-      const idx = Math.min(frameIdx.current, frames.length - 1);
-      renderFrame(frames[idx], svgImages, rc);
-    }
+    if (playing || frames.length === 0) return;
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    const idx = Math.min(frameIdx.current, frames.length - 1);
+    renderFrame(frames[idx], svgImages, {
+      ctx,
+      width,
+      height,
+      torsoDims: torsoDims.current,
+      earDist: earDist.current,
+      shifts,
+      scales,
+    });
   }, [shifts, scales, playing, frames, svgImages, width, height]);
 
   return (
