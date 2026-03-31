@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 
-const MOBILE_BP = 640;
+const MOBILE_BP = 1024;
 
 export type ToolbarMode = 'side' | 'top';
 

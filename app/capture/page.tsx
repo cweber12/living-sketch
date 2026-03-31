@@ -347,7 +347,7 @@ export default function CapturePage() {
   );
 
   return (
-    <main className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
+    <main className="flex flex-col lg:flex-row flex-1 w-full overflow-hidden">
       <Toolbar sideWidth={176}>{toolbarContent}</Toolbar>
 
       {/* ── Main content ── */}

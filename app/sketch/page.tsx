@@ -116,7 +116,7 @@ const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;
 const MAX_CANVAS_SIZE = 220;
-const MOBILE_BP = 640;
+const MOBILE_BP = 1024;
 
 type ArmPose = 'up' | 'down';
 type ViewMode = 'body' | 'single';
@@ -542,7 +542,7 @@ export default function SketchPage() {
   );
 
   return (
-    <main className="flex flex-col sm:flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
+    <main className="flex flex-col lg:flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
       <Toolbar sideWidth={200}>{toolbarContent}</Toolbar>
 
       {/* ── Canvas area ── */}

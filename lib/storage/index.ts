@@ -1,2 +1,2 @@
-export * from './s3-client';
-export * from './device-storage';
+// Storage utilities – barrel export
+// Individual storage helpers are imported directly where needed.
