@@ -4,6 +4,11 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { PoseCanvas } from '@/components/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
+import {
+  Toolbar,
+  ToolbarSection,
+  SegmentedControl,
+} from '@/components/ui/toolbar';
 import type { LandmarkFrame } from '@/lib/types';
 
 const PREVIEW_FRAME_MS = 1000 / 30;
@@ -20,7 +25,6 @@ export default function CapturePage() {
   const [webcamReady, setWebcamReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFileName, setVideoFileName] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
@@ -232,182 +236,119 @@ export default function CapturePage() {
     return () => cancelAnimationFrame(previewRafRef.current);
   }, [captureComplete, frames]);
 
-  return (
-    <main className="flex flex-row flex-1 w-full max-w-7xl mx-auto overflow-hidden">
-      {/* ── Left Sidebar ── */}
-      <div
-        className="flex flex-row shrink-0"
-        style={{ borderRight: '1px solid var(--border)' }}
-      >
-        {/* Sidebar content */}
-        <div
-          className="overflow-hidden transition-[width] duration-200 ease-in-out"
-          style={{ width: sidebarOpen ? 176 : 0 }}
-        >
-          <div
-            className="w-44 h-full flex flex-col py-4 px-3 gap-5 overflow-y-auto overflow-x-hidden"
-            style={{ backgroundColor: 'var(--surface)' }}
-          >
-            {/* Source section */}
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Source
-              </p>
-              <div
-                className="flex rounded overflow-hidden"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                <button
-                  onClick={() => {
-                    if (isDetecting) handleStop();
-                    setSource('webcam');
-                    setVideoReady(false);
-                    setVideoFileName('');
-                  }}
-                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                  style={
-                    source === 'webcam'
-                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                      : { color: 'var(--fg-muted)' }
-                  }
-                >
-                  Webcam
-                </button>
-                <button
-                  onClick={() => {
-                    if (isDetecting) handleStop();
-                    setSource('upload');
-                    setWebcamReady(false);
-                  }}
-                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                  style={
-                    source === 'upload'
-                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                      : { color: 'var(--fg-muted)' }
-                  }
-                >
-                  Upload
-                </button>
-              </div>
-              {source === 'upload' && (
-                <>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isDetecting}
-                    className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate"
-                    title={videoFileName || 'Choose File'}
-                  >
-                    {videoFileName || 'Choose File…'}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                </>
-              )}
-            </div>
-
-            {/* Capture section */}
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Capture
-              </p>
-              {captureComplete ? (
-                <button
-                  onClick={handleNewCapture}
-                  className="btn-ghost w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
-                >
-                  New Capture
-                </button>
-              ) : !isDetecting ? (
-                <button
-                  onClick={handleStart}
-                  disabled={!canStart}
-                  className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-                >
-                  Start Detection
-                </button>
-              ) : (
-                <button
-                  onClick={handleStop}
-                  className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
-                  style={{
-                    backgroundColor: 'var(--danger)',
-                    color: 'var(--bg)',
-                  }}
-                >
-                  Stop
-                </button>
-              )}
-            </div>
-
-            {/* Status section */}
-            <div
-              className="flex flex-col gap-1.5 text-[10px] uppercase tracking-widest"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              <span>
-                Frames:{' '}
-                <strong style={{ color: 'var(--fg)' }}>{frameCount}</strong>
-              </span>
-              {isDetecting && (
-                <span className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2 h-2 rounded-full animate-pulse"
-                    style={{ backgroundColor: 'var(--danger)' }}
-                  />
-                  Detecting
-                </span>
-              )}
-              {captureComplete && (
-                <span style={{ color: 'var(--accent)' }}>Capture complete</span>
-              )}
-              {errorMsg && (
-                <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
-              )}
-            </div>
-
-            {/* Upload — pinned to bottom */}
-            <div className="mt-auto">
-              <button
-                onClick={handleUpload}
-                disabled={!canUpload}
-                className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-              >
-                {uploadStatus === 'uploading' && 'Uploading…'}
-                {uploadStatus === 'done' && 'Uploaded ✓'}
-                {uploadStatus === 'error' && 'Error — retry'}
-                {uploadStatus === 'idle' && 'Upload Landmarks'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Toggle strip */}
-        <button
-          className="w-5 shrink-0 flex items-center justify-center transition-opacity hover:opacity-80"
-          style={{
-            backgroundColor: 'var(--surface)',
-            color: 'var(--fg-muted)',
-            borderRight: '1px solid var(--border)',
+  /* ── Toolbar content ─────────────────────────────────────────── */
+  const toolbarContent = (
+    <>
+      <ToolbarSection label="Source">
+        <SegmentedControl
+          options={['webcam', 'upload'] as Source[]}
+          value={source}
+          onChange={(v) => {
+            if (isDetecting) handleStop();
+            if (v === 'webcam') {
+              setVideoReady(false);
+              setVideoFileName('');
+            } else {
+              setWebcamReady(false);
+            }
+            setSource(v);
           }}
-          onClick={() => setSidebarOpen((o) => !o)}
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        />
+        {source === 'upload' && (
+          <>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isDetecting}
+              className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate"
+              title={videoFileName || 'Choose File'}
+            >
+              {videoFileName || 'Choose File…'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </>
+        )}
+      </ToolbarSection>
+
+      <ToolbarSection label="Capture">
+        {captureComplete ? (
+          <button
+            onClick={handleNewCapture}
+            className="btn-ghost w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
+          >
+            New Capture
+          </button>
+        ) : !isDetecting ? (
+          <button
+            onClick={handleStart}
+            disabled={!canStart}
+            className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+          >
+            Start Detection
+          </button>
+        ) : (
+          <button
+            onClick={handleStop}
+            className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
+            style={{
+              backgroundColor: 'var(--danger)',
+              color: 'var(--bg)',
+            }}
+          >
+            Stop
+          </button>
+        )}
+      </ToolbarSection>
+
+      <ToolbarSection label="Status">
+        <div
+          className="flex flex-col gap-1.5 text-[10px] uppercase tracking-widest"
+          style={{ color: 'var(--fg-muted)' }}
         >
-          <span className="text-[10px] select-none">
-            {sidebarOpen ? '‹' : '›'}
+          <span>
+            Frames: <strong style={{ color: 'var(--fg)' }}>{frameCount}</strong>
           </span>
+          {isDetecting && (
+            <span className="flex items-center gap-1">
+              <span
+                className="inline-block w-2 h-2 rounded-full animate-pulse"
+                style={{ backgroundColor: 'var(--danger)' }}
+              />
+              Detecting
+            </span>
+          )}
+          {captureComplete && (
+            <span style={{ color: 'var(--accent)' }}>Capture complete</span>
+          )}
+          {errorMsg && (
+            <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
+          )}
+        </div>
+      </ToolbarSection>
+
+      <div className="mt-auto">
+        <button
+          onClick={handleUpload}
+          disabled={!canUpload}
+          className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+        >
+          {uploadStatus === 'uploading' && 'Uploading…'}
+          {uploadStatus === 'done' && 'Uploaded ✓'}
+          {uploadStatus === 'error' && 'Error — retry'}
+          {uploadStatus === 'idle' && 'Upload Landmarks'}
         </button>
       </div>
+    </>
+  );
+
+  return (
+    <main className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
+      <Toolbar sideWidth={176}>{toolbarContent}</Toolbar>
 
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

@@ -7,6 +7,7 @@ const TABS = [
   { href: '/sketch', label: 'Sketch' },
   { href: '/capture', label: 'Capture' },
   { href: '/console', label: 'Animate' },
+  { href: '/docs', label: 'Docs' },
 ] as const;
 
 export function NavLinks() {

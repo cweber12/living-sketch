@@ -10,7 +10,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Overview
 
-Pose-driven animation app migrated from React Native (Expo) to Next.js 16 + TypeScript. Draws SVG body-part sketches onto TensorFlow.js MoveNet-detected skeletons.
+Pose-driven animation app migrated from React Native (Expo) to Next.js 16 + TypeScript. Draws SVG body-part sketches onto MediaPipe Pose Landmarker-detected skeletons.
 
 ## Tech Stack
 
@@ -86,3 +86,34 @@ After implementing new features, always review for:
 2. **Existing code integration** — check imports resolve to existing modules; verify Zustand store shapes match consumers; confirm API route request/response contracts match client-side fetch calls
 3. **Type safety** — run `npx tsc --noEmit` to catch type errors before committing
 4. **Lint** — run `npm run lint` before committing
+
+## Testing Rules
+
+- Run `npm test` after every implementation to verify nothing is broken
+- New utility functions, stores, and reusable components MUST have corresponding test files
+- Test files live in `__tests__/` directories alongside the code they test
+- Use Vitest globals (`describe`, `it`, `expect`, `vi`) — no manual imports needed
+- Mock browser APIs (e.g. `matchMedia`, `canvas.getContext`) where required
+- Aim for meaningful coverage: test state transitions, edge cases, and user interactions
+
+## Documentation Rules
+
+- After adding or changing features, update `app/docs/page.tsx` to reflect changes
+- Keep `README.md` in sync with the current tech stack, scripts, and project structure
+- Document new domain concepts in the "Key Domain Concepts" section above
+- The `app/docs/page.tsx` file is the in-app documentation page — keep its `sections` array current
+
+## Commit & Push Workflow
+
+After ALL files have been updated (code, tests, docs, README):
+
+1. Run `npx tsc --noEmit` — fix any type errors
+2. Run `npm run lint` — fix any lint issues
+3. Run `npm test` — ensure all tests pass
+4. Commit and push:
+
+```bash
+git add -A && git commit -m "type(scope): description" && git push
+```
+
+Always complete the full validate → test → commit → push cycle. Never leave uncommitted changes.

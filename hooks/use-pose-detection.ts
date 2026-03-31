@@ -13,6 +13,38 @@ const WASM_URL =
   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm';
 const MAX_FRAMES = 9000; // ~5 min at 30 fps
 
+// ── Module-level singleton ──────────────────────────────────────────────────
+// Keeps the landmarker alive across component mount/unmount cycles (SPA nav).
+// First load downloads WASM + model from CDN; subsequent navigations reuse it.
+let sharedLandmarker: PoseLandmarker | null = null;
+let loadingPromise: Promise<PoseLandmarker> | null = null;
+
+async function getOrCreateLandmarker(): Promise<PoseLandmarker> {
+  if (sharedLandmarker) return sharedLandmarker;
+  if (loadingPromise) return loadingPromise;
+
+  loadingPromise = (async () => {
+    const vision = await import('@mediapipe/tasks-vision');
+    const { PoseLandmarker, FilesetResolver } = vision;
+    const wasmFileset = await FilesetResolver.forVisionTasks(WASM_URL);
+    const landmarker = await PoseLandmarker.createFromOptions(wasmFileset, {
+      baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+      runningMode: 'VIDEO',
+      numPoses: 1,
+    });
+    sharedLandmarker = landmarker;
+    return landmarker;
+  })();
+
+  try {
+    return await loadingPromise;
+  } catch (err) {
+    // Allow retry on failure
+    loadingPromise = null;
+    throw err;
+  }
+}
+
 interface UsePoseDetectionOpts {
   /** Target detection FPS (default 30) */
   fps?: number;
@@ -44,7 +76,7 @@ export function usePoseDetection(
   const [isDetecting, setIsDetecting] = useState(false);
   const [frameCount, setFrameCount] = useState(0);
 
-  const landmarkerRef = useRef<PoseLandmarker | null>(null);
+  const landmarkerRef = useRef<PoseLandmarker | null>(sharedLandmarker);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -59,17 +91,7 @@ export function usePoseDetection(
     if (landmarkerRef.current) return landmarkerRef.current;
 
     setIsLoading(true);
-    const vision = await import('@mediapipe/tasks-vision');
-    const { PoseLandmarker, FilesetResolver } = vision;
-
-    const wasmFileset = await FilesetResolver.forVisionTasks(WASM_URL);
-
-    const landmarker = await PoseLandmarker.createFromOptions(wasmFileset, {
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
-      runningMode: 'VIDEO',
-      numPoses: 1,
-    });
-
+    const landmarker = await getOrCreateLandmarker();
     landmarkerRef.current = landmarker;
     if (mountedRef.current) {
       setIsLoading(false);
@@ -106,6 +128,13 @@ export function usePoseDetection(
 
   // ── Eagerly load model on mount so detection is instant when started ──────
   useEffect(() => {
+    mountedRef.current = true;
+    // If landmarker already cached from a previous navigation, mark ready immediately
+    if (sharedLandmarker) {
+      landmarkerRef.current = sharedLandmarker;
+      setIsModelReady(true);
+      return;
+    }
     loadModel().catch((err) => console.error('Pose model load failed:', err));
   }, [loadModel]);
 
@@ -183,12 +212,11 @@ export function usePoseDetection(
     flushFrames();
   }, [setCurrentFrame, flushFrames]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — cancel detection loop but keep shared landmarker alive
   useEffect(() => {
     return () => {
       mountedRef.current = false;
       cancelAnimationFrame(rafRef.current);
-      landmarkerRef.current?.close();
     };
   }, []);
 

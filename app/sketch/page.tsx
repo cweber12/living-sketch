@@ -1,14 +1,21 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { SketchCanvas } from '@/components/canvas/sketch-canvas';
+import {
+  SketchCanvas,
+  type ShapeTool,
+} from '@/components/canvas/sketch-canvas';
 import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
+import {
+  Toolbar,
+  ToolbarSection,
+  SegmentedControl,
+} from '@/components/ui/toolbar';
 
 /* ─── Grid templates ──────────────────────────────────────────────── */
 
-// Arms Up: 8 columns – arms form a single horizontal row through the torso
 const GRID_ARMS_UP = `
   ".     .     .     head  head  .     .     ."
   "lhand llarm luarm torso torso ruarm rlarm rhand"
@@ -18,7 +25,6 @@ const GRID_ARMS_UP = `
   ".     .     .     lfoot rfoot .     .     ."
 `;
 
-// Arms Down: 4 columns – arms as side columns, hands at upper-leg level
 const GRID_ARMS_DOWN = `
   ".     head  head  ."
   "luarm torso torso ruarm"
@@ -62,7 +68,6 @@ const PART_LABEL: Record<BodyPartName, string> = {
   rightFoot: 'R Foot',
 };
 
-/* Relative proportions (w × h) per part – matches arms-down grid cell sizes */
 const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
   head: { w: 1, h: 1 },
   torso: { w: 2.3, h: 2.6 },
@@ -80,7 +85,6 @@ const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
   rightFoot: { w: 1.15, h: 1.6 },
 };
 
-/* Ordered list for single-part navigation (top-to-bottom body order) */
 const PARTS_ORDER: BodyPartName[] = [
   'head',
   'torso',
@@ -96,6 +100,14 @@ const PARTS_ORDER: BodyPartName[] = [
   'rightLowerLeg',
   'leftFoot',
   'rightFoot',
+];
+
+const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
+  { value: 'pen', label: '✏ Pen' },
+  { value: 'line', label: '╱ Line' },
+  { value: 'rect', label: '▭ Rectangle' },
+  { value: 'circle', label: '○ Circle' },
+  { value: 'ellipse', label: '⬭ Ellipse' },
 ];
 
 const DEFAULT_COLOR_LIGHT = '#180e04';
@@ -118,7 +130,7 @@ function BodyThumbnail({
   focusPart: BodyPartName;
   onSelect: (part: BodyPartName) => void;
 }) {
-  const t = 10; // tiny base unit
+  const t = 10;
   const ac = t;
   const lc = Math.round(t * 1.15);
   return (
@@ -184,16 +196,18 @@ export default function SketchPage() {
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH);
   const [isEraser, setIsEraser] = useState(false);
   const [canvasSize, setCanvasSize] = useState(DEFAULT_CANVAS_SIZE);
-  const [armPose, setArmPose] = useState<ArmPose>('down');
+  const [armPose, setArmPose] = useState<ArmPose>('up');
   const [viewMode, setViewMode] = useState<ViewMode>('body');
   const [focusIdx, setFocusIdx] = useState(0);
+  const [tool, setTool] = useState<ShapeTool>('pen');
+  const [shapesOpen, setShapesOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [isMobile, setIsMobile] = useState(false);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const shapesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -203,6 +217,18 @@ export default function SketchPage() {
     mq.addEventListener('change', handle);
     return () => mq.removeEventListener('change', handle);
   }, []);
+
+  // Close shapes dropdown on outside click
+  useEffect(() => {
+    if (!shapesOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (shapesRef.current && !shapesRef.current.contains(e.target as Node)) {
+        setShapesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [shapesOpen]);
 
   const effectiveArms: ArmPose = isMobile ? 'down' : armPose;
   const focusPart = PARTS_ORDER[focusIdx];
@@ -249,7 +275,6 @@ export default function SketchPage() {
     }
   }, [exportAll]);
 
-  /* ── Single-part navigation ── */
   const goPrev = useCallback(
     () => setFocusIdx((i) => (i > 0 ? i - 1 : PARTS_ORDER.length - 1)),
     [],
@@ -263,7 +288,6 @@ export default function SketchPage() {
     if (idx >= 0) setFocusIdx(idx);
   }, []);
 
-  /* ── Body-mode scroll buttons ── */
   const scrollBody = useCallback((dir: 'up' | 'down') => {
     const el = bodyScrollRef.current;
     if (!el) return;
@@ -278,17 +302,16 @@ export default function SketchPage() {
   const armsUp = effectiveArms === 'up';
   const gridTemplate = armsUp ? GRID_ARMS_UP : GRID_ARMS_DOWN;
 
-  // On mobile body mode, size grid to fill screen width
   const mobileU =
     typeof window !== 'undefined'
-      ? Math.floor((window.innerWidth - 20) / 4.3) // 4 cols: u + 1.15u + 1.15u + u = 4.3u
+      ? Math.floor((window.innerWidth - 20) / 4.3)
       : 80;
   const effectiveU = isMobile && viewMode === 'body' ? mobileU : u;
 
   const armCol = effectiveU;
   const legCol = Math.round(effectiveU * 1.15);
-  const handColUp = Math.round(effectiveU * 1.75); // hand col width = arms-down hand height
-  const armColUp = Math.round(effectiveU * 1.3); // upper/lower arm col width = arms-down arm height
+  const handColUp = Math.round(effectiveU * 1.75);
+  const armColUp = Math.round(effectiveU * 1.3);
 
   const gridCols = armsUp
     ? `${handColUp}px ${armColUp}px ${armColUp}px ${legCol}px ${legCol}px ${armColUp}px ${armColUp}px ${handColUp}px`
@@ -317,6 +340,8 @@ export default function SketchPage() {
         .join(' ');
 
   /* ── Render helpers ── */
+  const activeTool = isEraser ? 'pen' : tool;
+
   function renderCanvas(s: Side, part: BodyPartName) {
     return (
       <div
@@ -337,6 +362,7 @@ export default function SketchPage() {
           brushSize={brushSize}
           color={color}
           isEraser={isEraser}
+          tool={activeTool}
           onMount={setCanvasRef}
           onStrokeStart={handleStrokeStart}
         />
@@ -350,286 +376,196 @@ export default function SketchPage() {
     );
   }
 
-  /* ── Single-part canvas dimensions ── */
   const focusProps = PART_PROPORTIONS[focusPart];
 
-  return (
-    <main className="flex flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
-      {/* ── Left Sidebar ── */}
-      <div
-        className="flex flex-row shrink-0"
-        style={{ borderRight: '1px solid var(--border)' }}
-      >
-        {/* Sidebar content */}
-        <div
-          className="overflow-hidden transition-[width] duration-200 ease-in-out"
-          style={{ width: sidebarOpen ? 200 : 0 }}
-        >
-          <div
-            className="w-[200px] h-full flex flex-col py-4 px-3 gap-4 overflow-y-auto overflow-x-hidden"
-            style={{ backgroundColor: 'var(--surface)' }}
+  /* ── Toolbar content ── */
+  const toolbarContent = (
+    <>
+      <ToolbarSection label="View">
+        <SegmentedControl
+          options={['front', 'back'] as Side[]}
+          value={side}
+          onChange={setSide}
+        />
+        <SegmentedControl
+          options={['body', 'single'] as ViewMode[]}
+          value={viewMode}
+          onChange={setViewMode}
+        />
+      </ToolbarSection>
+
+      {!isMobile && (
+        <ToolbarSection label="Layout">
+          <SegmentedControl
+            options={['up', 'down'] as ArmPose[]}
+            value={armPose}
+            onChange={setArmPose}
+            labels={{ up: 'Arms Up', down: 'Arms Down' }}
+          />
+          <label className="flex flex-col gap-1">
+            <span
+              className="text-[9px] uppercase tracking-widest"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              Scale
+            </span>
+            <input
+              type="range"
+              min={MIN_CANVAS_SIZE}
+              max={MAX_CANVAS_SIZE}
+              value={canvasSize}
+              onChange={(e) => setCanvasSize(Number(e.target.value))}
+              className="w-full accent-accent"
+            />
+          </label>
+          {viewMode === 'single' && (
+            <select
+              value={focusIdx}
+              onChange={(e) => setFocusIdx(Number(e.target.value))}
+              className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+              style={{
+                backgroundColor: 'var(--bg)',
+                color: 'var(--fg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {PARTS_ORDER.map((p, i) => (
+                <option key={p} value={i}>
+                  {PART_LABEL[p]}
+                </option>
+              ))}
+            </select>
+          )}
+        </ToolbarSection>
+      )}
+
+      <ToolbarSection label="Draw">
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => {
+              setColor(e.target.value);
+              setIsEraser(false);
+            }}
+            className="color-swatch shrink-0"
+            title="Stroke color"
+          />
+          <input
+            type="range"
+            min={1}
+            max={40}
+            value={brushSize}
+            onChange={(e) => setBrushSize(Number(e.target.value))}
+            className="flex-1 accent-accent"
+            title="Brush size"
+          />
+          <span
+            className="text-[10px] tabular-nums w-5 shrink-0"
+            style={{ color: 'var(--fg-muted)' }}
           >
-            {/* View section */}
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                View
-              </p>
-              {/* Front / Back */}
-              <div
-                className="flex rounded overflow-hidden"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                {(['front', 'back'] as Side[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSide(s)}
-                    className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                    style={
-                      side === s
-                        ? {
-                            backgroundColor: 'var(--accent)',
-                            color: 'var(--bg)',
-                          }
-                        : { color: 'var(--fg-muted)' }
-                    }
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {/* Body / Single */}
-              <div
-                className="flex rounded overflow-hidden"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                {(['body', 'single'] as ViewMode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setViewMode(m)}
-                    className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                    style={
-                      viewMode === m
-                        ? {
-                            backgroundColor: 'var(--accent)',
-                            color: 'var(--bg)',
-                          }
-                        : { color: 'var(--fg-muted)' }
-                    }
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Layout section — desktop only */}
-            <div className="hidden sm:flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Layout
-              </p>
-              {/* Arms */}
-              <div
-                className="flex rounded overflow-hidden"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                {(['down', 'up'] as ArmPose[]).map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setArmPose(a)}
-                    className="flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition-colors"
-                    style={
-                      effectiveArms === a
-                        ? {
-                            backgroundColor: 'var(--accent)',
-                            color: 'var(--bg)',
-                          }
-                        : { color: 'var(--fg-muted)' }
-                    }
-                  >
-                    Arms {a}
-                  </button>
-                ))}
-              </div>
-              {/* Scale */}
-              <label className="flex flex-col gap-1">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Scale
-                </span>
-                <input
-                  type="range"
-                  min={MIN_CANVAS_SIZE}
-                  max={MAX_CANVAS_SIZE}
-                  value={canvasSize}
-                  onChange={(e) => setCanvasSize(Number(e.target.value))}
-                  className="w-full accent-accent"
-                />
-              </label>
-              {/* Part dropdown — single mode */}
-              {viewMode === 'single' && (
-                <select
-                  value={focusIdx}
-                  onChange={(e) => setFocusIdx(Number(e.target.value))}
-                  className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-                  style={{
-                    backgroundColor: 'var(--bg)',
-                    color: 'var(--fg)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  {PARTS_ORDER.map((p, i) => (
-                    <option key={p} value={i}>
-                      {PART_LABEL[p]}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Draw section */}
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Draw
-              </p>
-              {/* Color + brush */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                    setIsEraser(false);
-                  }}
-                  className="color-swatch shrink-0"
-                  title="Stroke color"
-                />
-                <input
-                  type="range"
-                  min={1}
-                  max={40}
-                  value={brushSize}
-                  onChange={(e) => setBrushSize(Number(e.target.value))}
-                  className="flex-1 accent-accent"
-                  title="Brush size"
-                />
-                <span
-                  className="text-[10px] tabular-nums w-5 shrink-0"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  {brushSize}
-                </span>
-              </div>
-              {/* Pen / Erase */}
-              <div
-                className="flex rounded overflow-hidden"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                <button
-                  onClick={() => setIsEraser(false)}
-                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                  style={
-                    !isEraser
-                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                      : { color: 'var(--fg-muted)' }
-                  }
-                  title="Pen"
-                >
-                  Pen
-                </button>
-                <button
-                  onClick={() => setIsEraser(true)}
-                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                  style={
-                    isEraser
-                      ? { backgroundColor: 'var(--danger)', color: '#fff' }
-                      : { color: 'var(--fg-muted)' }
-                  }
-                  title="Eraser"
-                >
-                  Erase
-                </button>
-              </div>
-            </div>
-
-            {/* History section */}
-            <div className="flex flex-col gap-2">
-              <p
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                History
-              </p>
-              <button
-                onClick={handleUndo}
-                className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-                title="Undo last stroke"
-              >
-                ↩ Undo
-              </button>
-              <button
-                onClick={clearAll}
-                className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-                style={{ color: 'var(--danger)' }}
-                title="Clear all canvases"
-              >
-                ✕ Clear
-              </button>
-            </div>
-
-            {/* Save — pinned to bottom */}
-            <div className="mt-auto">
-              <button
-                onClick={handleSave}
-                disabled={saveStatus === 'saving'}
-                className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-                title="Save sketches to library"
-              >
-                {saveStatus === 'saving' && 'Saving…'}
-                {saveStatus === 'saved' && 'Saved ✓'}
-                {saveStatus === 'error' && 'Error'}
-                {saveStatus === 'idle' && 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Toggle strip */}
-        <button
-          className="w-5 shrink-0 flex items-center justify-center transition-opacity hover:opacity-80"
-          style={{
-            backgroundColor: 'var(--surface)',
-            color: 'var(--fg-muted)',
-            borderRight: '1px solid var(--border)',
-          }}
-          onClick={() => setSidebarOpen((o) => !o)}
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          <span className="text-[10px] select-none">
-            {sidebarOpen ? '‹' : '›'}
+            {brushSize}
           </span>
+        </div>
+        <SegmentedControl
+          options={['pen', 'eraser'] as ('pen' | 'eraser')[]}
+          value={isEraser ? 'eraser' : 'pen'}
+          onChange={(v) => setIsEraser(v === 'eraser')}
+          labels={{ pen: 'Pen', eraser: 'Erase' }}
+          dangerValue="eraser"
+        />
+      </ToolbarSection>
+
+      <ToolbarSection label="Shapes">
+        <div className="relative" ref={shapesRef}>
+          <button
+            onClick={() => setShapesOpen((o) => !o)}
+            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center justify-between"
+          >
+            <span>
+              {SHAPE_OPTIONS.find((s) => s.value === tool)?.label ?? 'Pen'}
+            </span>
+            <span className="text-[10px]">{shapesOpen ? '▲' : '▼'}</span>
+          </button>
+          {shapesOpen && (
+            <div
+              className="absolute left-0 right-0 z-50 mt-1 rounded-lg overflow-hidden shadow-lg"
+              style={{
+                backgroundColor: 'var(--surface-raised, var(--surface))',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {SHAPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    setTool(opt.value);
+                    if (opt.value !== 'pen') setIsEraser(false);
+                    setShapesOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs uppercase tracking-widest transition-colors hover:opacity-80"
+                  style={
+                    tool === opt.value
+                      ? {
+                          backgroundColor: 'var(--accent)',
+                          color: 'var(--bg)',
+                        }
+                      : { color: 'var(--fg)' }
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </ToolbarSection>
+
+      <ToolbarSection label="History">
+        <button
+          onClick={handleUndo}
+          className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+          title="Undo last stroke"
+        >
+          ↩ Undo
         </button>
-      </div>
+        <button
+          onClick={clearAll}
+          className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+          style={{ color: 'var(--danger)' }}
+          title="Clear all canvases"
+        >
+          ✕ Clear
+        </button>
+      </ToolbarSection>
+    </>
+  );
+
+  return (
+    <main className="flex flex-col sm:flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
+      <Toolbar sideWidth={200}>{toolbarContent}</Toolbar>
 
       {/* ── Canvas area ── */}
       <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
+        {/* Save button — absolute top-right overlay */}
+        <button
+          onClick={handleSave}
+          disabled={saveStatus === 'saving'}
+          className="absolute top-3 right-3 z-30 btn-primary rounded px-4 py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50 shadow-md"
+          title="Save sketches to library"
+        >
+          {saveStatus === 'saving' && 'Saving…'}
+          {saveStatus === 'saved' && 'Saved ✓'}
+          {saveStatus === 'error' && 'Error'}
+          {saveStatus === 'idle' && 'Save'}
+        </button>
+
         {/* ── BODY MODE ── */}
         <div
           className={
             viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
           }
         >
-          {/* Scroll up */}
           {isMobile && viewMode === 'body' && (
             <button
               onClick={() => scrollBody('up')}
@@ -664,7 +600,6 @@ export default function SketchPage() {
             </div>
           </div>
 
-          {/* Scroll down */}
           {isMobile && viewMode === 'body' && (
             <button
               onClick={() => scrollBody('down')}
@@ -685,7 +620,6 @@ export default function SketchPage() {
         {viewMode === 'single' && (
           <>
             <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
-              {/* Prev */}
               <button
                 onClick={goPrev}
                 className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm"
@@ -699,7 +633,6 @@ export default function SketchPage() {
                 ◀
               </button>
 
-              {/* Canvas at proportional size */}
               <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0">
                 <p
                   className="text-[10px] font-bold uppercase tracking-widest shrink-0"
@@ -735,6 +668,7 @@ export default function SketchPage() {
                         brushSize={brushSize}
                         color={color}
                         isEraser={isEraser}
+                        tool={activeTool}
                         onMount={setCanvasRef}
                         onStrokeStart={handleStrokeStart}
                       />
@@ -749,7 +683,6 @@ export default function SketchPage() {
                 </p>
               </div>
 
-              {/* Next */}
               <button
                 onClick={goNext}
                 className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm"
@@ -764,7 +697,6 @@ export default function SketchPage() {
               </button>
             </div>
 
-            {/* Body thumbnail – fixed bottom right */}
             <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />
           </>
         )}

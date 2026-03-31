@@ -5,12 +5,15 @@ import type { RefCallback } from 'react';
 import { getStroke } from 'perfect-freehand';
 import type { Side, BodyPartName } from '@/hooks/use-sketch-canvas-rig';
 
+export type ShapeTool = 'pen' | 'line' | 'circle' | 'rect' | 'ellipse';
+
 interface Props {
   side: Side;
   part: BodyPartName;
   brushSize: number;
   color: string;
   isEraser: boolean;
+  tool?: ShapeTool;
   onMount: (
     side: Side,
     part: BodyPartName,
@@ -49,6 +52,7 @@ export function SketchCanvas({
   brushSize,
   color,
   isEraser,
+  tool = 'pen',
   onMount,
   onStrokeStart,
 }: Props) {
@@ -56,16 +60,19 @@ export function SketchCanvas({
   const isDrawing = useRef(false);
 
   // All brush props in a ref so event handlers never go stale
-  const brushRef = useRef({ brushSize, color, isEraser });
+  const brushRef = useRef({ brushSize, color, isEraser, tool });
   useEffect(() => {
-    brushRef.current = { brushSize, color, isEraser };
-  }, [brushSize, color, isEraser]);
+    brushRef.current = { brushSize, color, isEraser, tool };
+  }, [brushSize, color, isEraser, tool]);
 
   // CSS-to-canvas scale factor — updated on every pointer event
   const scaleRef = useRef(1);
 
   // Points accumulated for the current in-progress stroke: [x, y, pressure][]
   const currentPoints = useRef<[number, number, number][]>([]);
+
+  // Start position for shape tools
+  const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Canvas state captured just before the stroke began (for live redraw)
   const committedImage = useRef<ImageData | null>(null);
@@ -134,6 +141,61 @@ export function SketchCanvas({
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  /** Render a shape preview from startPos to current pos */
+  function renderShape(
+    ctx: CanvasRenderingContext2D,
+    start: { x: number; y: number },
+    end: { x: number; y: number },
+  ) {
+    const {
+      brushSize: bs,
+      color: c,
+      isEraser: erase,
+      tool: t,
+    } = brushRef.current;
+    const lw = bs * scaleRef.current;
+
+    if (erase) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.fillStyle = 'rgba(0,0,0,1)';
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = c;
+      ctx.fillStyle = 'transparent';
+    }
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    if (t === 'line') {
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    } else if (t === 'rect') {
+      ctx.strokeRect(
+        Math.min(start.x, end.x),
+        Math.min(start.y, end.y),
+        Math.abs(end.x - start.x),
+        Math.abs(end.y - start.y),
+      );
+    } else if (t === 'circle') {
+      const r = Math.hypot(end.x - start.x, end.y - start.y);
+      ctx.arc(start.x, start.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (t === 'ellipse') {
+      const rx = Math.abs(end.x - start.x);
+      const ry = Math.abs(end.y - start.y);
+      const cx = (start.x + end.x) / 2;
+      const cy = (start.y + end.y) / 2;
+      ctx.ellipse(cx, cy, rx / 2, ry / 2, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -148,7 +210,11 @@ export function SketchCanvas({
 
       const pos = getPos(e);
       currentPoints.current = [[pos.x, pos.y, pos.pressure]];
-      renderCurrentStroke(ctx);
+      shapeStartRef.current = { x: pos.x, y: pos.y };
+
+      if (brushRef.current.tool === 'pen') {
+        renderCurrentStroke(ctx);
+      }
     },
     [side, part, onStrokeStart],
   );
@@ -166,7 +232,12 @@ export function SketchCanvas({
       if (committedImage.current) {
         ctx.putImageData(committedImage.current, 0, 0);
       }
-      renderCurrentStroke(ctx);
+
+      if (brushRef.current.tool === 'pen') {
+        renderCurrentStroke(ctx);
+      } else if (shapeStartRef.current) {
+        renderShape(ctx, shapeStartRef.current, { x: pos.x, y: pos.y });
+      }
     },
     [],
   );
@@ -174,6 +245,7 @@ export function SketchCanvas({
   const handlePointerUp = useCallback(() => {
     isDrawing.current = false;
     currentPoints.current = [];
+    shapeStartRef.current = null;
     committedImage.current = null;
   }, []);
 
