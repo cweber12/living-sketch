@@ -4,6 +4,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { PoseCanvas } from '@/components/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
+import type { LandmarkFrame } from '@/lib/types';
+
+const PREVIEW_FRAME_MS = 1000 / 30;
 
 type Source = 'webcam' | 'upload';
 
@@ -17,11 +20,18 @@ export default function CapturePage() {
   const [webcamReady, setWebcamReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFileName, setVideoFileName] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
+  const [previewLandmarks, setPreviewLandmarks] =
+    useState<LandmarkFrame | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const previewRafRef = useRef<number>(0);
+  const previewIdxRef = useRef(0);
+  const previewLastTimeRef = useRef(0);
 
   const { isLoading, isModelReady, isDetecting, frameCount, start, stop } =
     usePoseDetection();
@@ -73,6 +83,24 @@ export default function CapturePage() {
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
     };
   }, []);
+
+  /* ── Track actual video dimensions ─────────────────────────────── */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const updateDims = () => {
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        setVideoDims({ w: video.videoWidth, h: video.videoHeight });
+      }
+    };
+    video.addEventListener('loadedmetadata', updateDims);
+    video.addEventListener('resize', updateDims);
+    if (video.videoWidth > 0) updateDims();
+    return () => {
+      video.removeEventListener('loadedmetadata', updateDims);
+      video.removeEventListener('resize', updateDims);
+    };
+  }, []); // once — video element DOM node is stable
 
   /* ── File upload ────────────────────────────────────────────────── */
   const handleFileSelect = useCallback(
@@ -129,6 +157,7 @@ export default function CapturePage() {
   }, [stop, source]);
 
   const handleNewCapture = useCallback(() => {
+    cancelAnimationFrame(previewRafRef.current);
     useLandmarksStore.getState().reset();
     setUploadStatus('idle');
     setErrorMsg('');
@@ -170,7 +199,6 @@ export default function CapturePage() {
 
   /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
-  const lastFrame = captureComplete ? frames[frames.length - 1] : null;
 
   const canStart =
     isModelReady &&
@@ -179,239 +207,309 @@ export default function CapturePage() {
     (source === 'webcam' ? webcamReady : videoReady);
   const canUpload = captureComplete && uploadStatus !== 'uploading';
 
-  const videoW = dimensions.width || videoRef.current?.videoWidth || 640;
-  const videoH = dimensions.height || videoRef.current?.videoHeight || 480;
+  const videoW = videoDims.w || dimensions.width || 640;
+  const videoH = videoDims.h || dimensions.height || 480;
+
+  /* ── Animated skeleton preview ──────────────────────────────────── */
+  useEffect(() => {
+    if (!captureComplete || frames.length === 0) {
+      cancelAnimationFrame(previewRafRef.current);
+      setPreviewLandmarks(null);
+      return;
+    }
+    previewIdxRef.current = 0;
+    previewLastTimeRef.current = 0;
+    setPreviewLandmarks(frames[0]);
+    function loop(ts: number) {
+      if (ts - previewLastTimeRef.current >= PREVIEW_FRAME_MS) {
+        previewLastTimeRef.current = ts;
+        setPreviewLandmarks(frames[previewIdxRef.current]);
+        previewIdxRef.current = (previewIdxRef.current + 1) % frames.length;
+      }
+      previewRafRef.current = requestAnimationFrame(loop);
+    }
+    previewRafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(previewRafRef.current);
+  }, [captureComplete, frames]);
 
   return (
-    <main className="flex flex-col flex-1 w-full max-w-7xl mx-auto overflow-hidden">
-      {/* ── Toolbar ── */}
+    <main className="flex flex-row flex-1 w-full max-w-7xl mx-auto overflow-hidden">
+      {/* ── Left Sidebar ── */}
       <div
-        className="w-full px-3 sm:px-4 py-2 border-y flex items-center gap-2 flex-wrap"
-        style={{
-          borderColor: 'var(--border)',
-          backgroundColor: 'var(--surface)',
-        }}
+        className="flex flex-row shrink-0"
+        style={{ borderRight: '1px solid var(--border)' }}
       >
-        {/* Source toggle */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button
-            onClick={() => {
-              if (isDetecting) handleStop();
-              setSource('webcam');
-              setVideoReady(false);
-              setVideoFileName('');
-            }}
-            className="px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost"
-            style={
-              source === 'webcam'
-                ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                : {}
-            }
+        {/* Sidebar content */}
+        <div
+          className="overflow-hidden transition-[width] duration-200 ease-in-out"
+          style={{ width: sidebarOpen ? 176 : 0 }}
+        >
+          <div
+            className="w-44 h-full flex flex-col py-4 px-3 gap-5 overflow-y-auto overflow-x-hidden"
+            style={{ backgroundColor: 'var(--surface)' }}
           >
-            Webcam
-          </button>
-          <button
-            onClick={() => {
-              if (isDetecting) handleStop();
-              setSource('upload');
-              setWebcamReady(false);
-            }}
-            className="px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost"
-            style={
-              source === 'upload'
-                ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                : {}
-            }
-          >
-            Upload
-          </button>
+            {/* Source section */}
+            <div className="flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Source
+              </p>
+              <div
+                className="flex rounded overflow-hidden"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                <button
+                  onClick={() => {
+                    if (isDetecting) handleStop();
+                    setSource('webcam');
+                    setVideoReady(false);
+                    setVideoFileName('');
+                  }}
+                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                  style={
+                    source === 'webcam'
+                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                      : { color: 'var(--fg-muted)' }
+                  }
+                >
+                  Webcam
+                </button>
+                <button
+                  onClick={() => {
+                    if (isDetecting) handleStop();
+                    setSource('upload');
+                    setWebcamReady(false);
+                  }}
+                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                  style={
+                    source === 'upload'
+                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                      : { color: 'var(--fg-muted)' }
+                  }
+                >
+                  Upload
+                </button>
+              </div>
+              {source === 'upload' && (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isDetecting}
+                    className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate"
+                    title={videoFileName || 'Choose File'}
+                  >
+                    {videoFileName || 'Choose File…'}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Capture section */}
+            <div className="flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Capture
+              </p>
+              {captureComplete ? (
+                <button
+                  onClick={handleNewCapture}
+                  className="btn-ghost w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
+                >
+                  New Capture
+                </button>
+              ) : !isDetecting ? (
+                <button
+                  onClick={handleStart}
+                  disabled={!canStart}
+                  className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+                >
+                  Start Detection
+                </button>
+              ) : (
+                <button
+                  onClick={handleStop}
+                  className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
+                  style={{
+                    backgroundColor: 'var(--danger)',
+                    color: 'var(--bg)',
+                  }}
+                >
+                  Stop
+                </button>
+              )}
+            </div>
+
+            {/* Status section */}
+            <div
+              className="flex flex-col gap-1.5 text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              <span>
+                Frames:{' '}
+                <strong style={{ color: 'var(--fg)' }}>{frameCount}</strong>
+              </span>
+              {isDetecting && (
+                <span className="flex items-center gap-1">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: 'var(--danger)' }}
+                  />
+                  Detecting
+                </span>
+              )}
+              {captureComplete && (
+                <span style={{ color: 'var(--accent)' }}>Capture complete</span>
+              )}
+              {errorMsg && (
+                <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
+              )}
+            </div>
+
+            {/* Upload — pinned to bottom */}
+            <div className="mt-auto">
+              <button
+                onClick={handleUpload}
+                disabled={!canUpload}
+                className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+              >
+                {uploadStatus === 'uploading' && 'Uploading…'}
+                {uploadStatus === 'done' && 'Uploaded ✓'}
+                {uploadStatus === 'error' && 'Error — retry'}
+                {uploadStatus === 'idle' && 'Upload Landmarks'}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div
-          className="w-px h-5 hidden sm:block"
-          style={{ backgroundColor: 'var(--border)' }}
-        />
-
-        {/* File input trigger */}
-        {source === 'upload' && (
-          <>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isDetecting}
-              className="btn-ghost rounded px-3 py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50"
-            >
-              {videoFileName || 'Choose File'}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </>
-        )}
-
-        {/* Detection controls */}
-        {captureComplete ? (
-          <button
-            onClick={handleNewCapture}
-            className="btn-ghost rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold"
-          >
-            New Capture
-          </button>
-        ) : !isDetecting ? (
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            className="btn-primary rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-          >
-            Start Detection
-          </button>
-        ) : (
-          <button
-            onClick={handleStop}
-            className="rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold"
-            style={{
-              backgroundColor: 'var(--danger)',
-              color: 'var(--bg)',
-            }}
-          >
-            Stop
-          </button>
-        )}
-
-        {/* Upload landmarks */}
+        {/* Toggle strip */}
         <button
-          onClick={handleUpload}
-          disabled={!canUpload}
-          className="btn-primary rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50 ml-auto"
+          className="w-5 shrink-0 flex items-center justify-center transition-opacity hover:opacity-80"
+          style={{
+            backgroundColor: 'var(--surface)',
+            color: 'var(--fg-muted)',
+            borderRight: '1px solid var(--border)',
+          }}
+          onClick={() => setSidebarOpen((o) => !o)}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          {uploadStatus === 'uploading' && 'Uploading…'}
-          {uploadStatus === 'done' && 'Uploaded ✓'}
-          {uploadStatus === 'error' && 'Error — retry'}
-          {uploadStatus === 'idle' && 'Upload Landmarks'}
+          <span className="text-[10px] select-none">
+            {sidebarOpen ? '‹' : '›'}
+          </span>
         </button>
       </div>
 
-      {/* ── Status bar ── */}
-      <div
-        className="w-full px-3 sm:px-4 py-1 flex items-center gap-3 text-[10px] uppercase tracking-widest"
-        style={{ color: 'var(--fg-muted)' }}
-      >
-        <span>
-          Frames: <strong style={{ color: 'var(--fg)' }}>{frameCount}</strong>
-        </span>
-        {isDetecting && (
-          <span className="flex items-center gap-1">
-            <span
-              className="inline-block w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: 'var(--danger)' }}
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* ── Model loading overlay ── */}
+        {isLoading && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+            <div
+              className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+              style={{
+                borderColor: 'var(--accent)',
+                borderTopColor: 'transparent',
+              }}
             />
-            Detecting
-          </span>
+            <p
+              className="font-display text-sm uppercase tracking-widest text-center"
+              style={{ color: 'var(--accent)' }}
+            >
+              Reanimating neural pathways…
+            </p>
+            <p
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              Charging the locomotion automaton
+            </p>
+          </div>
         )}
+
+        {/* ── Video + pose overlay ── */}
+        {!isLoading && !captureComplete && (
+          <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
+            <div
+              className="relative rounded-lg overflow-hidden h-full"
+              style={{
+                aspectRatio: `${videoW} / ${videoH}`,
+                maxWidth: '100%',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+              }}
+            >
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                controls={source === 'upload' && !isDetecting}
+                className="w-full h-full object-fill"
+                style={{ display: 'block' }}
+              />
+              {currentFrame && (
+                <PoseCanvas
+                  width={videoW}
+                  height={videoH}
+                  landmarks={currentFrame}
+                />
+              )}
+
+              {/* Empty state */}
+              {!webcamReady && source === 'webcam' && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p
+                    className="text-sm uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Starting camera…
+                  </p>
+                </div>
+              )}
+              {source === 'upload' && !videoReady && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p
+                    className="text-sm uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Upload a video to begin
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Skeleton preview (capture complete) ── */}
         {captureComplete && (
-          <span style={{ color: 'var(--accent)' }}>Capture complete</span>
-        )}
-        {errorMsg && <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>}
-      </div>
-
-      {/* ── Model loading overlay ── */}
-      {isLoading && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-          <div
-            className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-            style={{
-              borderColor: 'var(--accent)',
-              borderTopColor: 'transparent',
-            }}
-          />
-          <p
-            className="font-display text-sm uppercase tracking-widest text-center"
-            style={{ color: 'var(--accent)' }}
-          >
-            Reanimating neural pathways…
-          </p>
-          <p
-            className="text-[10px] uppercase tracking-widest"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Charging the locomotion automaton
-          </p>
-        </div>
-      )}
-
-      {/* ── Video + pose overlay ── */}
-      {!isLoading && (
-        <div
-          className={`flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden${captureComplete ? ' hidden' : ''}`}
-        >
-          <div
-            className="relative rounded-lg overflow-hidden h-full"
-            style={{
-              aspectRatio: `${videoW} / ${videoH}`,
-              maxWidth: '100%',
-              border: '1px solid var(--border)',
-              backgroundColor: 'var(--surface)',
-            }}
-          >
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              controls={source === 'upload' && !isDetecting}
-              className="w-full h-full object-contain"
-              style={{ display: 'block' }}
-            />
-            {currentFrame && (
+          <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-4 min-h-0 overflow-hidden">
+            <div
+              className="relative"
+              style={{
+                aspectRatio: `${videoW} / ${videoH}`,
+                height: '100%',
+                maxWidth: '100%',
+              }}
+            >
               <PoseCanvas
                 width={videoW}
                 height={videoH}
-                landmarks={currentFrame}
+                landmarks={previewLandmarks}
+                className="w-full h-full"
               />
-            )}
-
-            {/* Empty state */}
-            {!webcamReady && source === 'webcam' && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p
-                  className="text-sm uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Starting camera…
-                </p>
-              </div>
-            )}
-            {source === 'upload' && !videoReady && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p
-                  className="text-sm uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Upload a video to begin
-                </p>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* ── Skeleton preview (capture complete) ── */}
-      {captureComplete && lastFrame && (
-        <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
-          <div
-            className="relative h-full"
-            style={{
-              aspectRatio: `${videoW} / ${videoH}`,
-              maxWidth: '100%',
-              position: 'relative',
-            }}
-          >
-            <PoseCanvas width={videoW} height={videoH} landmarks={lastFrame} />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }

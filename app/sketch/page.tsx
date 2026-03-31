@@ -190,6 +190,7 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [isMobile, setIsMobile] = useState(false);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
@@ -353,225 +354,275 @@ export default function SketchPage() {
   const focusProps = PART_PROPORTIONS[focusPart];
 
   return (
-    <main className="flex flex-col flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
-      {/* ── Toolbar ── */}
+    <main className="flex flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
+      {/* ── Left Sidebar ── */}
       <div
-        className="w-full px-3 sm:px-4 border-b flex flex-col"
-        style={{
-          borderColor: 'var(--border)',
-          backgroundColor: 'var(--surface)',
-        }}
+        className="flex flex-row shrink-0"
+        style={{ borderRight: '1px solid var(--border)' }}
       >
-        {/* ── Row 1: Primary drawing tools ── */}
-        <div className="flex items-center gap-1 py-2 flex-wrap">
-          {/* View toggles */}
+        {/* Sidebar content */}
+        <div
+          className="overflow-hidden transition-[width] duration-200 ease-in-out"
+          style={{ width: sidebarOpen ? 200 : 0 }}
+        >
           <div
-            className="flex items-center rounded overflow-hidden shrink-0"
-            style={{ border: '1px solid var(--border)' }}
+            className="w-[200px] h-full flex flex-col py-4 px-3 gap-4 overflow-y-auto overflow-x-hidden"
+            style={{ backgroundColor: 'var(--surface)' }}
           >
-            {(['front', 'back'] as Side[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSide(s)}
-                className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                style={
-                  side === s
-                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                    : { color: 'var(--fg-muted)' }
-                }
+            {/* View section */}
+            <div className="flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
               >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          <div
-            className="flex items-center rounded overflow-hidden shrink-0"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            {(['body', 'single'] as ViewMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setViewMode(m)}
-                className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-                style={
-                  viewMode === m
-                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                    : { color: 'var(--fg-muted)' }
-                }
+                View
+              </p>
+              {/* Front / Back */}
+              <div
+                className="flex rounded overflow-hidden"
+                style={{ border: '1px solid var(--border)' }}
               >
-                {m}
+                {(['front', 'back'] as Side[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSide(s)}
+                    className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                    style={
+                      side === s
+                        ? {
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--bg)',
+                          }
+                        : { color: 'var(--fg-muted)' }
+                    }
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              {/* Body / Single */}
+              <div
+                className="flex rounded overflow-hidden"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                {(['body', 'single'] as ViewMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setViewMode(m)}
+                    className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                    style={
+                      viewMode === m
+                        ? {
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--bg)',
+                          }
+                        : { color: 'var(--fg-muted)' }
+                    }
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Layout section — desktop only */}
+            <div className="hidden sm:flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Layout
+              </p>
+              {/* Arms */}
+              <div
+                className="flex rounded overflow-hidden"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                {(['down', 'up'] as ArmPose[]).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setArmPose(a)}
+                    className="flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition-colors"
+                    style={
+                      effectiveArms === a
+                        ? {
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--bg)',
+                          }
+                        : { color: 'var(--fg-muted)' }
+                    }
+                  >
+                    Arms {a}
+                  </button>
+                ))}
+              </div>
+              {/* Scale */}
+              <label className="flex flex-col gap-1">
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Scale
+                </span>
+                <input
+                  type="range"
+                  min={MIN_CANVAS_SIZE}
+                  max={MAX_CANVAS_SIZE}
+                  value={canvasSize}
+                  onChange={(e) => setCanvasSize(Number(e.target.value))}
+                  className="w-full accent-accent"
+                />
+              </label>
+              {/* Part dropdown — single mode */}
+              {viewMode === 'single' && (
+                <select
+                  value={focusIdx}
+                  onChange={(e) => setFocusIdx(Number(e.target.value))}
+                  className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+                  style={{
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--fg)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  {PARTS_ORDER.map((p, i) => (
+                    <option key={p} value={i}>
+                      {PART_LABEL[p]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Draw section */}
+            <div className="flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Draw
+              </p>
+              {/* Color + brush */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => {
+                    setColor(e.target.value);
+                    setIsEraser(false);
+                  }}
+                  className="color-swatch shrink-0"
+                  title="Stroke color"
+                />
+                <input
+                  type="range"
+                  min={1}
+                  max={40}
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(Number(e.target.value))}
+                  className="flex-1 accent-accent"
+                  title="Brush size"
+                />
+                <span
+                  className="text-[10px] tabular-nums w-5 shrink-0"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  {brushSize}
+                </span>
+              </div>
+              {/* Pen / Erase */}
+              <div
+                className="flex rounded overflow-hidden"
+                style={{ border: '1px solid var(--border)' }}
+              >
+                <button
+                  onClick={() => setIsEraser(false)}
+                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                  style={
+                    !isEraser
+                      ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                      : { color: 'var(--fg-muted)' }
+                  }
+                  title="Pen"
+                >
+                  Pen
+                </button>
+                <button
+                  onClick={() => setIsEraser(true)}
+                  className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                  style={
+                    isEraser
+                      ? { backgroundColor: 'var(--danger)', color: '#fff' }
+                      : { color: 'var(--fg-muted)' }
+                  }
+                  title="Eraser"
+                >
+                  Erase
+                </button>
+              </div>
+            </div>
+
+            {/* History section */}
+            <div className="flex flex-col gap-2">
+              <p
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                History
+              </p>
+              <button
+                onClick={handleUndo}
+                className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+                title="Undo last stroke"
+              >
+                ↩ Undo
               </button>
-            ))}
+              <button
+                onClick={clearAll}
+                className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+                style={{ color: 'var(--danger)' }}
+                title="Clear all canvases"
+              >
+                ✕ Clear
+              </button>
+            </div>
+
+            {/* Save — pinned to bottom */}
+            <div className="mt-auto">
+              <button
+                onClick={handleSave}
+                disabled={saveStatus === 'saving'}
+                className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+                title="Save sketches to library"
+              >
+                {saveStatus === 'saving' && 'Saving…'}
+                {saveStatus === 'saved' && 'Saved ✓'}
+                {saveStatus === 'error' && 'Error'}
+                {saveStatus === 'idle' && 'Save'}
+              </button>
+            </div>
           </div>
-
-          <div
-            className="w-px h-5 shrink-0"
-            style={{ backgroundColor: 'var(--border)' }}
-          />
-
-          {/* Color + brush size */}
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => {
-              setColor(e.target.value);
-              setIsEraser(false);
-            }}
-            className="color-swatch shrink-0"
-            title="Stroke color"
-          />
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <input
-              type="range"
-              min={1}
-              max={40}
-              value={brushSize}
-              onChange={(e) => setBrushSize(Number(e.target.value))}
-              className="w-16 sm:w-24 accent-accent"
-              title="Brush size"
-            />
-            <span
-              className="text-[10px] tabular-nums w-5 text-right shrink-0"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              {brushSize}
-            </span>
-          </div>
-
-          {/* Pen / Eraser */}
-          <div
-            className="flex items-center rounded overflow-hidden shrink-0"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            <button
-              onClick={() => setIsEraser(false)}
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-              style={
-                !isEraser
-                  ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                  : { color: 'var(--fg-muted)' }
-              }
-              title="Pen"
-            >
-              Pen
-            </button>
-            <button
-              onClick={() => setIsEraser(true)}
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-              style={
-                isEraser
-                  ? { backgroundColor: 'var(--danger)', color: '#fff' }
-                  : { color: 'var(--fg-muted)' }
-              }
-              title="Eraser"
-            >
-              Erase
-            </button>
-          </div>
-
-          <div
-            className="w-px h-5 shrink-0"
-            style={{ backgroundColor: 'var(--border)' }}
-          />
-
-          {/* History actions */}
-          <button
-            onClick={handleUndo}
-            className="btn-ghost rounded px-2.5 py-1.5 text-xs uppercase tracking-widest shrink-0"
-            title="Undo last stroke"
-          >
-            ↩ Undo
-          </button>
-          <button
-            onClick={clearAll}
-            className="btn-ghost rounded px-2.5 py-1.5 text-xs uppercase tracking-widest shrink-0"
-            style={{ color: 'var(--danger)' }}
-            title="Clear all canvases"
-          >
-            ✕ Clear
-          </button>
-
-          {/* Save — pushed to right */}
-          <button
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-            className="btn-primary rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50 shrink-0 ml-auto"
-            title="Save sketches to library"
-          >
-            {saveStatus === 'saving' && 'Saving…'}
-            {saveStatus === 'saved' && 'Saved ✓'}
-            {saveStatus === 'error' && 'Error'}
-            {saveStatus === 'idle' && 'Save'}
-          </button>
         </div>
 
-        {/* ── Row 2: Layout controls (desktop) ── */}
-        <div className="hidden sm:flex items-center gap-2 pb-2">
-          {/* Arms pose */}
-          <div
-            className="flex items-center rounded overflow-hidden shrink-0"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            {(['down', 'up'] as ArmPose[]).map((a) => (
-              <button
-                key={a}
-                onClick={() => setArmPose(a)}
-                className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-colors"
-                style={
-                  effectiveArms === a
-                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                    : { color: 'var(--fg-muted)' }
-                }
-              >
-                Arms {a}
-              </button>
-            ))}
-          </div>
-
-          {/* Scale */}
-          <label className="flex items-center gap-1.5" title="Canvas scale">
-            <span
-              className="text-[10px] tracking-widest uppercase shrink-0"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              Scale
-            </span>
-            <input
-              type="range"
-              min={MIN_CANVAS_SIZE}
-              max={MAX_CANVAS_SIZE}
-              value={canvasSize}
-              onChange={(e) => setCanvasSize(Number(e.target.value))}
-              className="w-24 accent-accent"
-            />
-          </label>
-
-          {/* Part dropdown — single mode */}
-          {viewMode === 'single' && (
-            <select
-              value={focusIdx}
-              onChange={(e) => setFocusIdx(Number(e.target.value))}
-              className="ml-auto rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-              style={{
-                backgroundColor: 'var(--bg)',
-                color: 'var(--fg)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {PARTS_ORDER.map((p, i) => (
-                <option key={p} value={i}>
-                  {PART_LABEL[p]}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+        {/* Toggle strip */}
+        <button
+          className="w-5 shrink-0 flex items-center justify-center transition-opacity hover:opacity-80"
+          style={{
+            backgroundColor: 'var(--surface)',
+            color: 'var(--fg-muted)',
+            borderRight: '1px solid var(--border)',
+          }}
+          onClick={() => setSidebarOpen((o) => !o)}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          <span className="text-[10px] select-none">
+            {sidebarOpen ? '‹' : '›'}
+          </span>
+        </button>
       </div>
 
       {/* ── Canvas area ── */}
-      <div className="flex-1 flex flex-col min-h-0 relative">
+      <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
         {/* ── BODY MODE ── */}
         <div
           className={
