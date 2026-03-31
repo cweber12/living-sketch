@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
   LandmarkFrame,
@@ -80,7 +80,6 @@ export default function ConsolePage() {
   /* ── Load landmark file ─────────────────────────────────────────── */
   const loadLandmarks = useCallback(async (file: FileEntry) => {
     setLandmarkFile(file.key);
-    setPlaying(false);
     try {
       const res = await fetch(
         `/api/storage/landmarks?key=${encodeURIComponent(file.key)}`,
@@ -97,14 +96,13 @@ export default function ConsolePage() {
   /* ── Load SVG set ───────────────────────────────────────────────── */
   const loadSvgs = useCallback(async (file: FileEntry) => {
     setSvgFile(file.key);
-    setPlaying(false);
     try {
       const res = await fetch(
         `/api/storage/upload?key=${encodeURIComponent(file.key)}`,
       );
       if (!res.ok) return;
       const data = await res.json();
-      setSvgParts(data.svgs ?? data);
+      setSvgParts(data.images ?? {});
     } catch {
       setSvgParts({});
     }
@@ -142,9 +140,47 @@ export default function ConsolePage() {
     }
   }, [saveStatus]);
 
-  /* ── UI ─────────────────────────────────────────────────────────── */
-  const canPlay = frames.length > 0 && Object.keys(svgImages).length > 0;
+  /* ── Auto-load most recent files on mount ───────────────────────── */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [lmRes, svgRes] = await Promise.all([
+          fetch('/api/storage/list?bucket=landmarks'),
+          fetch('/api/storage/list?bucket=svgs'),
+        ]);
+        const lmData = await lmRes.json();
+        const svgData = await svgRes.json();
 
+        if (cancelled) return;
+        const lmFiles: FileEntry[] = lmData.files ?? [];
+        const svgFiles: FileEntry[] = svgData.files ?? [];
+
+        if (lmFiles.length > 0) loadLandmarks(lmFiles[0]);
+        if (svgFiles.length > 0) loadSvgs(svgFiles[0]);
+      } catch {
+        // ignore — files will load when user selects manually
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Run only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Auto-play when both landmarks and SVG images are loaded ────── */
+  const prevDataKey = useRef('');
+  useEffect(() => {
+    const dataKey = `${frames.length}:${Object.keys(svgImages).length}`;
+    if (dataKey === prevDataKey.current) return;
+    prevDataKey.current = dataKey;
+    if (frames.length > 0 && Object.keys(svgImages).length > 0) {
+      setPlaying(true);
+    }
+  }, [frames, svgImages]);
+
+  /* ── UI ─────────────────────────────────────────────────────────── */
   return (
     <main className="flex flex-1 flex-col lg:flex-row">
       {/* Toolbar / sidebar */}
@@ -187,13 +223,6 @@ export default function ConsolePage() {
 
         <ToolbarSection label="Playback">
           <div className="flex flex-wrap gap-2">
-            <button
-              disabled={!canPlay}
-              onClick={() => setPlaying((p) => !p)}
-              className="rounded bg-blue-600 px-3 py-1 text-xs text-white disabled:opacity-40"
-            >
-              {playing ? 'Pause' : 'Play'}
-            </button>
             <button
               disabled={frames.length === 0}
               onClick={save}

@@ -204,9 +204,9 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
+  const backInitialised = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  const bodyScrollRef = useRef<HTMLDivElement>(null);
   const shapesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -234,8 +234,28 @@ export default function SketchPage() {
   const focusPart = PARTS_ORDER[focusIdx];
 
   const lastDrawnRef = useRef<{ side: Side; part: BodyPartName } | null>(null);
-  const { setCanvasRef, pushUndoSnapshot, undo, clearAll, exportAll } =
-    useSketchCanvasRig();
+  const {
+    setCanvasRef,
+    pushUndoSnapshot,
+    undo,
+    clearAll,
+    exportAll,
+    copyCanvas,
+  } = useSketchCanvasRig();
+
+  /** First time user selects "back", copy all front canvases to back */
+  const handleSideChange = useCallback(
+    (newSide: Side) => {
+      if (newSide === 'back' && !backInitialised.current) {
+        backInitialised.current = true;
+        for (const part of BODY_PARTS) {
+          copyCanvas('front', part, 'back', part);
+        }
+      }
+      setSide(newSide);
+    },
+    [copyCanvas],
+  );
 
   const handleStrokeStart = useCallback(
     (strokeSide: Side, part: BodyPartName) => {
@@ -288,15 +308,6 @@ export default function SketchPage() {
     if (idx >= 0) setFocusIdx(idx);
   }, []);
 
-  const scrollBody = useCallback((dir: 'up' | 'down') => {
-    const el = bodyScrollRef.current;
-    if (!el) return;
-    el.scrollBy({
-      top: dir === 'up' ? -el.clientHeight * 0.65 : el.clientHeight * 0.65,
-      behavior: 'smooth',
-    });
-  }, []);
-
   /* ── Grid sizing ── */
   const u = canvasSize;
   const armsUp = effectiveArms === 'up';
@@ -304,7 +315,10 @@ export default function SketchPage() {
 
   const mobileU =
     typeof window !== 'undefined'
-      ? Math.floor((window.innerWidth - 20) / 4.3)
+      ? Math.min(
+          Math.floor((window.innerWidth - 20) / 4.3),
+          Math.floor((window.innerHeight - 140) / 9.85),
+        )
       : 80;
   const effectiveU = isMobile && viewMode === 'body' ? mobileU : u;
 
@@ -385,22 +399,26 @@ export default function SketchPage() {
         <SegmentedControl
           options={['front', 'back'] as Side[]}
           value={side}
-          onChange={setSide}
+          onChange={handleSideChange}
         />
+      </ToolbarSection>
+
+      <ToolbarSection label="Body">
         <SegmentedControl
           options={['body', 'single'] as ViewMode[]}
           value={viewMode}
           onChange={setViewMode}
+          labels={{ body: 'Full', single: 'Parts' }}
         />
       </ToolbarSection>
 
       {!isMobile && (
-        <ToolbarSection label="Layout">
+        <ToolbarSection label="Arm Layout">
           <SegmentedControl
             options={['up', 'down'] as ArmPose[]}
             value={armPose}
             onChange={setArmPose}
-            labels={{ up: 'Arms Up', down: 'Arms Down' }}
+            labels={{ up: 'Up', down: 'Down' }}
           />
           <label className="flex flex-col gap-1">
             <span
@@ -521,23 +539,73 @@ export default function SketchPage() {
         </div>
       </ToolbarSection>
 
-      <ToolbarSection label="History">
-        <button
-          onClick={handleUndo}
-          className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-          title="Undo last stroke"
-        >
-          ↩ Undo
-        </button>
-        <button
-          onClick={clearAll}
-          className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-          style={{ color: 'var(--danger)' }}
-          title="Clear all canvases"
-        >
-          ✕ Clear
-        </button>
-      </ToolbarSection>
+      {isMobile ? (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleUndo}
+            className="btn-ghost flex-1 rounded py-1.5 text-xs uppercase tracking-widest px-2"
+            title="Undo last stroke"
+          >
+            ↩ Undo
+          </button>
+          <button
+            onClick={clearAll}
+            className="btn-ghost flex-1 rounded py-1.5 text-xs uppercase tracking-widest px-2"
+            style={{ color: 'var(--danger)' }}
+            title="Clear all canvases"
+          >
+            ✕ Clear
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saveStatus === 'saving'}
+            className="btn-primary flex-1 rounded py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            title="Save sketches to library"
+          >
+            {saveStatus === 'saving'
+              ? '…'
+              : saveStatus === 'saved'
+                ? '✓'
+                : saveStatus === 'error'
+                  ? '!'
+                  : 'Save'}
+          </button>
+        </div>
+      ) : (
+        <>
+          <ToolbarSection label="History">
+            <button
+              onClick={handleUndo}
+              className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+              title="Undo last stroke"
+            >
+              ↩ Undo
+            </button>
+            <button
+              onClick={clearAll}
+              className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+              style={{ color: 'var(--danger)' }}
+              title="Clear all canvases"
+            >
+              ✕ Clear
+            </button>
+          </ToolbarSection>
+
+          <ToolbarSection label="Save">
+            <button
+              onClick={handleSave}
+              disabled={saveStatus === 'saving'}
+              className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+              title="Save sketches to library"
+            >
+              {saveStatus === 'saving' && 'Saving…'}
+              {saveStatus === 'saved' && 'Saved ✓'}
+              {saveStatus === 'error' && 'Error'}
+              {saveStatus === 'idle' && 'Save'}
+            </button>
+          </ToolbarSection>
+        </>
+      )}
     </>
   );
 
@@ -547,44 +615,13 @@ export default function SketchPage() {
 
       {/* ── Canvas area ── */}
       <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-        {/* Save button — absolute top-right overlay */}
-        <button
-          onClick={handleSave}
-          disabled={saveStatus === 'saving'}
-          className="absolute top-3 right-3 z-30 btn-primary rounded px-4 py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50 shadow-md"
-          title="Save sketches to library"
-        >
-          {saveStatus === 'saving' && 'Saving…'}
-          {saveStatus === 'saved' && 'Saved ✓'}
-          {saveStatus === 'error' && 'Error'}
-          {saveStatus === 'idle' && 'Save'}
-        </button>
-
         {/* ── BODY MODE ── */}
         <div
           className={
             viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
           }
         >
-          {isMobile && viewMode === 'body' && (
-            <button
-              onClick={() => scrollBody('up')}
-              className="w-full py-1 text-center shrink-0"
-              style={{
-                color: 'var(--fg-muted)',
-                backgroundColor: 'var(--surface)',
-                borderBottom: '1px solid var(--border)',
-              }}
-              aria-label="Scroll up"
-            >
-              <span className="text-base leading-none">▲</span>
-            </button>
-          )}
-
-          <div
-            ref={bodyScrollRef}
-            className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3"
-          >
+          <div className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3">
             <div
               style={{
                 display: 'grid',
@@ -599,21 +636,6 @@ export default function SketchPage() {
               )}
             </div>
           </div>
-
-          {isMobile && viewMode === 'body' && (
-            <button
-              onClick={() => scrollBody('down')}
-              className="w-full py-1 text-center shrink-0"
-              style={{
-                color: 'var(--fg-muted)',
-                backgroundColor: 'var(--surface)',
-                borderTop: '1px solid var(--border)',
-              }}
-              aria-label="Scroll down"
-            >
-              <span className="text-base leading-none">▼</span>
-            </button>
-          )}
         </div>
 
         {/* ── SINGLE-PART MODE ── */}

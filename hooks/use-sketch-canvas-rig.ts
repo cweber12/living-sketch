@@ -102,6 +102,26 @@ export function useSketchCanvasRig() {
     return result;
   }, []);
 
+  /** Copy pixels from one canvas to another */
+  const copyCanvas = useCallback(
+    (
+      fromSide: Side,
+      fromPart: BodyPartName,
+      toSide: Side,
+      toPart: BodyPartName,
+    ) => {
+      const src = refs.current.get(makeKey(fromSide, fromPart));
+      const dst = refs.current.get(makeKey(toSide, toPart));
+      if (!src || !dst) return;
+      const srcCtx = src.getContext('2d');
+      const dstCtx = dst.getContext('2d');
+      if (!srcCtx || !dstCtx) return;
+      const data = srcCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      dstCtx.putImageData(data, 0, 0);
+    },
+    [],
+  );
+
   return {
     setCanvasRef,
     pushUndoSnapshot,
@@ -109,5 +129,6 @@ export function useSketchCanvasRig() {
     clearPart,
     clearAll,
     exportAll,
+    copyCanvas,
   };
 }

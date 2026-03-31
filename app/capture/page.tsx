@@ -381,10 +381,11 @@ export default function CapturePage() {
         {!isLoading && !captureComplete && (
           <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
             <div
-              className="relative rounded-lg overflow-hidden h-full"
+              className="relative rounded-lg overflow-hidden"
               style={{
                 aspectRatio: `${videoW} / ${videoH}`,
                 maxWidth: '100%',
+                maxHeight: '100%',
                 border: '1px solid var(--border)',
                 backgroundColor: 'var(--surface)',
               }}
