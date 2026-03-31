@@ -9,9 +9,15 @@ interface PoseCanvasProps {
   width: number;
   height: number;
   landmarks: LandmarkFrame | null;
+  className?: string;
 }
 
-export function PoseCanvas({ width, height, landmarks }: PoseCanvasProps) {
+export function PoseCanvas({
+  width,
+  height,
+  landmarks,
+  className = 'absolute inset-0 pointer-events-none',
+}: PoseCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const themeRef = useRef(getActiveTheme());
 
@@ -84,7 +90,7 @@ export function PoseCanvas({ width, height, landmarks }: PoseCanvasProps) {
       ref={canvasRef}
       width={width}
       height={height}
-      className="absolute inset-0 pointer-events-none"
+      className={className}
     />
   );
 }

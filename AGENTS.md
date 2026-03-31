@@ -52,7 +52,7 @@ npm run test:coverage  # with coverage
 
 ## Key Domain Concepts
 
-- **Landmarks**: MoveNet keypoints (17 body points + 2 estimated feet)
+- **Landmarks**: MediaPipe Pose Landmarker keypoints (33 body points)
 - **Anchors**: Computed positions from landmarks for placing SVG drawings
 - **Shift/Scale Factors**: User adjustments to body-part positioning/sizing
 - **Body Parts**: 14 drawable segments (head, torso, arms, hands, legs, feet)
@@ -66,3 +66,23 @@ git add -A && git commit -m "type(scope): description" && git push
 ```
 
 Use conventional commit types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`.
+
+## Supabase Integration
+
+- **Buckets**: `user_data` (private), `landmarks` (public), `svgs` (public)
+- **Auth**: `@supabase/ssr` with cookie-based sessions via middleware
+- **Server client**: `lib/supabase/server.ts` — per-request, authenticated via cookies
+- **Admin client**: `lib/supabase/admin.ts` — uses `SUPABASE_SECRET_KEY`, bypasses RLS
+- **Client**: `lib/supabase/client.ts` — browser-side, publishable key only
+- API routes MUST use `supabaseAdmin ?? supabase` for storage writes (admin bypasses RLS; falls back to authenticated client)
+- Never expose `SUPABASE_SECRET_KEY` client-side (no `NEXT_PUBLIC_` prefix)
+- Storage paths follow `{user.id}/...` convention
+
+## Code Review Checklist
+
+After implementing new features, always review for:
+
+1. **Supabase compatibility** — verify all storage operations use the admin client fallback pattern; confirm target bucket exists (`user_data`, `landmarks`, `svgs`); validate auth flow (server client for user identity, admin for storage writes)
+2. **Existing code integration** — check imports resolve to existing modules; verify Zustand store shapes match consumers; confirm API route request/response contracts match client-side fetch calls
+3. **Type safety** — run `npx tsc --noEmit` to catch type errors before committing
+4. **Lint** — run `npm run lint` before committing

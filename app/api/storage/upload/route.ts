@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 
 interface UploadBody {
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
   const paths: string[] = [];
   const errors: string[] = [];
 
+  const storageClient = supabaseAdmin ?? supabase;
+
   for (const side of ['front', 'back'] as Side[]) {
     const sideImages = images[side] ?? {};
     for (const [partName, dataUrl] of Object.entries(sideImages)) {
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
       const buffer = Buffer.from(base64, 'base64');
       const storagePath = `${user.id}/${setName}/${partName}-${side}.webp`;
 
-      const { error } = await supabase.storage
+      const { error } = await storageClient.storage
         .from('svgs')
         .upload(storagePath, buffer, {
           contentType: 'image/webp',

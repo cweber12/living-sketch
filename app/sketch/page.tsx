@@ -98,7 +98,8 @@ const PARTS_ORDER: BodyPartName[] = [
   'rightFoot',
 ];
 
-const DEFAULT_COLOR = '#39ff14';
+const DEFAULT_COLOR_LIGHT = '#180e04';
+const DEFAULT_COLOR_DARK = '#39ff14';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;
@@ -200,7 +201,12 @@ function BodyThumbnail({
 
 export default function SketchPage() {
   const [side, setSide] = useState<Side>('front');
-  const [color, setColor] = useState(DEFAULT_COLOR);
+  const [color, setColor] = useState(() =>
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? DEFAULT_COLOR_DARK
+      : DEFAULT_COLOR_LIGHT,
+  );
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH);
   const [isEraser, setIsEraser] = useState(false);
   const [canvasSize, setCanvasSize] = useState(DEFAULT_CANVAS_SIZE);

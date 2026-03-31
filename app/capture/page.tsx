@@ -128,6 +128,12 @@ export default function CapturePage() {
     if (source === 'upload') videoRef.current?.pause();
   }, [stop, source]);
 
+  const handleNewCapture = useCallback(() => {
+    useLandmarksStore.getState().reset();
+    setUploadStatus('idle');
+    setErrorMsg('');
+  }, []);
+
   /* ── Upload landmarks to Supabase ───────────────────────────────── */
   const handleUpload = useCallback(async () => {
     if (frames.length === 0) return;
@@ -163,15 +169,18 @@ export default function CapturePage() {
   }, [isDetecting, handleStop]);
 
   /* ── Derived ────────────────────────────────────────────────────── */
+  const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
+  const lastFrame = captureComplete ? frames[frames.length - 1] : null;
+
   const canStart =
     !isDetecting &&
     !isLoading &&
+    !captureComplete &&
     (source === 'webcam' ? webcamReady : videoReady);
-  const canUpload =
-    frames.length > 0 && !isDetecting && uploadStatus !== 'uploading';
+  const canUpload = captureComplete && uploadStatus !== 'uploading';
 
-  const videoW = videoRef.current?.videoWidth ?? 640;
-  const videoH = videoRef.current?.videoHeight ?? 480;
+  const videoW = dimensions.width || videoRef.current?.videoWidth || 640;
+  const videoH = dimensions.height || videoRef.current?.videoHeight || 480;
 
   return (
     <main className="flex flex-col flex-1 w-full max-w-7xl mx-auto overflow-hidden">
@@ -262,7 +271,14 @@ export default function CapturePage() {
         )}
 
         {/* Detection controls */}
-        {!isDetecting ? (
+        {captureComplete ? (
+          <button
+            onClick={handleNewCapture}
+            className="btn-ghost rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold"
+          >
+            New Capture
+          </button>
+        ) : !isDetecting ? (
           <button
             onClick={handleStart}
             disabled={!canStart}
@@ -314,11 +330,16 @@ export default function CapturePage() {
           </span>
         )}
         {isLoading && <span>Loading model…</span>}
+        {captureComplete && (
+          <span style={{ color: 'var(--accent)' }}>Capture complete</span>
+        )}
         {errorMsg && <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>}
       </div>
 
       {/* ── Video + pose overlay ── */}
-      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-4 min-h-0">
+      <div
+        className={`flex-1 flex items-start justify-center px-3 sm:px-4 pt-3 min-h-0${captureComplete ? ' hidden' : ''}`}
+      >
         <div
           className="relative rounded-lg overflow-hidden"
           style={{
@@ -334,6 +355,7 @@ export default function CapturePage() {
             ref={videoRef}
             playsInline
             muted
+            controls={source === 'upload' && !isDetecting}
             className="w-full h-full object-contain"
             style={{ display: 'block' }}
           />
@@ -368,6 +390,23 @@ export default function CapturePage() {
           )}
         </div>
       </div>
+
+      {/* ── Skeleton preview (capture complete) ── */}
+      {captureComplete && lastFrame && (
+        <div className="flex-1 flex items-start justify-center px-3 sm:px-4 pt-3 min-h-0">
+          <div
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              aspectRatio: `${videoW} / ${videoH}`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            <PoseCanvas width={videoW} height={videoH} landmarks={lastFrame} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { LandmarkFrame } from '@/lib/types';
 
 interface UploadBody {
@@ -79,7 +80,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
   }
 
-  const { error } = await supabase.storage
+  const storageClient = supabaseAdmin ?? supabase;
+  const { error } = await storageClient.storage
     .from('landmarks')
     .upload(storagePath, buffer, {
       contentType: 'application/json',
