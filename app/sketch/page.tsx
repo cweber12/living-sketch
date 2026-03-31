@@ -66,11 +66,11 @@ const PART_LABEL: Record<BodyPartName, string> = {
 const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
   head: { w: 1, h: 1 },
   torso: { w: 2.3, h: 2.6 },
-  leftUpperArm: { w: 1, h: 1.3 },
-  leftLowerArm: { w: 1, h: 1.3 },
+  leftUpperArm: { w: 1.15, h: 1.3 },
+  leftLowerArm: { w: 1.15, h: 1.3 },
   leftHand: { w: 1, h: 1.75 },
-  rightUpperArm: { w: 1, h: 1.3 },
-  rightLowerArm: { w: 1, h: 1.3 },
+  rightUpperArm: { w: 1.15, h: 1.3 },
+  rightLowerArm: { w: 1.15, h: 1.3 },
   rightHand: { w: 1, h: 1.75 },
   leftUpperLeg: { w: 1.15, h: 1.75 },
   leftLowerLeg: { w: 1.15, h: 1.6 },
@@ -108,32 +108,6 @@ const MOBILE_BP = 640;
 
 type ArmPose = 'up' | 'down';
 type ViewMode = 'body' | 'single';
-
-/* ─── Helpers ─────────────────────────────────────────────────────── */
-
-function PillButton({
-  active,
-  onClick,
-  children,
-  className = '',
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-widest transition-colors btn-ghost ${className}`}
-      style={
-        active ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' } : {}
-      }
-    >
-      {children}
-    </button>
-  );
-}
 
 /* ─── Body Thumbnail (single-part mode) ──────────────────────────── */
 
@@ -380,76 +354,63 @@ export default function SketchPage() {
 
   return (
     <main className="flex flex-col flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-2 px-3 sm:px-4 pt-3 sm:pt-5 pb-2 sm:pb-3">
-        <div className="min-w-0">
-          <p
-            className="text-[10px] sm:text-xs font-bold tracking-[0.35em] uppercase mb-0.5"
-            style={{ color: 'var(--accent)' }}
-          >
-            I — Sketch
-          </p>
-          <h1
-            className="font-display font-black uppercase tracking-wider text-lg sm:text-2xl truncate"
-            style={{ color: 'var(--fg)' }}
-          >
-            The Laboratory
-          </h1>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saveStatus === 'saving'}
-          className="btn-primary rounded px-3 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-xs uppercase tracking-widest font-bold disabled:opacity-50 shrink-0"
-        >
-          {saveStatus === 'saving' && 'Saving…'}
-          {saveStatus === 'saved' && 'Saved ✓'}
-          {saveStatus === 'error' && 'Error — retry'}
-          {saveStatus === 'idle' && 'Save'}
-        </button>
-      </div>
-
       {/* ── Toolbar ── */}
       <div
-        className="w-full px-3 sm:px-4 py-2 border-y flex flex-col gap-1.5"
+        className="w-full px-3 sm:px-4 border-b flex flex-col"
         style={{
           borderColor: 'var(--border)',
           backgroundColor: 'var(--surface)',
         }}
       >
-        {/* Row 1: Side + drawing tools */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <div className="flex items-center gap-0.5 shrink-0">
+        {/* ── Row 1: Primary drawing tools ── */}
+        <div className="flex items-center gap-1 py-2 flex-wrap">
+          {/* View toggles */}
+          <div
+            className="flex items-center rounded overflow-hidden shrink-0"
+            style={{ border: '1px solid var(--border)' }}
+          >
             {(['front', 'back'] as Side[]).map((s) => (
-              <PillButton
+              <button
                 key={s}
-                active={side === s}
                 onClick={() => setSide(s)}
+                className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                style={
+                  side === s
+                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                    : { color: 'var(--fg-muted)' }
+                }
               >
                 {s}
-              </PillButton>
+              </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-0.5 shrink-0">
-            <PillButton
-              active={viewMode === 'body'}
-              onClick={() => setViewMode('body')}
-            >
-              Body
-            </PillButton>
-            <PillButton
-              active={viewMode === 'single'}
-              onClick={() => setViewMode('single')}
-            >
-              Single
-            </PillButton>
+          <div
+            className="flex items-center rounded overflow-hidden shrink-0"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            {(['body', 'single'] as ViewMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setViewMode(m)}
+                className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+                style={
+                  viewMode === m
+                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                    : { color: 'var(--fg-muted)' }
+                }
+              >
+                {m}
+              </button>
+            ))}
           </div>
 
           <div
-            className="w-px h-5 hidden sm:block"
+            className="w-px h-5 shrink-0"
             style={{ backgroundColor: 'var(--border)' }}
           />
 
+          {/* Color + brush size */}
           <input
             type="color"
             value={color}
@@ -457,74 +418,122 @@ export default function SketchPage() {
               setColor(e.target.value);
               setIsEraser(false);
             }}
-            className="color-swatch"
-            title="Color"
+            className="color-swatch shrink-0"
+            title="Stroke color"
           />
 
-          <input
-            type="range"
-            min={1}
-            max={40}
-            value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="w-14 sm:w-20 accent-accent shrink-0"
-            title="Brush size"
-          />
-          <span
-            className="text-[10px] w-4 shrink-0"
-            style={{ color: 'var(--fg-muted)' }}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <input
+              type="range"
+              min={1}
+              max={40}
+              value={brushSize}
+              onChange={(e) => setBrushSize(Number(e.target.value))}
+              className="w-16 sm:w-24 accent-accent"
+              title="Brush size"
+            />
+            <span
+              className="text-[10px] tabular-nums w-5 text-right shrink-0"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              {brushSize}
+            </span>
+          </div>
+
+          {/* Pen / Eraser */}
+          <div
+            className="flex items-center rounded overflow-hidden shrink-0"
+            style={{ border: '1px solid var(--border)' }}
           >
-            {brushSize}
-          </span>
-
-          <div className="flex items-center gap-0.5 shrink-0">
-            <PillButton active={!isEraser} onClick={() => setIsEraser(false)}>
-              Brush
-            </PillButton>
-            <PillButton active={isEraser} onClick={() => setIsEraser(true)}>
-              Eraser
-            </PillButton>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
             <button
-              onClick={handleUndo}
-              className="btn-ghost rounded px-2 py-1 text-[10px] sm:text-xs uppercase tracking-widest"
+              onClick={() => setIsEraser(false)}
+              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+              style={
+                !isEraser
+                  ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                  : { color: 'var(--fg-muted)' }
+              }
+              title="Pen"
             >
-              Undo
+              Pen
             </button>
             <button
-              onClick={clearAll}
-              className="btn-ghost rounded px-2 py-1 text-[10px] sm:text-xs uppercase tracking-widest"
-              style={{ color: 'var(--danger)' }}
+              onClick={() => setIsEraser(true)}
+              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+              style={
+                isEraser
+                  ? { backgroundColor: 'var(--danger)', color: '#fff' }
+                  : { color: 'var(--fg-muted)' }
+              }
+              title="Eraser"
             >
-              Clear
+              Erase
             </button>
           </div>
+
+          <div
+            className="w-px h-5 shrink-0"
+            style={{ backgroundColor: 'var(--border)' }}
+          />
+
+          {/* History actions */}
+          <button
+            onClick={handleUndo}
+            className="btn-ghost rounded px-2.5 py-1.5 text-xs uppercase tracking-widest shrink-0"
+            title="Undo last stroke"
+          >
+            ↩ Undo
+          </button>
+          <button
+            onClick={clearAll}
+            className="btn-ghost rounded px-2.5 py-1.5 text-xs uppercase tracking-widest shrink-0"
+            style={{ color: 'var(--danger)' }}
+            title="Clear all canvases"
+          >
+            ✕ Clear
+          </button>
+
+          {/* Save — pushed to right */}
+          <button
+            onClick={handleSave}
+            disabled={saveStatus === 'saving'}
+            className="btn-primary rounded px-3 sm:px-5 py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50 shrink-0 ml-auto"
+            title="Save sketches to library"
+          >
+            {saveStatus === 'saving' && 'Saving…'}
+            {saveStatus === 'saved' && 'Saved ✓'}
+            {saveStatus === 'error' && 'Error'}
+            {saveStatus === 'idle' && 'Save'}
+          </button>
         </div>
 
-        {/* Row 2: View + layout controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          {/* Arms pose — desktop */}
-          <div className="hidden sm:flex items-center gap-0.5">
-            <PillButton
-              active={effectiveArms === 'up'}
-              onClick={() => setArmPose('up')}
-            >
-              Arms Up
-            </PillButton>
-            <PillButton
-              active={effectiveArms === 'down'}
-              onClick={() => setArmPose('down')}
-            >
-              Arms Down
-            </PillButton>
+        {/* ── Row 2: Layout controls (desktop) ── */}
+        <div className="hidden sm:flex items-center gap-2 pb-2">
+          {/* Arms pose */}
+          <div
+            className="flex items-center rounded overflow-hidden shrink-0"
+            style={{ border: '1px solid var(--border)' }}
+          >
+            {(['down', 'up'] as ArmPose[]).map((a) => (
+              <button
+                key={a}
+                onClick={() => setArmPose(a)}
+                className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest transition-colors"
+                style={
+                  effectiveArms === a
+                    ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
+                    : { color: 'var(--fg-muted)' }
+                }
+              >
+                Arms {a}
+              </button>
+            ))}
           </div>
 
-          {/* Scale — desktop */}
-          <label className="hidden sm:flex items-center gap-1.5" title="Scale">
+          {/* Scale */}
+          <label className="flex items-center gap-1.5" title="Canvas scale">
             <span
-              className="text-[10px] tracking-widest uppercase"
+              className="text-[10px] tracking-widest uppercase shrink-0"
               style={{ color: 'var(--fg-muted)' }}
             >
               Scale
@@ -535,7 +544,7 @@ export default function SketchPage() {
               max={MAX_CANVAS_SIZE}
               value={canvasSize}
               onChange={(e) => setCanvasSize(Number(e.target.value))}
-              className="w-20 accent-accent"
+              className="w-24 accent-accent"
             />
           </label>
 

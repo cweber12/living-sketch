@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import type { RefCallback } from 'react';
+import { getStroke } from 'perfect-freehand';
 import type { Side, BodyPartName } from '@/hooks/use-sketch-canvas-rig';
 
 interface Props {
@@ -20,6 +21,28 @@ interface Props {
 
 const CANVAS_SIZE = 400;
 
+/**
+ * Convert perfect-freehand outline points into an SVG path string.
+ * Uses quadratic bezier curves through midpoints for smooth closed shapes.
+ */
+function toSvgPath(stroke: number[][]): string {
+  if (!stroke.length) return '';
+  const d = stroke.reduce(
+    (
+      acc: (string | number)[],
+      [x0, y0]: number[],
+      i: number,
+      arr: number[][],
+    ) => {
+      const [x1, y1] = arr[(i + 1) % arr.length];
+      acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+      return acc;
+    },
+    ['M', ...stroke[0], 'Q'],
+  );
+  return [...d, 'Z'].join(' ');
+}
+
 export function SketchCanvas({
   side,
   part,
@@ -31,13 +54,21 @@ export function SketchCanvas({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawing = useRef(false);
-  const lastPos = useRef<{ x: number; y: number } | null>(null);
 
-  // Keep current brush props in a ref so event handlers never go stale
+  // All brush props in a ref so event handlers never go stale
   const brushRef = useRef({ brushSize, color, isEraser });
   useEffect(() => {
     brushRef.current = { brushSize, color, isEraser };
   }, [brushSize, color, isEraser]);
+
+  // CSS-to-canvas scale factor — updated on every pointer event
+  const scaleRef = useRef(1);
+
+  // Points accumulated for the current in-progress stroke: [x, y, pressure][]
+  const currentPoints = useRef<[number, number, number][]>([]);
+
+  // Canvas state captured just before the stroke began (for live redraw)
+  const committedImage = useRef<ImageData | null>(null);
 
   // Register ref with the rig
   const refCallback: RefCallback<HTMLCanvasElement> = useCallback(
@@ -52,31 +83,55 @@ export function SketchCanvas({
     [side, part, onMount],
   );
 
-  function getCanvasPos(e: React.PointerEvent<HTMLCanvasElement>) {
+  /**
+   * Map a pointer event to canvas-buffer coordinates and update the scale ref.
+   * brushSize is in CSS pixels; multiplying by scale gives canvas units.
+   */
+  function getPos(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    const scaleX = CANVAS_SIZE / rect.width;
-    const scaleY = CANVAS_SIZE / rect.height;
+    const sx = CANVAS_SIZE / rect.width;
+    const sy = CANVAS_SIZE / rect.height;
+    scaleRef.current = (sx + sy) / 2;
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: (e.clientX - rect.left) * sx,
+      y: (e.clientY - rect.top) * sy,
+      pressure: e.pressure > 0 ? e.pressure : 0.5,
     };
   }
 
-  function applyBrushStyle(ctx: CanvasRenderingContext2D) {
+  /** Render the current in-progress stroke on top of committedImage. */
+  function renderCurrentStroke(ctx: CanvasRenderingContext2D) {
+    const pts = currentPoints.current;
+    if (!pts.length) return;
+
     const { brushSize: bs, color: c, isEraser: erase } = brushRef.current;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = bs;
+
+    // Brush size is defined in CSS pixels; scale to canvas-buffer pixels
+    const canvasSize = bs * scaleRef.current;
+
+    const outline = getStroke(pts, {
+      size: canvasSize,
+      thinning: 0.4,
+      smoothing: 0.5,
+      streamline: 0.4,
+      simulatePressure: true,
+      last: false,
+    });
+
+    if (!outline.length) return;
+
+    const path = new Path2D(toSvgPath(outline));
+
     if (erase) {
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.fillStyle = 'rgba(0,0,0,1)';
     } else {
       ctx.globalCompositeOperation = 'source-over';
-      ctx.strokeStyle = c;
       ctx.fillStyle = c;
     }
+    ctx.fill(path);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   const handlePointerDown = useCallback(
@@ -84,39 +139,42 @@ export function SketchCanvas({
       e.currentTarget.setPointerCapture(e.pointerId);
       onStrokeStart(side, part);
       isDrawing.current = true;
-      const pos = getCanvasPos(e);
-      lastPos.current = pos;
 
       const ctx = canvasRef.current?.getContext('2d');
       if (!ctx) return;
-      applyBrushStyle(ctx);
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, brushRef.current.brushSize / 2, 0, Math.PI * 2);
-      ctx.fill();
+
+      // Snapshot canvas state before this stroke (used for live redraw)
+      committedImage.current = ctx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      const pos = getPos(e);
+      currentPoints.current = [[pos.x, pos.y, pos.pressure]];
+      renderCurrentStroke(ctx);
     },
     [side, part, onStrokeStart],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isDrawing.current || !lastPos.current) return;
+      if (!isDrawing.current) return;
       const ctx = canvasRef.current?.getContext('2d');
       if (!ctx) return;
 
-      const pos = getCanvasPos(e);
-      applyBrushStyle(ctx);
-      ctx.beginPath();
-      ctx.moveTo(lastPos.current.x, lastPos.current.y);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-      lastPos.current = pos;
+      const pos = getPos(e);
+      currentPoints.current.push([pos.x, pos.y, pos.pressure]);
+
+      // Restore baseline, then redraw full stroke outline from scratch
+      if (committedImage.current) {
+        ctx.putImageData(committedImage.current, 0, 0);
+      }
+      renderCurrentStroke(ctx);
     },
     [],
   );
 
   const handlePointerUp = useCallback(() => {
     isDrawing.current = false;
-    lastPos.current = null;
+    currentPoints.current = [];
+    committedImage.current = null;
   }, []);
 
   return (
@@ -126,7 +184,7 @@ export function SketchCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
-      className="w-full h-full block touch-none rounded"
+      className="w-full h-full block touch-none"
       style={{
         cursor: isEraser ? 'cell' : 'crosshair',
         backgroundColor: 'transparent',

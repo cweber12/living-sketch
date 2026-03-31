@@ -21,6 +21,8 @@ interface UsePoseDetectionOpts {
 interface UsePoseDetectionReturn {
   /** True while the model is loading */
   isLoading: boolean;
+  /** True once the model has successfully loaded and is ready */
+  isModelReady: boolean;
   /** True while detection loop is running */
   isDetecting: boolean;
   /** Number of frames collected so far */
@@ -38,6 +40,7 @@ export function usePoseDetection(
   const minInterval = 1000 / fps;
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isModelReady, setIsModelReady] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [frameCount, setFrameCount] = useState(0);
 
@@ -68,7 +71,10 @@ export function usePoseDetection(
     });
 
     landmarkerRef.current = landmarker;
-    if (mountedRef.current) setIsLoading(false);
+    if (mountedRef.current) {
+      setIsLoading(false);
+      setIsModelReady(true);
+    }
     return landmarker;
   }, []);
 
@@ -97,6 +103,11 @@ export function usePoseDetection(
     const store = useLandmarksStore.getState();
     store.setFrames(framesBuffer.current);
   }, []);
+
+  // ── Eagerly load model on mount so detection is instant when started ──────
+  useEffect(() => {
+    loadModel().catch((err) => console.error('Pose model load failed:', err));
+  }, [loadModel]);
 
   // ── Detection loop ────────────────────────────────────────────────────────
   const detect = useCallback(() => {
@@ -181,5 +192,5 @@ export function usePoseDetection(
     };
   }, []);
 
-  return { isLoading, isDetecting, frameCount, start, stop };
+  return { isLoading, isModelReady, isDetecting, frameCount, start, stop };
 }
