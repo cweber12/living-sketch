@@ -232,6 +232,9 @@ export default async function Home() {
           <Link href="/console" className="hover:opacity-80 transition-opacity">
             Console
           </Link>
+          <Link href="/docs" className="hover:opacity-80 transition-opacity">
+            Docs
+          </Link>
         </nav>
       </footer>
     </main>

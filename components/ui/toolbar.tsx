@@ -48,7 +48,7 @@ export function Toolbar({ children, sideWidth = 200 }: ToolbarProps) {
             maxHeight: open ? 600 : 0,
           }}
         >
-          <div className="flex items-center gap-2 px-3 py-2 flex-wrap overflow-x-auto">
+          <div className="flex items-start justify-between gap-2 px-3 py-2 flex-wrap overflow-x-auto w-full">
             {children}
           </div>
         </div>
@@ -182,7 +182,7 @@ export function SegmentedControl<T extends string>({
           <button
             key={o}
             onClick={() => onChange(o)}
-            className="flex-1 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+            className="flex-1 px-2 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
             style={
               isDanger
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }

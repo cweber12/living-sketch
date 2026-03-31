@@ -61,7 +61,10 @@ describe('useCacheSvgs', () => {
         set: (_val: string) => {
           setTimeout(() => {
             if (this.onload)
-              (this.onload as () => void).call(this, new Event('load'));
+              (this.onload as (ev: Event) => void).call(
+                this,
+                new Event('load'),
+              );
           }, 0);
         },
         get: () => '',

@@ -17,11 +17,14 @@ type Source = 'webcam' | 'upload';
 
 export default function CapturePage() {
   /* ── State ──────────────────────────────────────────────────────── */
-  const [source, setSource] = useState<Source>('webcam');
+  const [source, setSource] = useState<Source>('upload');
   const [uploadStatus, setUploadStatus] = useState<
     'idle' | 'uploading' | 'done' | 'error'
   >('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [cameraPermission, setCameraPermission] = useState<
+    'prompt' | 'granted' | 'denied' | 'unknown'
+  >('unknown');
   const [webcamReady, setWebcamReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFileName, setVideoFileName] = useState('');
@@ -50,6 +53,26 @@ export default function CapturePage() {
 
   const startWebcam = useCallback(async () => {
     stopWebcam();
+    setErrorMsg('');
+
+    // Check camera permission state if API is available
+    try {
+      if (navigator.permissions) {
+        const status = await navigator.permissions.query({
+          name: 'camera' as PermissionName,
+        });
+        setCameraPermission(status.state as 'prompt' | 'granted' | 'denied');
+        if (status.state === 'denied') {
+          setErrorMsg(
+            'Camera access is blocked. Please allow camera access in your browser settings and reload the page.',
+          );
+          return;
+        }
+      }
+    } catch {
+      // permissions API not supported — proceed with getUserMedia
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -59,6 +82,7 @@ export default function CapturePage() {
         },
         audio: false,
       });
+      setCameraPermission('granted');
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -68,7 +92,10 @@ export default function CapturePage() {
         };
       }
     } catch {
-      setErrorMsg('Camera access denied or unavailable.');
+      setCameraPermission('denied');
+      setErrorMsg(
+        'Camera access denied. Please allow camera access in your browser settings and reload the page.',
+      );
     }
   }, [stopWebcam]);
 
@@ -408,13 +435,33 @@ export default function CapturePage() {
 
               {/* Empty state */}
               {!webcamReady && source === 'webcam' && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p
-                    className="text-sm uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Starting camera…
-                  </p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
+                  {cameraPermission === 'denied' ? (
+                    <>
+                      <p
+                        className="text-sm uppercase tracking-widest text-center"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        Camera access blocked
+                      </p>
+                      <p
+                        className="text-xs tracking-wider text-center max-w-xs"
+                        style={{ color: 'var(--fg-muted)' }}
+                      >
+                        Allow camera access in your browser settings, then
+                        reload the page.
+                      </p>
+                    </>
+                  ) : (
+                    <p
+                      className="text-sm uppercase tracking-widest"
+                      style={{ color: 'var(--fg-muted)' }}
+                    >
+                      {cameraPermission === 'prompt'
+                        ? 'Allow camera access to continue…'
+                        : 'Starting camera…'}
+                    </p>
+                  )}
                 </div>
               )}
               {source === 'upload' && !videoReady && (

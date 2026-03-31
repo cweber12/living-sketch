@@ -102,7 +102,21 @@ export default function ConsolePage() {
       );
       if (!res.ok) return;
       const data = await res.json();
-      setSvgParts(data.images ?? {});
+      const raw: Record<string, string> = data.images ?? {};
+
+      // Normalize keys: "head-front" / "torso-back" → "head" / "torso"
+      // Prefer front-side images when both exist.
+      const normalized: Record<string, string> = {};
+      for (const [key, value] of Object.entries(raw)) {
+        const match = key.match(/^(.+)-(front|back)$/);
+        const partName = match ? match[1] : key;
+        const side = match ? match[2] : 'front';
+        if (!normalized[partName] || side === 'front') {
+          normalized[partName] = value;
+        }
+      }
+
+      setSvgParts(normalized);
     } catch {
       setSvgParts({});
     }
