@@ -100,7 +100,7 @@ export function renderPartSvg(
     const a = setHandAnchors(
       part,
       scaledLandmarks,
-      map as { wrist?: number; elbow?: number; start?: number; end?: number },
+      map as { start: number; end: number },
       rc.torsoDims,
       rc.shifts,
     );

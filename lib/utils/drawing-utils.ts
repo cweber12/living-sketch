@@ -55,19 +55,23 @@ export function drawHeadSvg(
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from: leftEar, to: rightEar } = anchors;
-    const midX = (leftEar.x + rightEar.x) / 2;
-    const midY = (leftEar.y + rightEar.y) / 2;
-    const scaleX =
-      (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-      Math.max(1, torsoDims.torsoSvgWidth);
-    const scaleY =
-      (Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-      Math.max(1, torsoDims.torsoSvgHeight);
+    const { from: leftEye, to: rightEye } = anchors;
+    const midX = (leftEye.x + rightEye.x) / 2;
+    const midY = (leftEye.y + rightEye.y) / 2;
+
+    // Uniform scaling: average of torso width+height ratios
+    const avgTorso =
+      (Math.abs(torsoDims.avgTorsoWidth) + Math.abs(torsoDims.avgTorsoHeight)) /
+      2;
+    const avgSvg =
+      (Math.max(1, torsoDims.torsoSvgWidth) +
+        Math.max(1, torsoDims.torsoSvgHeight)) /
+      2;
+    const uniformScale = (avgTorso * 0.5) / avgSvg;
 
     ctx.save();
     ctx.translate(midX, midY);
-    ctx.scale(scaleX * scale.x, scaleY * scale.y);
+    ctx.scale(uniformScale * scale.x, uniformScale * scale.y);
     ctx.drawImage(img, -svgW / 2, -svgH / 1.2, svgW, svgH);
     ctx.restore();
     return true;
@@ -119,53 +123,63 @@ export function drawArmSvg(
   }
 }
 
-/* ── Hands ────────────────────────────────────────────────────────────── */
+/* ── Hands (affine transform wrist → finger) ─────────────────────────── */
 export function drawHandSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   anchors: SegmentAnchor,
   armsDown: boolean,
-  part: string,
+  _part: string,
   torsoDims: TorsoDimensions,
   scale: ScaleVector,
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from: wrist, to: elbow } = anchors;
-    const isRight = part.startsWith('right');
-    const dx = elbow.x - wrist.x;
-    const dy = elbow.y - wrist.y;
-    const angle = Math.atan2(dy, dx);
+    const { from: wrist, to: finger } = anchors;
 
-    const s =
+    const dx = finger.x - wrist.x;
+    const dy = finger.y - wrist.y;
+    const segLen = Math.hypot(dx, dy);
+    if (segLen < 1) return false;
+
+    // Perpendicular unit vector
+    const px = -dy / segLen;
+    const py = dx / segLen;
+
+    // Cross-section scale from averaged torso proportions
+    const crossScale =
       ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
         Math.max(1, torsoDims.torsoSvgHeight) +
         (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
           Math.max(1, torsoDims.torsoSvgWidth)) /
       2;
 
-    ctx.save();
-    ctx.translate(wrist.x, wrist.y);
+    // Source corners in SVG-pixel space
+    const src0: PointAnchor = { x: 0, y: 0 };
+    const src1: PointAnchor = { x: svgW, y: 0 };
+    const src2: PointAnchor = { x: 0, y: svgH };
+    let dst0: PointAnchor, dst1: PointAnchor, dst2: PointAnchor;
 
-    if (!armsDown) {
-      ctx.rotate(angle);
-      if (isRight) {
-        ctx.scale(s * scale.x, s * scale.y);
-        ctx.drawImage(img, -svgW, -svgH / 2, svgW, svgH);
-      } else {
-        ctx.scale(-s * scale.x, -s * scale.y);
-        ctx.drawImage(img, 0, -svgH / 2, svgW, svgH);
-      }
+    if (armsDown) {
+      // SVG authored vertically (h > w): top→wrist, bottom→finger
+      const hw = (svgW / 2) * crossScale * scale.x;
+      dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
+      dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
+      dst2 = { x: finger.x - px * hw, y: finger.y - py * hw };
     } else {
-      ctx.rotate(angle - Math.PI / 2);
-      if (isRight) {
-        ctx.scale(-s * scale.x, s * scale.y);
-        ctx.drawImage(img, 0, 0, svgW, svgH);
-      } else {
-        ctx.scale(s * scale.x, s * scale.y);
-        ctx.drawImage(img, -svgW, 0, svgW, svgH);
-      }
+      // SVG authored horizontally (w >= h): left→wrist, right→finger
+      const hh = (svgH / 2) * crossScale * scale.y;
+      dst0 = { x: wrist.x + px * hh, y: wrist.y + py * hh };
+      dst1 = { x: finger.x + px * hh, y: finger.y + py * hh };
+      dst2 = { x: wrist.x - px * hh, y: wrist.y - py * hh };
     }
+
+    const M = affineFrom3Points(src0, src1, src2, dst0, dst1, dst2);
+    if (!M) return false;
+
+    ctx.save();
+    ctx.setTransform(M.a, M.b, M.c, M.d, M.e, M.f);
+    ctx.drawImage(img, 0, 0, svgW, svgH);
     ctx.restore();
     return true;
   } catch {

@@ -132,14 +132,12 @@ export function setArmAnchors(
 export function setHandAnchors(
   part: string,
   scaledLandmarks: LandmarkFrame,
-  map: { wrist?: number; elbow?: number; start?: number; end?: number },
+  map: { start: number; end: number },
   torsoDims: TorsoDimensions,
   shifts: ShiftFactors,
 ): SegmentAnchor | undefined {
-  const wristIdx = map.wrist ?? map.start ?? 0;
-  const elbowIdx = map.elbow ?? map.end ?? 0;
-  const from = kp(scaledLandmarks, wristIdx);
-  const to = kp(scaledLandmarks, elbowIdx);
+  const from = kp(scaledLandmarks, map.start);
+  const to = kp(scaledLandmarks, map.end);
   if (!valid(from) || !valid(to)) return undefined;
 
   const tw = torsoDims.avgTorsoWidth * SHIFT_FACTOR;
@@ -153,8 +151,8 @@ export function setHandAnchors(
       y: from.y + shifts.wristShift.y * th,
     },
     to: {
-      x: to.x + sign * shifts.elbowShift.x * tw,
-      y: to.y + shifts.elbowShift.y * th,
+      x: to.x + sign * shifts.wristShift.x * tw,
+      y: to.y + shifts.wristShift.y * th,
     },
   };
 }

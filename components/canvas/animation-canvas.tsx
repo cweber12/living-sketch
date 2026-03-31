@@ -63,17 +63,36 @@ export default function AnimationCanvas({
     };
   }, [frames, svgImages, shifts, scales, width, height]);
 
+  // Keep torso SVG dimensions in sync with loaded images
+  useEffect(() => {
+    const torsoImg = svgImages.torso;
+    if (torsoImg) {
+      torsoDims.current.updateTorsoSvgDimensions(
+        torsoImg.naturalHeight || torsoImg.height || 1,
+        torsoImg.naturalWidth || torsoImg.width || 1,
+      );
+    }
+  }, [svgImages]);
+
   // Start / stop playback
   useEffect(() => {
     if (playing && frames.length > 0) {
       lastTime.current = performance.now();
       frameIdx.current = 0;
-      torsoDims.current = new TorsoDimensions();
+      const td = new TorsoDimensions();
+      const torsoImg = svgImages.torso;
+      if (torsoImg) {
+        td.updateTorsoSvgDimensions(
+          torsoImg.naturalHeight || torsoImg.height || 1,
+          torsoImg.naturalWidth || torsoImg.width || 1,
+        );
+      }
+      torsoDims.current = td;
       earDist.current = new EarDistance();
       rafId.current = requestAnimationFrame((t) => drawRef.current?.(t));
     }
     return () => cancelAnimationFrame(rafId.current);
-  }, [playing, frames]);
+  }, [playing, frames, svgImages]);
 
   // Re-render current frame when shifts/scales change while paused
   useEffect(() => {
