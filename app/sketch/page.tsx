@@ -98,7 +98,7 @@ const PARTS_ORDER: BodyPartName[] = [
   'rightFoot',
 ];
 
-const DEFAULT_COLOR = '#e4ff30';
+const DEFAULT_COLOR = '#39ff14';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;

@@ -1,10 +1,11 @@
 // Types – Pose Detection
-// Mirrors MoveNet 17 keypoints + 2 estimated feet (18-19)
+// MediaPipe Pose Landmarker outputs 33 landmarks with x, y, z, visibility
 
 export interface Keypoint {
   x: number;
   y: number;
-  score?: number;
+  z?: number;
+  score?: number; // visibility (0–1)
   name?: string;
 }
 
