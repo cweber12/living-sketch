@@ -53,11 +53,12 @@ export function setTorsoAnchors(
   const th = torsoDims.avgTorsoHeight * SHIFT_FACTOR;
   const s = shifts.torsoShift;
 
+  // Positive x → spreads shoulders/hips apart; positive y → stretches vertically
   return {
-    tl: { x: tl.x + s.x * tw, y: tl.y + s.y * th },
-    tr: { x: tr.x - s.x * tw, y: tr.y + s.y * th },
-    bl: { x: bl.x + s.x * tw, y: bl.y - s.y * th },
-    br: { x: br.x - s.x * tw, y: br.y - s.y * th },
+    tl: { x: tl.x - s.x * tw, y: tl.y - s.y * th },
+    tr: { x: tr.x + s.x * tw, y: tr.y - s.y * th },
+    bl: { x: bl.x - s.x * tw, y: bl.y + s.y * th },
+    br: { x: br.x + s.x * tw, y: br.y + s.y * th },
   };
 }
 
@@ -106,9 +107,10 @@ export function setArmAnchors(
   let toA: PointAnchor;
 
   if (part.includes('Upper')) {
+    // Shoulder anchor: torso shift moves shoulder outward (x) and up (y)
     fromA = {
       x: from.x + sign * (shifts.shoulderShift.x + shifts.torsoShift.x) * tw,
-      y: from.y + (shifts.shoulderShift.y + shifts.torsoShift.y) * th,
+      y: from.y + (shifts.shoulderShift.y - shifts.torsoShift.y) * th,
     };
     toA = {
       x: to.x + sign * shifts.elbowShift.x * tw,
@@ -178,9 +180,10 @@ export function setLegAnchors(
   let toA: PointAnchor;
 
   if (part.includes('Upper')) {
+    // Hip anchor: torso shift moves hip outward (x) and down (y)
     fromA = {
       x: from.x + sign * (shifts.torsoShift.x + shifts.hipShift.x) * tw,
-      y: from.y + (-shifts.torsoShift.y + shifts.hipShift.y) * th,
+      y: from.y + (shifts.torsoShift.y + shifts.hipShift.y) * th,
     };
     toA = {
       x: to.x + sign * shifts.kneeShift.x * tw,

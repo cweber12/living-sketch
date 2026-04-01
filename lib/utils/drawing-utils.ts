@@ -59,15 +59,11 @@ export function drawHeadSvg(
     const midX = (leftEye.x + rightEye.x) / 2;
     const midY = (leftEye.y + rightEye.y) / 2;
 
-    // Uniform scaling: average of torso width+height ratios
-    const avgTorso =
-      (Math.abs(torsoDims.avgTorsoWidth) + Math.abs(torsoDims.avgTorsoHeight)) /
-      2;
-    const avgSvg =
-      (Math.max(1, torsoDims.torsoSvgWidth) +
-        Math.max(1, torsoDims.torsoSvgHeight)) /
-      2;
-    const uniformScale = (avgTorso * 0.5) / avgSvg;
+    // Scale head to match its size relative to the torso on the sketch page.
+    // Both canvases are 400×400; the sketch grid gives the head roughly the
+    // same display width as the torso, so we use the shoulder-width ratio.
+    const uniformScale =
+      Math.abs(torsoDims.avgTorsoWidth) / Math.max(1, torsoDims.torsoSvgWidth);
 
     ctx.save();
     ctx.translate(midX, midY);
@@ -94,6 +90,9 @@ const MIN_CROSS_WIDTH = 5; // minimum cross-section width in screen pixels
  * @param referenceWidth - Body reference width in screen pixels
  *   (abs(avgTorsoWidth) for arms/hands, abs(avgHipWidth) for legs/feet)
  * @param torsoSvgWidth - Torso SVG pixel width (for proportional scaling)
+ * @param forceVertical - Override orientation detection. `true` = top/bottom
+ *   anchored (arms-down), `false` = left/right anchored (arms-up),
+ *   `undefined` = auto-detect from image dimensions.
  */
 export function drawSegmentSvg(
   ctx: CanvasRenderingContext2D,
@@ -102,6 +101,7 @@ export function drawSegmentSvg(
   referenceWidth: number,
   torsoSvgWidth: number,
   scale: ScaleVector,
+  forceVertical?: boolean,
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
@@ -117,7 +117,7 @@ export function drawSegmentSvg(
     const py = dx / segLen;
 
     // Detect SVG orientation and compute cross-section width
-    const isVertical = svgH >= svgW;
+    const isVertical = forceVertical ?? svgH > svgW;
     const crossDim = isVertical ? svgW : svgH;
     const ratio = Math.abs(referenceWidth) / Math.max(1, torsoSvgWidth);
     const crossWidth = Math.max(crossDim * ratio, MIN_CROSS_WIDTH);

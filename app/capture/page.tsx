@@ -358,18 +358,19 @@ export default function CapturePage() {
         </div>
       </ToolbarSection>
 
-      <div className="mt-auto">
+      <ToolbarSection label="Save">
         <button
           onClick={handleUpload}
           disabled={!canUpload}
           className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+          title="Upload captured landmarks"
         >
-          {uploadStatus === 'uploading' && 'Uploading…'}
-          {uploadStatus === 'done' && 'Uploaded ✓'}
-          {uploadStatus === 'error' && 'Error — retry'}
-          {uploadStatus === 'idle' && 'Upload Landmarks'}
+          {uploadStatus === 'uploading' && 'Saving…'}
+          {uploadStatus === 'done' && 'Saved ✓'}
+          {uploadStatus === 'error' && 'Error'}
+          {uploadStatus === 'idle' && 'Save'}
         </button>
-      </div>
+      </ToolbarSection>
     </>
   );
 

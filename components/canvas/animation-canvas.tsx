@@ -17,6 +17,8 @@ interface AnimationCanvasProps {
   playing: boolean;
   width: number;
   height: number;
+  armsDown: boolean;
+  showAnchors?: boolean;
 }
 
 export default function AnimationCanvas({
@@ -27,6 +29,8 @@ export default function AnimationCanvas({
   playing,
   width,
   height,
+  armsDown,
+  showAnchors,
 }: AnimationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameIdx = useRef(0);
@@ -55,13 +59,15 @@ export default function AnimationCanvas({
           earDist: earDist.current,
           shifts,
           scales,
+          armsDown,
+          showAnchors,
         });
 
         frameIdx.current = (frameIdx.current + 1) % frames.length;
       }
       rafId.current = requestAnimationFrame((t) => drawRef.current?.(t));
     };
-  }, [frames, svgImages, shifts, scales, width, height]);
+  }, [frames, svgImages, shifts, scales, width, height, armsDown, showAnchors]);
 
   // Keep torso SVG dimensions in sync with loaded images
   useEffect(() => {
@@ -108,8 +114,20 @@ export default function AnimationCanvas({
       earDist: earDist.current,
       shifts,
       scales,
+      armsDown,
+      showAnchors,
     });
-  }, [shifts, scales, playing, frames, svgImages, width, height]);
+  }, [
+    shifts,
+    scales,
+    playing,
+    frames,
+    svgImages,
+    width,
+    height,
+    armsDown,
+    showAnchors,
+  ]);
 
   return (
     <canvas

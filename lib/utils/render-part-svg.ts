@@ -12,6 +12,7 @@ import {
 import { drawTorsoSvg, drawHeadSvg, drawSegmentSvg } from './drawing-utils';
 import { TorsoDimensions } from './torso-dimensions';
 import { EarDistance } from './ear-distance';
+import type { PointAnchor, SegmentAnchor, QuadAnchor } from '@/lib/types';
 
 export interface RenderContext {
   ctx: CanvasRenderingContext2D;
@@ -21,6 +22,10 @@ export interface RenderContext {
   earDist: EarDistance;
   shifts: ShiftFactors;
   scales: ScaleFactors;
+  /** true when SVGs were drawn in arms-down pose (top/bottom anchored) */
+  armsDown: boolean;
+  /** When true, draw anchor points and vectors over SVG parts */
+  showAnchors?: boolean;
 }
 
 /**
@@ -91,6 +96,7 @@ export function renderPartSvg(
       Math.abs(rc.torsoDims.avgTorsoWidth),
       rc.torsoDims.torsoSvgWidth,
       rc.scales.armScale,
+      rc.armsDown,
     );
   }
 
@@ -111,6 +117,7 @@ export function renderPartSvg(
       Math.abs(rc.torsoDims.avgTorsoWidth),
       rc.torsoDims.torsoSvgWidth,
       rc.scales.handScale,
+      rc.armsDown,
     );
   }
 
@@ -218,4 +225,138 @@ export function renderFrame(
       renderPartSvg('torso', torsoImg, scaledLandmarks, rc);
     }
   }
+
+  // Draw anchor overlay when enabled
+  if (rc.showAnchors) {
+    drawAnchorOverlay(scaledLandmarks, rc);
+  }
+}
+
+/* ── Anchor debug overlay ─────────────────────────────────────────────── */
+
+const ANCHOR_COLOR = 'rgba(0, 200, 255, 0.8)';
+const ANCHOR_RADIUS = 4;
+
+function drawDot(ctx: CanvasRenderingContext2D, p: PointAnchor) {
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, ANCHOR_RADIUS, 0, 2 * Math.PI);
+  ctx.fill();
+}
+
+function drawLine(
+  ctx: CanvasRenderingContext2D,
+  a: PointAnchor,
+  b: PointAnchor,
+) {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+function drawAnchorOverlay(scaledLandmarks: LandmarkFrame, rc: RenderContext) {
+  const { ctx } = rc;
+  ctx.save();
+  ctx.fillStyle = ANCHOR_COLOR;
+  ctx.strokeStyle = ANCHOR_COLOR;
+  ctx.lineWidth = 1.5;
+
+  for (const part of Object.keys(ANCHOR_MAP) as (keyof typeof ANCHOR_MAP)[]) {
+    const map = ANCHOR_MAP[part];
+    const isTorso = part === 'torso';
+    const isHead = part === 'head';
+    const isFoot = part.includes('Foot');
+
+    if (isTorso) {
+      const a = setTorsoAnchors(
+        scaledLandmarks,
+        map as typeof ANCHOR_MAP.torso,
+        rc.torsoDims,
+        rc.shifts,
+      );
+      if (a) {
+        const q = a as QuadAnchor;
+        drawDot(ctx, q.tl);
+        drawDot(ctx, q.tr);
+        drawDot(ctx, q.bl);
+        drawDot(ctx, q.br);
+        drawLine(ctx, q.tl, q.tr);
+        drawLine(ctx, q.tr, q.br);
+        drawLine(ctx, q.br, q.bl);
+        drawLine(ctx, q.bl, q.tl);
+      }
+    } else if (isHead) {
+      const a = setHeadAnchors(
+        scaledLandmarks,
+        map as typeof ANCHOR_MAP.head,
+        rc.torsoDims,
+        rc.earDist,
+        rc.shifts,
+      );
+      if (a) {
+        const s = a as SegmentAnchor;
+        drawDot(ctx, s.from);
+        drawDot(ctx, s.to);
+        drawLine(ctx, s.from, s.to);
+      }
+    } else if (isFoot) {
+      const a = setFootAnchors(
+        part,
+        scaledLandmarks,
+        map as { ankle?: number; foot?: number; start?: number; end?: number },
+        rc.torsoDims,
+        rc.shifts,
+      );
+      if (a) {
+        const s = a as SegmentAnchor;
+        drawDot(ctx, s.from);
+        drawDot(ctx, s.to);
+        drawLine(ctx, s.from, s.to);
+      }
+    } else if (part.includes('Arm')) {
+      const a = setArmAnchors(
+        part,
+        scaledLandmarks,
+        map as { start: number; end: number },
+        rc.torsoDims,
+        rc.shifts,
+      );
+      if (a) {
+        const s = a as SegmentAnchor;
+        drawDot(ctx, s.from);
+        drawDot(ctx, s.to);
+        drawLine(ctx, s.from, s.to);
+      }
+    } else if (part.includes('Hand')) {
+      const a = setHandAnchors(
+        part,
+        scaledLandmarks,
+        map as { start: number; end: number },
+        rc.torsoDims,
+        rc.shifts,
+      );
+      if (a) {
+        const s = a as SegmentAnchor;
+        drawDot(ctx, s.from);
+        drawDot(ctx, s.to);
+        drawLine(ctx, s.from, s.to);
+      }
+    } else if (part.includes('Leg')) {
+      const a = setLegAnchors(
+        part,
+        scaledLandmarks,
+        map as { start: number; end: number },
+        rc.torsoDims,
+        rc.shifts,
+      );
+      if (a) {
+        const s = a as SegmentAnchor;
+        drawDot(ctx, s.from);
+        drawDot(ctx, s.to);
+        drawLine(ctx, s.from, s.to);
+      }
+    }
+  }
+
+  ctx.restore();
 }

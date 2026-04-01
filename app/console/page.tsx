@@ -38,9 +38,11 @@ export default function ConsolePage() {
   const [svgParts, setSvgParts] = useState<SvgParts>({});
   const [playing, setPlaying] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
-    'idle' | 'saving' | 'done' | 'error'
+    'idle' | 'saving' | 'saved' | 'error'
   >('idle');
   const [panel, setPanel] = useState<'files' | 'shift' | 'scale'>('files');
+  const [armsDown, setArmsDown] = useState(false);
+  const [showAnchors, setShowAnchors] = useState(false);
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -146,19 +148,16 @@ export default function ConsolePage() {
           scaleFactors: scales,
         }),
       });
-      setSaveStatus(res.ok ? 'done' : 'error');
+      if (!res.ok) throw new Error('Save failed');
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     } catch {
       setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 4000);
     }
   }, [frames, svgParts, origDims, shifts, scales]);
 
-  // Reset save status after feedback
-  useEffect(() => {
-    if (saveStatus === 'done' || saveStatus === 'error') {
-      const t = setTimeout(() => setSaveStatus('idle'), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [saveStatus]);
+  // Reset save status — handled by setTimeout in save callback
 
   /* ── Auto-load most recent files on mount ───────────────────────── */
   useEffect(() => {
@@ -241,22 +240,34 @@ export default function ConsolePage() {
           </ToolbarSection>
         )}
 
-        <ToolbarSection label="Playback">
-          <div className="flex flex-wrap gap-2">
-            <button
-              disabled={frames.length === 0}
-              onClick={save}
-              className="rounded bg-green-600 px-3 py-1 text-xs text-white disabled:opacity-40"
-            >
-              {saveStatus === 'saving'
-                ? 'Saving…'
-                : saveStatus === 'done'
-                  ? 'Saved!'
-                  : saveStatus === 'error'
-                    ? 'Error'
-                    : 'Save Animation'}
-            </button>
-          </div>
+        <ToolbarSection label="Animation">
+          <SegmentedControl
+            value={armsDown ? 'down' : 'up'}
+            options={['up', 'down'] as const}
+            onChange={(v) => setArmsDown(v === 'down')}
+            labels={{ up: 'Arms Up', down: 'Arms Down' }}
+          />
+          <button
+            onClick={() => setShowAnchors((v) => !v)}
+            className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
+            style={showAnchors ? { color: 'var(--accent)' } : undefined}
+          >
+            {showAnchors ? '⊙ Hide Anchors' : '⊙ Show Anchors'}
+          </button>
+        </ToolbarSection>
+
+        <ToolbarSection label="Save">
+          <button
+            onClick={save}
+            disabled={saveStatus === 'saving' || frames.length === 0}
+            className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            title="Save animation"
+          >
+            {saveStatus === 'saving' && 'Saving…'}
+            {saveStatus === 'saved' && 'Saved ✓'}
+            {saveStatus === 'error' && 'Error'}
+            {saveStatus === 'idle' && 'Save'}
+          </button>
         </ToolbarSection>
       </Toolbar>
 
@@ -270,6 +281,8 @@ export default function ConsolePage() {
           playing={playing}
           width={CANVAS_W}
           height={CANVAS_H}
+          armsDown={armsDown}
+          showAnchors={showAnchors}
         />
       </div>
     </main>
