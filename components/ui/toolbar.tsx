@@ -52,17 +52,19 @@ export function Toolbar({
     return (
       <div
         className="w-full flex flex-col shrink-0"
-        style={{ borderBottom: '1px solid var(--border)' }}
+        style={{
+          borderBottom: '2px solid var(--border-strong)',
+          backgroundColor: 'var(--surface)',
+        }}
       >
         {/* Collapsible content area */}
         <div
           className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
           style={{
-            backgroundColor: 'var(--surface)',
             maxHeight: open ? 2000 : 0,
           }}
         >
-          <div className="flex flex-wrap items-start gap-x-4 gap-y-3 px-4 py-3">
+          <div className="flex flex-wrap items-start gap-x-5 gap-y-3 px-4 py-3">
             {children}
           </div>
         </div>
@@ -71,7 +73,6 @@ export function Toolbar({
         <div
           className="flex items-center justify-between h-7 px-3"
           style={{
-            backgroundColor: 'var(--surface)',
             borderTop: open ? '1px solid var(--border)' : 'none',
           }}
         >
@@ -151,7 +152,10 @@ export function Toolbar({
   return (
     <div
       className="flex flex-row shrink-0 self-stretch"
-      style={{ borderRight: '1px solid var(--border)' }}
+      style={{
+        borderRight: '2px solid var(--border-strong)',
+        backgroundColor: 'var(--surface)',
+      }}
     >
       {/* Sidebar content */}
       <div
@@ -159,12 +163,11 @@ export function Toolbar({
         style={{ width: open ? sideWidth : 0 }}
       >
         <div
-          className="flex flex-col gap-3 py-4 overflow-y-auto overflow-x-hidden h-full"
+          className="flex flex-col gap-2 py-3 overflow-y-auto overflow-x-hidden h-full"
           style={{
             width: sideWidth,
-            backgroundColor: 'var(--surface)',
-            paddingLeft: '14px',
-            paddingRight: '14px',
+            paddingLeft: '12px',
+            paddingRight: '12px',
           }}
         >
           {children}
@@ -175,7 +178,6 @@ export function Toolbar({
       <div
         className="w-6 shrink-0 flex flex-col items-center pt-3 pb-3 gap-3"
         style={{
-          backgroundColor: 'var(--surface)',
           borderLeft: open ? '1px solid var(--border)' : 'none',
         }}
       >
@@ -267,33 +269,35 @@ export function ToolbarSection({
   const toggle = useCallback(() => setOpen((o) => !o), []);
 
   return (
-    <div className="flex flex-col">
+    <div
+      className="flex flex-col rounded-md overflow-hidden"
+      style={{
+        border: '1px solid var(--border)',
+        backgroundColor: 'var(--surface-raised)',
+      }}
+    >
       {/* Section header — click to expand / collapse */}
       <button
-        className="flex items-center gap-2 w-full text-left py-1 transition-opacity hover:opacity-80 focus-visible:outline-none"
+        className="flex items-center gap-2 w-full text-left px-2.5 py-1.5 transition-colors hover:brightness-110 focus-visible:outline-none"
+        style={{ backgroundColor: 'var(--surface-raised)' }}
         onClick={toggle}
         aria-expanded={open}
       >
         {icon && (
           <span
             className="shrink-0"
-            style={{ color: 'var(--fg-muted)' }}
+            style={{ color: 'var(--accent)' }}
             aria-hidden="true"
           >
             {icon}
           </span>
         )}
         <span
-          className="text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap select-none"
+          className="flex-1 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap select-none"
           style={{ color: 'var(--fg-muted)' }}
         >
           {label}
         </span>
-        <span
-          className="flex-1 h-px"
-          style={{ backgroundColor: 'var(--border)' }}
-          aria-hidden="true"
-        />
         {/* Chevron */}
         <svg
           width="8"
@@ -322,7 +326,12 @@ export function ToolbarSection({
         className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
         style={{ maxHeight: open ? 2000 : 0 }}
       >
-        <div className="flex flex-col gap-1.5 pb-2">{children}</div>
+        <div
+          className="flex flex-col gap-1.5 px-2.5 pb-2.5 pt-1"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

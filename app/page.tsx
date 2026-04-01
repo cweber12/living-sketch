@@ -16,7 +16,7 @@ export default async function Home() {
 
           {/* Main headline */}
           <h1
-            className="font-display font-black uppercase leading-none glow-accent"
+            className="font-display font-bold uppercase leading-none glow-accent"
             style={{
               fontSize: 'clamp(3rem, 12vw, 9rem)',
               color: 'var(--fg)',
@@ -70,7 +70,7 @@ export default async function Home() {
             The Process
           </p>
           <h2
-            className="font-display font-black uppercase"
+            className="font-display font-bold uppercase"
             style={{
               fontSize: 'clamp(1.5rem, 5vw, 3rem)',
               color: 'var(--fg)',

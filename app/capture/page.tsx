@@ -8,6 +8,7 @@ import {
   Toolbar,
   ToolbarSection,
   SegmentedControl,
+  type ToolbarMode,
 } from '@/components/ui/toolbar';
 import type { LandmarkFrame } from '@/lib/types';
 
@@ -31,6 +32,7 @@ export default function CapturePage() {
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
+  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -264,9 +266,73 @@ export default function CapturePage() {
   }, [captureComplete, frames]);
 
   /* ── Toolbar content ─────────────────────────────────────────── */
+  const iconSource = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="4" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d="M1.5 11a4.5 4.5 0 019 0"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+  const iconCapture = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="6" cy="6" r="1.5" fill="currentColor" />
+    </svg>
+  );
+  const iconStatus = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1 9l2.5-3 2 2 3-4L11 7"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconSave = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 9.5h7M6 7.5V2.5M4 4.5L6 2.5 8 4.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   const toolbarContent = (
     <>
-      <ToolbarSection label="Source">
+      <ToolbarSection label="Source" icon={iconSource}>
         <SegmentedControl
           options={['webcam', 'upload'] as Source[]}
           value={source}
@@ -302,7 +368,7 @@ export default function CapturePage() {
         )}
       </ToolbarSection>
 
-      <ToolbarSection label="Capture">
+      <ToolbarSection label="Capture" icon={iconCapture}>
         {captureComplete ? (
           <button
             onClick={handleNewCapture}
@@ -332,7 +398,7 @@ export default function CapturePage() {
         )}
       </ToolbarSection>
 
-      <ToolbarSection label="Status">
+      <ToolbarSection label="Status" icon={iconStatus}>
         <div
           className="flex flex-col gap-1.5 text-[10px] uppercase tracking-widest"
           style={{ color: 'var(--fg-muted)' }}
@@ -358,7 +424,7 @@ export default function CapturePage() {
         </div>
       </ToolbarSection>
 
-      <ToolbarSection label="Save">
+      <ToolbarSection label="Save" icon={iconSave}>
         <button
           onClick={handleUpload}
           disabled={!canUpload}
@@ -375,8 +441,12 @@ export default function CapturePage() {
   );
 
   return (
-    <main className="flex flex-col lg:flex-row flex-1 w-full overflow-hidden">
-      <Toolbar sideWidth={176}>{toolbarContent}</Toolbar>
+    <main
+      className={`flex flex-1 w-full overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
+    >
+      <Toolbar sideWidth={176} onModeChange={setToolbarMode}>
+        {toolbarContent}
+      </Toolbar>
 
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

@@ -12,6 +12,7 @@ import {
   Toolbar,
   ToolbarSection,
   SegmentedControl,
+  type ToolbarMode,
 } from '@/components/ui/toolbar';
 
 /* ─── Grid templates ──────────────────────────────────────────────── */
@@ -112,8 +113,8 @@ const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
   { value: 'ellipse', label: '⬭ Ellipse' },
 ];
 
-const DEFAULT_COLOR_LIGHT = '#180e04';
-const DEFAULT_COLOR_DARK = '#39ff14';
+const DEFAULT_COLOR_LIGHT = '#0f1219';
+const DEFAULT_COLOR_DARK = '#22d3ee';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MIN_CANVAS_SIZE = 60;
@@ -206,6 +207,8 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
+  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
+  const [zoom, setZoom] = useState(1);
   const backInitialised = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -392,9 +395,171 @@ export default function SketchPage() {
   const focusProps = PART_PROPORTIONS[focusPart];
 
   /* ── Toolbar content ── */
+  const iconView = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <circle cx="6" cy="6" r="1.5" fill="currentColor" />
+    </svg>
+  );
+  const iconBody = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="2.5" r="1.5" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M6 4v4M4 5.5h4M4 11l2-3 2 3"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconArm = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 9V3M9 9V3M3 6h6"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+  const iconDraw = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 10l3-1 5-5-2-2-5 5-1 3zM8 2l2 2"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconShapes = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="1.5"
+        y="1.5"
+        width="4"
+        height="4"
+        rx="0.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <circle
+        cx="8.5"
+        cy="8.5"
+        r="2.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+  const iconHistory = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 6a4 4 0 118 0 4 4 0 01-8 0z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M6 4v2.5l1.5 1"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M2 3v3h3"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconSave = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 9.5h7M6 7.5V2.5M4 4.5L6 2.5 8 4.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconZoom = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle
+        cx="5.5"
+        cy="5.5"
+        r="3.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M8 8l2.5 2.5M4 5.5h3M5.5 4v3"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
   const toolbarContent = (
     <>
-      <ToolbarSection label="View">
+      <ToolbarSection label="View" icon={iconView}>
         <SegmentedControl
           options={['front', 'back'] as Side[]}
           value={side}
@@ -402,7 +567,7 @@ export default function SketchPage() {
         />
       </ToolbarSection>
 
-      <ToolbarSection label="Body">
+      <ToolbarSection label="Body" icon={iconBody}>
         <SegmentedControl
           options={['body', 'single'] as ViewMode[]}
           value={viewMode}
@@ -412,7 +577,7 @@ export default function SketchPage() {
       </ToolbarSection>
 
       {!isMobile && (
-        <ToolbarSection label="Arm Layout">
+        <ToolbarSection label="Arm Layout" icon={iconArm}>
           <SegmentedControl
             options={['up', 'down'] as ArmPose[]}
             value={armPose}
@@ -456,7 +621,7 @@ export default function SketchPage() {
         </ToolbarSection>
       )}
 
-      <ToolbarSection label="Draw">
+      <ToolbarSection label="Draw" icon={iconDraw}>
         <div className="flex items-center gap-2">
           <input
             type="color"
@@ -493,7 +658,7 @@ export default function SketchPage() {
         />
       </ToolbarSection>
 
-      <ToolbarSection label="Shapes">
+      <ToolbarSection label="Shapes" icon={iconShapes}>
         <div className="relative" ref={shapesRef}>
           <button
             onClick={() => setShapesOpen((o) => !o)}
@@ -572,7 +737,7 @@ export default function SketchPage() {
         </div>
       ) : (
         <>
-          <ToolbarSection label="History">
+          <ToolbarSection label="History" icon={iconHistory}>
             <button
               onClick={handleUndo}
               className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
@@ -590,7 +755,7 @@ export default function SketchPage() {
             </button>
           </ToolbarSection>
 
-          <ToolbarSection label="Save">
+          <ToolbarSection label="Save" icon={iconSave}>
             <button
               onClick={handleSave}
               disabled={saveStatus === 'saving'}
@@ -603,14 +768,45 @@ export default function SketchPage() {
               {saveStatus === 'idle' && 'Save'}
             </button>
           </ToolbarSection>
+
+          <ToolbarSection label="Zoom" icon={iconZoom}>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0.5}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="flex-1 accent-accent"
+                title="Canvas zoom"
+              />
+              <span
+                className="text-[10px] tabular-nums w-8 shrink-0"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                {Math.round(zoom * 100)}%
+              </span>
+            </div>
+            <button
+              onClick={() => setZoom(1)}
+              className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+            >
+              Reset
+            </button>
+          </ToolbarSection>
         </>
       )}
     </>
   );
 
   return (
-    <main className="flex flex-col lg:flex-row flex-1 w-full max-w-screen-2xl mx-auto overflow-hidden">
-      <Toolbar sideWidth={200}>{toolbarContent}</Toolbar>
+    <main
+      className={`flex flex-1 w-full overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
+    >
+      <Toolbar sideWidth={200} onModeChange={setToolbarMode}>
+        {toolbarContent}
+      </Toolbar>
 
       {/* ── Canvas area ── */}
       <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
@@ -628,6 +824,8 @@ export default function SketchPage() {
                 gridTemplateColumns: gridCols,
                 gridTemplateRows: gridRows,
                 gap: isMobile ? '2px' : '4px',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
               }}
             >
               {(['front', 'back'] as Side[]).flatMap((s) =>
@@ -672,6 +870,8 @@ export default function SketchPage() {
                     border: '1px solid var(--border)',
                     backgroundColor: 'var(--surface)',
                     position: 'relative',
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top center',
                   }}
                 >
                   {(['front', 'back'] as Side[]).map((s) => (

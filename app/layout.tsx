@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Cinzel, Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { NavBar } from '@/components/ui/nav-bar';
 
@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-const cinzel = Cinzel({
-  variable: '--font-cinzel',
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
-  weight: ['400', '700', '900'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <NavBar />

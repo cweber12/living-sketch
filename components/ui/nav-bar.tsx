@@ -11,17 +11,17 @@ export async function NavBar() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b"
+      className="sticky top-0 z-50"
       style={{
-        backgroundColor: 'var(--bg)',
-        borderColor: 'var(--border)',
+        backgroundColor: 'var(--surface)',
+        borderBottom: '2px solid var(--border-strong)',
       }}
     >
-      {/* Top row: logo + sign-out (always one line) */}
+      {/* Top row: logo + sign-out */}
       <div className="flex items-center justify-between px-3 sm:px-5 py-2">
         <Link
           href="/"
-          className="font-display font-black tracking-widest uppercase text-sm sm:text-base shrink-0"
+          className="font-display font-bold tracking-wide uppercase text-sm sm:text-base shrink-0"
           style={{ color: 'var(--accent)' }}
         >
           Living Sketch
@@ -47,7 +47,7 @@ export async function NavBar() {
         )}
       </div>
 
-      {/* Bottom row: nav tabs (full width, evenly spaced) */}
+      {/* Bottom row: nav tabs */}
       {user && (
         <div className="px-3 sm:px-5 pb-2">
           <NavLinks />

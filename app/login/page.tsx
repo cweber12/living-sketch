@@ -24,7 +24,7 @@ export default async function LoginPage({
         <div className="text-center space-y-1">
           <Link
             href="/"
-            className="font-display font-black uppercase text-sm tracking-[0.3em] block mb-4 transition-opacity hover:opacity-70"
+            className="font-display font-bold uppercase text-sm tracking-[0.3em] block mb-4 transition-opacity hover:opacity-70"
             style={{ color: 'var(--accent)' }}
           >
             Living Sketch
