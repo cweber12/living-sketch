@@ -83,7 +83,7 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawHeadSvg(rc.ctx, img, a, rc.scales.headScale);
+    return drawHeadSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.headScale);
   }
 
   /* Arms — cross-width relative to shoulder width */
@@ -286,25 +286,15 @@ function drawAnchorOverlay(scaledLandmarks: LandmarkFrame, rc: RenderContext) {
         rc.shifts,
       );
       if (a) {
-        // Draw base dot, and a short line showing the up-direction
-        drawDot(ctx, a.base);
-        const tipLen = a.earWidth / 2;
-        const tip: PointAnchor = {
-          x: a.base.x + a.up.x * tipLen,
-          y: a.base.y + a.up.y * tipLen,
+        // Draw ear midpoint dot and a line between the two ear anchors
+        const mid: PointAnchor = {
+          x: (a.leftAnchor.x + a.rightAnchor.x) / 2,
+          y: (a.leftAnchor.y + a.rightAnchor.y) / 2,
         };
-        drawLine(ctx, a.base, tip);
-        // Draw the ear-width span
-        const hw = a.earWidth / 2;
-        const bl: PointAnchor = {
-          x: a.base.x - a.right.x * hw,
-          y: a.base.y - a.right.y * hw,
-        };
-        const br: PointAnchor = {
-          x: a.base.x + a.right.x * hw,
-          y: a.base.y + a.right.y * hw,
-        };
-        drawLine(ctx, bl, br);
+        drawDot(ctx, mid);
+        drawDot(ctx, a.leftAnchor);
+        drawDot(ctx, a.rightAnchor);
+        drawLine(ctx, a.leftAnchor, a.rightAnchor);
       }
     } else if (isFoot) {
       const a = setFootAnchors(

@@ -26,6 +26,30 @@ import {
 const CANVAS_W = 640;
 const CANVAS_H = 480;
 
+function formatFileTimestamp(name: string): string {
+  // ISO-like: "2026-03-31T13-16-35-194Z" or "capture-2026-03-31T05-36-51-828Z.json"
+  const isoFixed = name
+    .replace(/^capture-/, '')
+    .replace(/\.json$/, '')
+    .replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, 'T$1:$2:$3.$4Z');
+  const d = new Date(isoFixed);
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  return name;
+}
+
+function formatCreationLabel(name: string, selected: boolean): string {
+  const ts = formatFileTimestamp(name);
+  return selected ? `Created ${ts}` : `Extracted ${ts}`;
+}
+
 export default function ConsolePage() {
   /* ── State ──────────────────────────────────────────────────────── */
   const [landmarkFile, setLandmarkFile] = useState<string | null>(null);
@@ -215,15 +239,26 @@ export default function ConsolePage() {
 
         {panel === 'files' && (
           <>
-            <ToolbarSection label="Landmarks">
+            <ToolbarSection label="Animations">
               <FileList
                 bucket="landmarks"
                 selected={landmarkFile}
                 onSelect={loadLandmarks}
+                onDelete={(f) => {
+                  if (landmarkFile === f.key) setLandmarkFile(null);
+                }}
               />
             </ToolbarSection>
-            <ToolbarSection label="SVG Characters">
-              <FileList bucket="svgs" selected={svgFile} onSelect={loadSvgs} />
+            <ToolbarSection label="Creations">
+              <FileList
+                bucket="svgs"
+                selected={svgFile}
+                onSelect={loadSvgs}
+                formatLabel={formatCreationLabel}
+                onDelete={(f) => {
+                  if (svgFile === f.key) setSvgFile(null);
+                }}
+              />
             </ToolbarSection>
           </>
         )}

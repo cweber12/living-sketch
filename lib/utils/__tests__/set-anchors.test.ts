@@ -52,7 +52,7 @@ describe('setTorsoAnchors', () => {
 });
 
 describe('setHeadAnchors', () => {
-  it('returns HeadAnchor with base, right, up, earWidth, noseToShoulderDist', () => {
+  it('returns HeadAnchor with leftAnchor and rightAnchor', () => {
     const frame = makeFrame();
     const td = new TorsoDimensions();
     td.updateAvgTorsoWidth(100);
@@ -66,13 +66,10 @@ describe('setHeadAnchors', () => {
       DEFAULT_SHIFTS,
     );
     expect(result).toBeDefined();
-    expect(result!.base).toHaveProperty('x');
-    expect(result!.base).toHaveProperty('y');
-    expect(result!.right).toHaveProperty('x');
-    expect(result!.up).toHaveProperty('y');
-    expect(typeof result!.earWidth).toBe('number');
-    expect(typeof result!.noseToShoulderDist).toBe('number');
-    expect(result!.noseToShoulderDist).toBeGreaterThan(0);
+    expect(result!.leftAnchor).toHaveProperty('x');
+    expect(result!.leftAnchor).toHaveProperty('y');
+    expect(result!.rightAnchor).toHaveProperty('x');
+    expect(result!.rightAnchor).toHaveProperty('y');
   });
 });
 

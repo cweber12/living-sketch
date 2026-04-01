@@ -47,72 +47,27 @@ export function drawTorsoSvg(
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
-/**
- * Draws the head SVG so that:
- * - Its bottom-center edge anchors to the shoulder midpoint (anchor.base)
- * - It lies in the torso plane (right/up vectors from the torso axis)
- * - Its height is driven by the nose-to-shoulder distance × HEAD_HEIGHT_MULTIPLIER
- * - Its width is driven by the smoothed ear-to-ear distance
- * - The base point is raised slightly above the shoulder midpoint by HEAD_ANCHOR_Y_OFFSET
- */
-
-/** Multiplier applied to the nose-to-shoulder distance to get the head height. */
-const HEAD_HEIGHT_MULTIPLIER = 2.2;
-/** Fraction of headH by which we raise the base above the shoulder midpoint. */
-const HEAD_ANCHOR_Y_OFFSET = 0.15;
-
 export function drawHeadSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   anchor: HeadAnchor,
+  torsoDims: TorsoDimensions,
   scale: ScaleVector,
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { base, right, up, earWidth, noseToShoulderDist } = anchor;
-
-    const headH = noseToShoulderDist * HEAD_HEIGHT_MULTIPLIER * scale.y;
-    const headW = Math.max(earWidth * scale.x, 4);
-    const halfW = headW / 2;
-
-    // Raise the base upward so the head sits above the shoulder midpoint
-    const offsetDist = headH * HEAD_ANCHOR_Y_OFFSET;
-    const offsetBase: PointAnchor = {
-      x: base.x + up.x * offsetDist,
-      y: base.y + up.y * offsetDist,
-    };
-
-    // Map SVG corners to screen positions:
-    //   (0,    0) = top-left    → offsetBase - right*halfW + up*headH
-    //   (svgW, 0) = top-right   → offsetBase + right*halfW + up*headH
-    //   (0, svgH) = bottom-left → offsetBase - right*halfW
-    // Bottom-center (svgW/2, svgH) automatically maps to offsetBase.
-    const dst0: PointAnchor = {
-      x: offsetBase.x - right.x * halfW + up.x * headH,
-      y: offsetBase.y - right.y * halfW + up.y * headH,
-    };
-    const dst1: PointAnchor = {
-      x: offsetBase.x + right.x * halfW + up.x * headH,
-      y: offsetBase.y + right.y * halfW + up.y * headH,
-    };
-    const dst2: PointAnchor = {
-      x: offsetBase.x - right.x * halfW,
-      y: offsetBase.y - right.y * halfW,
-    };
-
-    const M = affineFrom3Points(
-      { x: 0, y: 0 },
-      { x: svgW, y: 0 },
-      { x: 0, y: svgH },
-      dst0,
-      dst1,
-      dst2,
-    );
-    if (!M) return false;
-
+    const { leftAnchor, rightAnchor } = anchor;
+    const midX = (leftAnchor.x + rightAnchor.x) / 2;
+    const midY = (leftAnchor.y + rightAnchor.y) / 2;
+    const avgTorsoWidth = Math.abs(torsoDims.avgTorsoWidth);
+    const avgTorsoHeight = Math.abs(torsoDims.avgTorsoHeight);
+    const scaleX = (avgTorsoWidth * 0.5) / Math.max(1, torsoDims.torsoSvgWidth);
+    const scaleY =
+      (avgTorsoHeight * 0.5) / Math.max(1, torsoDims.torsoSvgHeight);
     ctx.save();
-    ctx.setTransform(M.a, M.b, M.c, M.d, M.e, M.f);
-    ctx.drawImage(img, 0, 0, svgW, svgH);
+    ctx.translate(midX, midY);
+    ctx.scale(scaleX * scale.x, scaleY * scale.y);
+    ctx.drawImage(img, -svgW / 2, -svgH / 1.2, svgW, svgH);
     ctx.restore();
     return true;
   } catch {
