@@ -21,6 +21,7 @@ import {
   Toolbar,
   ToolbarSection,
   SegmentedControl,
+  type ToolbarMode,
 } from '@/components/ui/toolbar';
 
 const CANVAS_W = 640;
@@ -67,6 +68,7 @@ export default function ConsolePage() {
   const [panel, setPanel] = useState<'files' | 'shift' | 'scale'>('files');
   const [armsDown, setArmsDown] = useState(false);
   const [showAnchors, setShowAnchors] = useState(false);
+  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -224,11 +226,140 @@ export default function ConsolePage() {
   }, [frames, svgImages]);
 
   /* ── UI ─────────────────────────────────────────────────────────── */
+  const iconPanel = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 3.5h8M2 6h8M2 8.5h8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+  const iconAnimations = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="M3 2.5L10 6l-7 3.5V2.5z" fill="currentColor" />
+    </svg>
+  );
+  const iconCreations = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 10L7.5 4.5M7.5 4.5L9.5 2l1 1L8 5.5M5 3l.5-.5M9 7l-.5.5M3.5 2.5L3 3M9.5 8.5L9 9"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconShift = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 1.5v9M1.5 6h9"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4.5 3L6 1.5 7.5 3M4.5 9L6 10.5 7.5 9M3 4.5L1.5 6 3 7.5M9 4.5L10.5 6 9 7.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconScale = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 4.5V1.5h3M1.5 7.5V10.5h3M7.5 1.5H10.5v3M10.5 7.5V10.5H7.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const iconAnimation = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="1.5"
+        y="2.5"
+        width="9"
+        height="7"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M1.5 4.5h9M1.5 7.5h9M4 2.5v2M8 2.5v2M4 7.5v2M8 7.5v2"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+  const iconSave = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.5 9.5h7M6 7.5V2.5M4 4.5L6 2.5 8 4.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   return (
-    <main className="flex flex-1 flex-col lg:flex-row">
+    <main
+      className={`flex flex-1 ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
+    >
       {/* Toolbar / sidebar */}
-      <Toolbar>
-        <ToolbarSection label="Panel">
+      <Toolbar onModeChange={setToolbarMode}>
+        <ToolbarSection label="Panel" icon={iconPanel}>
           <SegmentedControl
             value={panel}
             options={['files', 'shift', 'scale'] as const}
@@ -239,7 +370,7 @@ export default function ConsolePage() {
 
         {panel === 'files' && (
           <>
-            <ToolbarSection label="Animations">
+            <ToolbarSection label="Animations" icon={iconAnimations}>
               <FileList
                 bucket="landmarks"
                 selected={landmarkFile}
@@ -249,7 +380,7 @@ export default function ConsolePage() {
                 }}
               />
             </ToolbarSection>
-            <ToolbarSection label="Creations">
+            <ToolbarSection label="Creations" icon={iconCreations}>
               <FileList
                 bucket="svgs"
                 selected={svgFile}
@@ -264,18 +395,18 @@ export default function ConsolePage() {
         )}
 
         {panel === 'shift' && (
-          <ToolbarSection label="Shift Anchors">
+          <ToolbarSection label="Shift Anchors" icon={iconShift}>
             <ShiftControls />
           </ToolbarSection>
         )}
 
         {panel === 'scale' && (
-          <ToolbarSection label="Scale Parts">
+          <ToolbarSection label="Scale Parts" icon={iconScale}>
             <ScaleControls />
           </ToolbarSection>
         )}
 
-        <ToolbarSection label="Animation">
+        <ToolbarSection label="Animation" icon={iconAnimation}>
           <SegmentedControl
             value={armsDown ? 'down' : 'up'}
             options={['up', 'down'] as const}
@@ -291,7 +422,7 @@ export default function ConsolePage() {
           </button>
         </ToolbarSection>
 
-        <ToolbarSection label="Save">
+        <ToolbarSection label="Save" icon={iconSave}>
           <button
             onClick={save}
             disabled={saveStatus === 'saving' || frames.length === 0}

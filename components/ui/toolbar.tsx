@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 
 const MOBILE_BP = 1024;
+/** Sections collapse by default below this width (phone breakpoint) */
+const SECTION_PHONE_BP = 768;
 
 export type ToolbarMode = 'side' | 'top';
 
@@ -10,13 +12,19 @@ interface ToolbarProps {
   children: ReactNode;
   /** Width in px when in side mode (default 224) */
   sideWidth?: number;
+  /** Called whenever the toolbar switches between side / top modes */
+  onModeChange?: (mode: ToolbarMode) => void;
 }
 
 /**
  * Responsive toolbar: left sidebar on desktop, collapsible top bar on mobile.
  * Desktop can toggle between side and top mode via a small icon.
  */
-export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
+export function Toolbar({
+  children,
+  sideWidth = 224,
+  onModeChange,
+}: ToolbarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
   const [open, setOpen] = useState(true);
@@ -31,6 +39,11 @@ export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
   }, []);
 
   const mode: ToolbarMode = isMobile ? 'top' : preferSide ? 'side' : 'top';
+
+  useEffect(() => {
+    onModeChange?.(mode);
+  }, [mode, onModeChange]);
+
   const toggleMode = useCallback(() => setPreferSide((p) => !p), []);
   const toggleOpen = useCallback(() => setOpen((o) => !o), []);
 
@@ -38,7 +51,7 @@ export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
   if (mode === 'top') {
     return (
       <div
-        className="flex flex-col shrink-0"
+        className="w-full flex flex-col shrink-0"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         {/* Collapsible content area */}
@@ -46,7 +59,7 @@ export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
           className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
           style={{
             backgroundColor: 'var(--surface)',
-            maxHeight: open ? 600 : 0,
+            maxHeight: open ? 2000 : 0,
           }}
         >
           <div className="flex flex-wrap items-start gap-x-4 gap-y-3 px-4 py-3">
@@ -137,16 +150,16 @@ export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
   /* ── Side bar mode (desktop default) ────────────────────────────── */
   return (
     <div
-      className="flex flex-row shrink-0 h-full"
+      className="flex flex-row shrink-0 self-stretch"
       style={{ borderRight: '1px solid var(--border)' }}
     >
       {/* Sidebar content */}
       <div
-        className="overflow-hidden transition-[width] duration-300 ease-in-out h-full"
+        className="overflow-hidden transition-[width] duration-300 ease-in-out self-stretch"
         style={{ width: open ? sideWidth : 0 }}
       >
         <div
-          className="h-full flex flex-col gap-5 py-4 overflow-y-auto overflow-x-hidden"
+          className="flex flex-col gap-3 py-4 overflow-y-auto overflow-x-hidden h-full"
           style={{
             width: sideWidth,
             backgroundColor: 'var(--surface)',
@@ -232,18 +245,44 @@ export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
   );
 }
 
-/** Visually groups related toolbar controls under a labelled section */
+/** Visually groups related toolbar controls under a collapsible labelled section */
 export function ToolbarSection({
   label,
+  icon,
   children,
+  defaultOpen,
 }: {
   label: string;
+  icon?: ReactNode;
   children: ReactNode;
+  /** Override responsive default (true = expanded, false = collapsed) */
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(() => {
+    if (defaultOpen !== undefined) return defaultOpen;
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= SECTION_PHONE_BP;
+  });
+
+  const toggle = useCallback(() => setOpen((o) => !o), []);
+
   return (
-    <div className="flex flex-col gap-2.5">
-      {/* Section label with subtle divider */}
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col">
+      {/* Section header — click to expand / collapse */}
+      <button
+        className="flex items-center gap-2 w-full text-left py-1 transition-opacity hover:opacity-80 focus-visible:outline-none"
+        onClick={toggle}
+        aria-expanded={open}
+      >
+        {icon && (
+          <span
+            className="shrink-0"
+            style={{ color: 'var(--fg-muted)' }}
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+        )}
         <span
           className="text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap select-none"
           style={{ color: 'var(--fg-muted)' }}
@@ -255,8 +294,36 @@ export function ToolbarSection({
           style={{ backgroundColor: 'var(--border)' }}
           aria-hidden="true"
         />
+        {/* Chevron */}
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 8 8"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 transition-transform duration-200"
+          style={{
+            transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
+            color: 'var(--fg-muted)',
+          }}
+        >
+          <path
+            d="M1.5 2.5l2.5 3 2.5-3"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {/* Content — always in DOM, collapsed via max-height transition */}
+      <div
+        className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+        style={{ maxHeight: open ? 2000 : 0 }}
+      >
+        <div className="flex flex-col gap-1.5 pb-2">{children}</div>
       </div>
-      <div className="flex flex-col gap-1.5">{children}</div>
     </div>
   );
 }
