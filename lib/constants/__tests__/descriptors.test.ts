@@ -22,10 +22,12 @@ describe('anchor-descriptors', () => {
     expect(t.bottomRight).toBe(24); // right hip
   });
 
-  it('head anchors reference eye keypoints', () => {
+  it('head anchors reference ear and shoulder keypoints', () => {
     const h = ANCHOR_MAP.head;
-    expect(h.leftAnchor).toBe(2); // left eye
-    expect(h.rightAnchor).toBe(5); // right eye
+    expect(h.leftEar).toBe(7); // left ear
+    expect(h.rightEar).toBe(8); // right ear
+    expect(h.leftShoulder).toBe(11); // left shoulder
+    expect(h.rightShoulder).toBe(12); // right shoulder
   });
 
   it('all anchor keypoint indices are within MediaPipe 33-keypoint range', () => {

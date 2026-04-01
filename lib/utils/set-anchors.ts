@@ -3,6 +3,7 @@ import type {
   PointAnchor,
   QuadAnchor,
   SegmentAnchor,
+  HeadAnchor,
   ShiftFactors,
 } from '@/lib/types';
 import { TorsoDimensions } from './torso-dimensions';
@@ -65,24 +66,71 @@ export function setTorsoAnchors(
 /* ── Head ─────────────────────────────────────────────────────────────── */
 export function setHeadAnchors(
   scaledLandmarks: LandmarkFrame,
-  map: { leftAnchor: number; rightAnchor: number },
+  map: {
+    leftEar: number;
+    rightEar: number;
+    leftShoulder: number;
+    rightShoulder: number;
+  },
   torsoDims: TorsoDimensions,
   earDist: EarDistance,
   shifts: ShiftFactors,
-): SegmentAnchor | undefined {
-  const left = kp(scaledLandmarks, map.leftAnchor);
-  const right = kp(scaledLandmarks, map.rightAnchor);
-  if (!valid(left) || !valid(right)) return undefined;
+): HeadAnchor | undefined {
+  const leftEar = kp(scaledLandmarks, map.leftEar);
+  const rightEar = kp(scaledLandmarks, map.rightEar);
+  const leftShoulder = kp(scaledLandmarks, map.leftShoulder);
+  const rightShoulder = kp(scaledLandmarks, map.rightShoulder);
+  if (!valid(leftEar) || !valid(rightEar)) return undefined;
+  if (!valid(leftShoulder) || !valid(rightShoulder)) return undefined;
 
-  earDist.updateAvgEarDistance(Math.hypot(right.x - left.x, right.y - left.y));
+  // Update EarDistance EMA tracker with current frame measurement
+  earDist.updateAvgEarDistance(
+    Math.hypot(rightEar.x - leftEar.x, rightEar.y - leftEar.y),
+  );
 
   const tw = torsoDims.avgTorsoWidth * SHIFT_FACTOR;
   const th = torsoDims.avgTorsoHeight * SHIFT_FACTOR;
   const s = shifts.headShift;
 
+  // Shoulder midpoint (bottom-center anchor), shifted by headShift
+  const baseX = (leftShoulder.x + rightShoulder.x) / 2 + s.x * tw;
+  const baseY = (leftShoulder.y + rightShoulder.y) / 2 + s.y * th;
+
+  // Torso right unit vector (left shoulder → right shoulder)
+  const sdx = rightShoulder.x - leftShoulder.x;
+  const sdy = rightShoulder.y - leftShoulder.y;
+  const sLen = Math.hypot(sdx, sdy);
+  const rx = sLen > 0 ? sdx / sLen : 1;
+  const ry = sLen > 0 ? sdy / sLen : 0;
+
+  // Torso up unit vector — prefer hip→shoulder axis, fall back to ⊥ shoulder line
+  let ux = -ry; // perpendicular fallback (points "up" relative to shoulder tilt)
+  let uy = rx;
+  // Ensure it points upward in screen space (negative y)
+  if (uy > 0) {
+    ux = -ux;
+    uy = -uy;
+  }
+
+  const leftHip = kp(scaledLandmarks, 23);
+  const rightHip = kp(scaledLandmarks, 24);
+  if (valid(leftHip) && valid(rightHip)) {
+    const hipMidX = (leftHip.x + rightHip.x) / 2;
+    const hipMidY = (leftHip.y + rightHip.y) / 2;
+    const vx = baseX - s.x * tw - hipMidX; // shoulder mid (unshifted) → hip mid
+    const vy = baseY - s.y * th - hipMidY;
+    const vLen = Math.hypot(vx, vy);
+    if (vLen > 1) {
+      ux = vx / vLen;
+      uy = vy / vLen;
+    }
+  }
+
   return {
-    from: { x: left.x + s.x * tw, y: left.y + s.y * th },
-    to: { x: right.x + s.x * tw, y: right.y + s.y * th },
+    base: { x: baseX, y: baseY },
+    right: { x: rx, y: ry },
+    up: { x: ux, y: uy },
+    earWidth: earDist.avgEarDistance,
   };
 }
 

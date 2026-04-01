@@ -8,16 +8,15 @@ export type ToolbarMode = 'side' | 'top';
 
 interface ToolbarProps {
   children: ReactNode;
-  /** Width in px when in side mode (default 200) */
+  /** Width in px when in side mode (default 224) */
   sideWidth?: number;
 }
 
 /**
- * Responsive toolbar: left column on large screens, top row on small.
- * Large screens can toggle between side and top via a button.
- * Small screens always show top bar (no toggle).
+ * Responsive toolbar: left sidebar on desktop, collapsible top bar on mobile.
+ * Desktop can toggle between side and top mode via a small icon.
  */
-export function Toolbar({ children, sideWidth = 200 }: ToolbarProps) {
+export function Toolbar({ children, sideWidth = 224 }: ToolbarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
   const [open, setOpen] = useState(true);
@@ -32,51 +31,102 @@ export function Toolbar({ children, sideWidth = 200 }: ToolbarProps) {
   }, []);
 
   const mode: ToolbarMode = isMobile ? 'top' : preferSide ? 'side' : 'top';
-
   const toggleMode = useCallback(() => setPreferSide((p) => !p), []);
   const toggleOpen = useCallback(() => setOpen((o) => !o), []);
 
+  /* ── Top bar mode (mobile always, desktop optional) ─────────────── */
   if (mode === 'top') {
     return (
-      <div className="flex flex-col shrink-0">
-        {/* Top bar */}
+      <div
+        className="flex flex-col shrink-0"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        {/* Collapsible content area */}
         <div
-          className="w-full border-b overflow-hidden transition-[max-height] duration-200 ease-in-out"
+          className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
           style={{
-            borderColor: 'var(--border)',
             backgroundColor: 'var(--surface)',
             maxHeight: open ? 600 : 0,
           }}
         >
-          <div className="flex items-start justify-between gap-2 px-3 py-2 flex-wrap overflow-x-auto w-full">
+          <div className="flex flex-wrap items-start gap-x-4 gap-y-3 px-4 py-3">
             {children}
           </div>
         </div>
-        {/* Toggle strip (thin bottom bar) */}
+
+        {/* Toggle strip */}
         <div
-          className="flex items-center h-5"
+          className="flex items-center justify-between h-7 px-3"
           style={{
             backgroundColor: 'var(--surface)',
-            borderBottom: '1px solid var(--border)',
+            borderTop: open ? '1px solid var(--border)' : 'none',
           }}
         >
           <button
-            className="h-full px-2 flex items-center transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
             style={{ color: 'var(--fg-muted)' }}
             onClick={toggleOpen}
             aria-label={open ? 'Collapse toolbar' : 'Expand toolbar'}
           >
-            <span className="text-[10px] select-none">{open ? '▲' : '▼'}</span>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+              className="transition-transform duration-200"
+              style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            >
+              <path
+                d="M2 4l4 4 4-4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="text-[10px] uppercase tracking-widest select-none">
+              {open ? 'Collapse' : 'Toolbar'}
+            </span>
           </button>
+
           {!isMobile && (
             <button
-              className="h-full px-2 flex items-center transition-opacity hover:opacity-80 ml-auto"
+              className="flex items-center gap-1 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
               style={{ color: 'var(--fg-muted)' }}
               onClick={toggleMode}
-              title="Switch to side toolbar"
-              aria-label="Switch to side toolbar"
+              title="Switch to sidebar"
+              aria-label="Switch to sidebar"
             >
-              <span className="text-[10px] select-none">◧</span>
+              <span className="text-[10px] uppercase tracking-widest select-none">
+                Sidebar
+              </span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="1"
+                  y="1"
+                  width="10"
+                  height="10"
+                  rx="1.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <rect
+                  x="1"
+                  y="1"
+                  width="4"
+                  height="10"
+                  rx="1.5"
+                  fill="currentColor"
+                  opacity="0.4"
+                />
+              </svg>
             </button>
           )}
         </div>
@@ -84,58 +134,105 @@ export function Toolbar({ children, sideWidth = 200 }: ToolbarProps) {
     );
   }
 
-  // ── Side mode ──
+  /* ── Side bar mode (desktop default) ────────────────────────────── */
   return (
     <div
-      className="flex flex-row shrink-0"
+      className="flex flex-row shrink-0 h-full"
       style={{ borderRight: '1px solid var(--border)' }}
     >
       {/* Sidebar content */}
       <div
-        className="overflow-hidden transition-[width] duration-200 ease-in-out"
+        className="overflow-hidden transition-[width] duration-300 ease-in-out h-full"
         style={{ width: open ? sideWidth : 0 }}
       >
         <div
-          className="h-full flex flex-col py-3 px-3 gap-4 overflow-y-auto overflow-x-hidden"
+          className="h-full flex flex-col gap-5 py-4 overflow-y-auto overflow-x-hidden"
           style={{
             width: sideWidth,
             backgroundColor: 'var(--surface)',
+            paddingLeft: '14px',
+            paddingRight: '14px',
           }}
         >
           {children}
         </div>
       </div>
-      {/* Toggle strip */}
+
+      {/* Collapse handle strip */}
       <div
-        className="w-5 shrink-0 flex flex-col items-center py-2 gap-2"
+        className="w-6 shrink-0 flex flex-col items-center pt-3 pb-3 gap-3"
         style={{
           backgroundColor: 'var(--surface)',
-          borderRight: '1px solid var(--border)',
+          borderLeft: open ? '1px solid var(--border)' : 'none',
         }}
       >
+        {/* Collapse/expand toggle */}
         <button
-          className="flex items-center justify-center transition-opacity hover:opacity-80"
+          className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:opacity-70 focus-visible:outline-none"
           style={{ color: 'var(--fg-muted)' }}
           onClick={toggleOpen}
           aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          <span className="text-[10px] select-none">{open ? '‹' : '›'}</span>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+            className="transition-transform duration-300"
+            style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
+          >
+            <path
+              d="M7 2L3 5l4 3"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
+
+        {/* Mode toggle (bottom) */}
         <button
-          className="flex items-center justify-center transition-opacity hover:opacity-80 mt-auto"
+          className="mt-auto w-5 h-5 flex items-center justify-center rounded transition-opacity hover:opacity-70 focus-visible:outline-none"
           style={{ color: 'var(--fg-muted)' }}
           onClick={toggleMode}
           title="Switch to top toolbar"
           aria-label="Switch to top toolbar"
         >
-          <span className="text-[10px] select-none">▭</span>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="0.5"
+              y="0.5"
+              width="9"
+              height="9"
+              rx="1.5"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+            <rect
+              x="0.5"
+              y="0.5"
+              width="9"
+              height="3.5"
+              rx="1.5"
+              fill="currentColor"
+              opacity="0.4"
+            />
+          </svg>
         </button>
       </div>
     </div>
   );
 }
 
-/** Section label used inside the toolbar */
+/** Visually groups related toolbar controls under a labelled section */
 export function ToolbarSection({
   label,
   children,
@@ -144,19 +241,27 @@ export function ToolbarSection({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <p
-        className="text-[9px] uppercase tracking-widest"
-        style={{ color: 'var(--fg-muted)' }}
-      >
-        {label}
-      </p>
-      {children}
+    <div className="flex flex-col gap-2.5">
+      {/* Section label with subtle divider */}
+      <div className="flex items-center gap-2">
+        <span
+          className="text-[10px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap select-none"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          {label}
+        </span>
+        <span
+          className="flex-1 h-px"
+          style={{ backgroundColor: 'var(--border)' }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">{children}</div>
     </div>
   );
 }
 
-/** Segmented toggle (2+ options in a row) */
+/** Pill-shaped segmented control for 2–4 mutually exclusive options */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -172,24 +277,36 @@ export function SegmentedControl<T extends string>({
 }) {
   return (
     <div
-      className="flex rounded overflow-hidden"
-      style={{ border: '1px solid var(--border)' }}
+      className="flex rounded-md overflow-hidden"
+      style={{
+        border: '1px solid var(--border)',
+        backgroundColor: 'var(--surface-raised)',
+      }}
     >
-      {options.map((o) => {
+      {options.map((o, i) => {
         const active = o === value;
         const isDanger = dangerValue === o && active;
+        const isLast = i === options.length - 1;
         return (
           <button
             key={o}
             onClick={() => onChange(o)}
-            className="flex-1 px-2 py-1.5 text-xs font-semibold uppercase tracking-widest transition-colors"
-            style={
-              isDanger
+            className="flex-1 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
+            style={{
+              ...(isDanger
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }
                 : active
-                  ? { backgroundColor: 'var(--accent)', color: 'var(--bg)' }
-                  : { color: 'var(--fg-muted)' }
-            }
+                  ? {
+                      backgroundColor: 'var(--accent)',
+                      color: 'var(--bg)',
+                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
+                    }
+                  : {
+                      color: 'var(--fg-muted)',
+                      backgroundColor: 'transparent',
+                    }),
+              borderRight: !isLast ? '1px solid var(--border)' : 'none',
+            }}
           >
             {labels?.[o] ?? o}
           </button>

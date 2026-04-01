@@ -3,7 +3,8 @@
 
 export const ANCHOR_MAP = {
   torso: { topLeft: 11, topRight: 12, bottomLeft: 23, bottomRight: 24 },
-  head: { leftAnchor: 2, rightAnchor: 5 },
+  // Ears (7, 8) anchor ear-to-ear width; shoulders (11, 12) anchor base position
+  head: { leftEar: 7, rightEar: 8, leftShoulder: 11, rightShoulder: 12 },
   leftUpperArm: { start: 11, end: 13 },
   leftLowerArm: { start: 13, end: 15 },
   leftHand: { start: 15, end: 19 },

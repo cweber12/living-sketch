@@ -2,6 +2,7 @@ import type {
   PointAnchor,
   QuadAnchor,
   SegmentAnchor,
+  HeadAnchor,
   ScaleVector,
 } from '@/lib/types';
 import { affineFrom3Points, getSvgSize } from './svg-utils';
@@ -46,33 +47,58 @@ export function drawTorsoSvg(
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
+/**
+ * Draws the head SVG so that:
+ * - Its bottom-center edge anchors to the shoulder midpoint (anchor.base)
+ * - It lies in the torso plane (right/up vectors from the torso axis)
+ * - Its width is driven by the smoothed ear-to-ear distance
+ * - Aspect ratio is preserved (height = width x svgH/svgW)
+ */
 export function drawHeadSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
-  anchors: SegmentAnchor,
-  torsoDims: TorsoDimensions,
+  anchor: HeadAnchor,
   scale: ScaleVector,
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from: leftEye, to: rightEye } = anchors;
-    const midX = (leftEye.x + rightEye.x) / 2;
-    const midY = (leftEye.y + rightEye.y) / 2;
+    const { base, right, up, earWidth } = anchor;
 
-    // Uniform scaling: average of torso width+height ratios
-    const avgTorso =
-      (Math.abs(torsoDims.avgTorsoWidth) + Math.abs(torsoDims.avgTorsoHeight)) /
-      2;
-    const avgSvg =
-      (Math.max(1, torsoDims.torsoSvgWidth) +
-        Math.max(1, torsoDims.torsoSvgHeight)) /
-      2;
-    const uniformScale = (avgTorso * 0.5) / avgSvg;
+    const headW = Math.max(earWidth * scale.x, 4);
+    const headH = headW * (svgH / Math.max(svgW, 1)) * scale.y;
+    const halfW = headW / 2;
+
+    // Map SVG corners to screen positions:
+    //   (0,    0) = top-left    → base - right*halfW + up*headH
+    //   (svgW, 0) = top-right   → base + right*halfW + up*headH
+    //   (0, svgH) = bottom-left → base - right*halfW
+    // Bottom-center (svgW/2, svgH) automatically maps to base.
+    const dst0: PointAnchor = {
+      x: base.x - right.x * halfW + up.x * headH,
+      y: base.y - right.y * halfW + up.y * headH,
+    };
+    const dst1: PointAnchor = {
+      x: base.x + right.x * halfW + up.x * headH,
+      y: base.y + right.y * halfW + up.y * headH,
+    };
+    const dst2: PointAnchor = {
+      x: base.x - right.x * halfW,
+      y: base.y - right.y * halfW,
+    };
+
+    const M = affineFrom3Points(
+      { x: 0, y: 0 },
+      { x: svgW, y: 0 },
+      { x: 0, y: svgH },
+      dst0,
+      dst1,
+      dst2,
+    );
+    if (!M) return false;
 
     ctx.save();
-    ctx.translate(midX, midY);
-    ctx.scale(uniformScale * scale.x, uniformScale * scale.y);
-    ctx.drawImage(img, -svgW / 2, -svgH / 1.2, svgW, svgH);
+    ctx.setTransform(M.a, M.b, M.c, M.d, M.e, M.f);
+    ctx.drawImage(img, 0, 0, svgW, svgH);
     ctx.restore();
     return true;
   } catch {
