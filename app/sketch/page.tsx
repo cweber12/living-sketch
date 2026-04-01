@@ -18,22 +18,24 @@ import {
 
 const GRID_ARMS_UP = `
   ".     .     .     head  head  .     .     ."
-  "lhand llarm luarm torso torso ruarm rlarm rhand"
+  "rhand rlarm ruarm torso torso luarm llarm lhand"
   ".     .     .     torso torso .     .     ."
-  ".     .     .     lulg  rulg  .     .     ."
-  ".     .     .     lllg  rllg  .     .     ."
-  ".     .     .     lfoot rfoot .     .     ."
+  ".     .     .     rulg  lulg  .     .     ."
+  ".     .     .     rllg  lllg  .     .     ."
+  ".     .     .     rfoot lfoot .     .     ."
 `;
 
 const GRID_ARMS_DOWN = `
   ".     head  head  ."
-  "luarm torso torso ruarm"
-  "llarm torso torso rlarm"
-  "lhand lulg  rulg  rhand"
-  ".     lllg  rllg  ."
-  ".     lfoot rfoot ."
+  "ruarm torso torso luarm"
+  "rlarm torso torso llarm"
+  "rhand rulg  lulg  lhand"
+  ".     rllg  lllg  ."
+  ".     rfoot lfoot ."
 `;
 
+// Grid areas: left body parts on screen-right, right on screen-left
+// (matches anatomical anterior view / camera mirror)
 const GRID_AREA: Record<BodyPartName, string> = {
   head: 'head',
   torso: 'torso',

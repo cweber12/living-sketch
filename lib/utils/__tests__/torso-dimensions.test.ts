@@ -38,4 +38,36 @@ describe('TorsoDimensions', () => {
     // 200 / 100 * 1.2 = 2.4
     expect(td.scaleFactorY).toBeCloseTo(2.4, 5);
   });
+
+  it('initialises facing as front (positive)', () => {
+    const td = new TorsoDimensions();
+    expect(td.facingSmoothed).toBe(1);
+    expect(td.isFront).toBe(true);
+  });
+
+  it('updateFacing smooths toward front for positive cross product', () => {
+    const td = new TorsoDimensions();
+    td.facingSmoothed = 0; // start at neutral
+    td.updateFacing(100); // positive → front
+    expect(td.facingSmoothed).toBeGreaterThan(0);
+    expect(td.isFront).toBe(true);
+  });
+
+  it('updateFacing smooths toward back for negative cross product', () => {
+    const td = new TorsoDimensions();
+    // Drive it firmly toward back
+    for (let i = 0; i < 30; i++) td.updateFacing(-100);
+    expect(td.facingSmoothed).toBeLessThan(0);
+    expect(td.isFront).toBe(false);
+  });
+
+  it('facing transitions smoothly without jumping', () => {
+    const td = new TorsoDimensions();
+    // Start front-facing
+    expect(td.facingSmoothed).toBe(1);
+    // Single back-facing update should not flip immediately
+    td.updateFacing(-100);
+    expect(td.facingSmoothed).toBeGreaterThan(0);
+    expect(td.isFront).toBe(true);
+  });
 });

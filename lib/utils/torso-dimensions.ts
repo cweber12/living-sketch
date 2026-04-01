@@ -13,8 +13,12 @@ export class TorsoDimensions {
   scaleFactorX = 1;
   scaleFactorY = 1;
 
+  /** Smoothed facing factor: positive = front-facing, negative = back-facing */
+  facingSmoothed = 1;
+
   private torsoAlpha = 0.1;
   private hipAlpha = 0.05;
+  private facingAlpha = 0.15;
   private initFlipFlag = false;
   private sameAfterFlipCount = 0;
   private confirmFlipFlag = false;
@@ -91,5 +95,18 @@ export class TorsoDimensions {
         this.hipAlpha * newWidth + (1 - this.hipAlpha) * this.avgHipWidth;
     }
     this._updateScaleFactorX();
+  }
+
+  /** Update facing direction from cross product of torso vectors.
+   *  Positive cross = front-facing, negative = back-facing. */
+  updateFacing(crossProduct: number) {
+    const target = crossProduct >= 0 ? 1 : -1;
+    this.facingSmoothed =
+      this.facingAlpha * target + (1 - this.facingAlpha) * this.facingSmoothed;
+  }
+
+  /** Whether the subject is currently front-facing. */
+  get isFront(): boolean {
+    return this.facingSmoothed >= 0;
   }
 }

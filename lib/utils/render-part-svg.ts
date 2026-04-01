@@ -1,7 +1,6 @@
 import type { LandmarkFrame, ShiftFactors, ScaleFactors } from '@/lib/types';
 import { ANCHOR_MAP } from '@/lib/constants';
 import { validateAnchors } from './validation-utils';
-import { getSvgSize } from './svg-utils';
 import {
   setTorsoAnchors,
   setHeadAnchors,
@@ -10,14 +9,7 @@ import {
   setLegAnchors,
   setFootAnchors,
 } from './set-anchors';
-import {
-  drawTorsoSvg,
-  drawHeadSvg,
-  drawArmSvg,
-  drawHandSvg,
-  drawLegSvg,
-  drawFootSvg,
-} from './drawing-utils';
+import { drawTorsoSvg, drawHeadSvg, drawSegmentSvg } from './drawing-utils';
 import { TorsoDimensions } from './torso-dimensions';
 import { EarDistance } from './ear-distance';
 
@@ -82,7 +74,7 @@ export function renderPartSvg(
     return drawHeadSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.headScale);
   }
 
-  /* Arms */
+  /* Arms — cross-width relative to shoulder width */
   if (isArm) {
     const a = setArmAnchors(
       part,
@@ -92,10 +84,17 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawArmSvg(rc.ctx, img, a, part, rc.torsoDims, rc.scales.armScale);
+    return drawSegmentSvg(
+      rc.ctx,
+      img,
+      a,
+      Math.abs(rc.torsoDims.avgTorsoWidth),
+      rc.torsoDims.torsoSvgWidth,
+      rc.scales.armScale,
+    );
   }
 
-  /* Hands */
+  /* Hands — cross-width relative to shoulder width */
   if (isHand) {
     const a = setHandAnchors(
       part,
@@ -105,20 +104,17 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    const { w, h } = getSvgSize(img);
-    const armsDown = h > w;
-    return drawHandSvg(
+    return drawSegmentSvg(
       rc.ctx,
       img,
       a,
-      armsDown,
-      part,
-      rc.torsoDims,
+      Math.abs(rc.torsoDims.avgTorsoWidth),
+      rc.torsoDims.torsoSvgWidth,
       rc.scales.handScale,
     );
   }
 
-  /* Legs */
+  /* Legs — cross-width relative to hip width */
   if (isLeg) {
     const a = setLegAnchors(
       part,
@@ -128,10 +124,17 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawLegSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.legScale);
+    return drawSegmentSvg(
+      rc.ctx,
+      img,
+      a,
+      Math.abs(rc.torsoDims.avgHipWidth),
+      rc.torsoDims.torsoSvgWidth,
+      rc.scales.legScale,
+    );
   }
 
-  /* Feet */
+  /* Feet — cross-width relative to hip width */
   if (isFoot) {
     const a = setFootAnchors(
       part,
@@ -141,7 +144,14 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawFootSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.footScale);
+    return drawSegmentSvg(
+      rc.ctx,
+      img,
+      a,
+      Math.abs(rc.torsoDims.avgHipWidth),
+      rc.torsoDims.torsoSvgWidth,
+      rc.scales.footScale,
+    );
   }
 
   return false;
@@ -149,7 +159,7 @@ export function renderPartSvg(
 
 /**
  * Render ALL body parts for a single frame.
- * Renders torso first, then head/limbs — order matters for z-layering.
+ * Detects facing direction for front/back SVG selection and z-order.
  */
 export function renderFrame(
   scaledLandmarks: LandmarkFrame,
@@ -158,14 +168,54 @@ export function renderFrame(
 ) {
   rc.ctx.clearRect(0, 0, rc.width, rc.height);
 
-  // Draw torso first (back layer)
-  if (svgImages.torso) {
-    renderPartSvg('torso', svgImages.torso, scaledLandmarks, rc);
+  // Detect facing direction via cross product of torso vectors
+  const ls = scaledLandmarks[11]; // left shoulder
+  const rs = scaledLandmarks[12]; // right shoulder
+  const lh = scaledLandmarks[23]; // left hip
+  if (ls && rs && lh) {
+    const v1x = rs.x - ls.x;
+    const v1y = rs.y - ls.y;
+    const v2x = lh.x - ls.x;
+    const v2y = lh.y - ls.y;
+    const cross = v1x * v2y - v1y * v2x;
+    rc.torsoDims.updateFacing(cross);
   }
 
-  // Then remaining parts
-  const parts = Object.keys(svgImages).filter((p) => p !== 'torso');
-  for (const part of parts) {
-    renderPartSvg(part, svgImages[part], scaledLandmarks, rc);
+  const facingFront = rc.torsoDims.isFront;
+
+  // Pick front or back SVG for a given part
+  const getImg = (part: string): HTMLImageElement | undefined => {
+    if (!facingFront) {
+      const backKey = `${part}-back`;
+      if (svgImages[backKey]) return svgImages[backKey];
+    }
+    return svgImages[part];
+  };
+
+  // Canonical part list from ANCHOR_MAP (excludes '-back' alternate keys)
+  const partKeys = Object.keys(ANCHOR_MAP) as (keyof typeof ANCHOR_MAP)[];
+
+  if (facingFront) {
+    // Front-facing: torso first (background), then limbs on top
+    const torsoImg = getImg('torso');
+    if (torsoImg) {
+      renderPartSvg('torso', torsoImg, scaledLandmarks, rc);
+    }
+    for (const part of partKeys) {
+      if (part === 'torso') continue;
+      const img = getImg(part);
+      if (img) renderPartSvg(part, img, scaledLandmarks, rc);
+    }
+  } else {
+    // Back-facing: limbs first, then torso on top (foreground)
+    for (const part of partKeys) {
+      if (part === 'torso') continue;
+      const img = getImg(part);
+      if (img) renderPartSvg(part, img, scaledLandmarks, rc);
+    }
+    const torsoImg = getImg('torso');
+    if (torsoImg) {
+      renderPartSvg('torso', torsoImg, scaledLandmarks, rc);
+    }
   }
 }

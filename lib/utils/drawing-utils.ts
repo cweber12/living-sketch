@@ -80,98 +80,72 @@ export function drawHeadSvg(
   }
 }
 
-/* ── Arms (horizontal orientation) ───────────────────────────────────── */
-export function drawArmSvg(
+/* ── Segment-based parts (arms, hands, legs, feet) ───────────────────── */
+
+const MIN_CROSS_WIDTH = 5; // minimum cross-section width in screen pixels
+
+/**
+ * Unified drawing for all segment-based body parts using affine transform.
+ *
+ * Automatically detects SVG orientation:
+ * - Vertical (h >= w): top edge → from anchor, bottom edge → to anchor
+ * - Horizontal (w > h): left edge → from anchor, right edge → to anchor
+ *
+ * @param referenceWidth - Body reference width in screen pixels
+ *   (abs(avgTorsoWidth) for arms/hands, abs(avgHipWidth) for legs/feet)
+ * @param torsoSvgWidth - Torso SVG pixel width (for proportional scaling)
+ */
+export function drawSegmentSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   anchors: SegmentAnchor,
-  part: string,
-  torsoDims: TorsoDimensions,
+  referenceWidth: number,
+  torsoSvgWidth: number,
   scale: ScaleVector,
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
     const { from, to } = anchors;
-    const isLeft = part.startsWith('left');
+
     const dx = to.x - from.x;
     const dy = to.y - from.y;
-    const angle = Math.atan2(dy, dx);
-    const length = Math.hypot(dx, dy);
-
-    const scaleX = length / Math.max(1, svgW);
-    const scaleY =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
-
-    ctx.save();
-    ctx.translate(from.x, from.y);
-    ctx.rotate(angle);
-    if (!isLeft) {
-      ctx.scale(-scaleX * scale.x, -scaleY * scale.y);
-      ctx.drawImage(img, -svgW, -svgH / 2, svgW, svgH);
-    } else {
-      ctx.scale(scaleX * scale.x, scaleY * scale.y);
-      ctx.drawImage(img, 0, -svgH / 2, svgW, svgH);
-    }
-    ctx.restore();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/* ── Hands (affine transform wrist → finger) ─────────────────────────── */
-export function drawHandSvg(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  anchors: SegmentAnchor,
-  armsDown: boolean,
-  _part: string,
-  torsoDims: TorsoDimensions,
-  scale: ScaleVector,
-): boolean {
-  try {
-    const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from: wrist, to: finger } = anchors;
-
-    const dx = finger.x - wrist.x;
-    const dy = finger.y - wrist.y;
     const segLen = Math.hypot(dx, dy);
     if (segLen < 1) return false;
 
-    // Perpendicular unit vector
+    // Perpendicular unit vector (90° CCW rotation of direction)
     const px = -dy / segLen;
     const py = dx / segLen;
 
-    // Cross-section scale from averaged torso proportions
-    const crossScale =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
+    // Detect SVG orientation and compute cross-section width
+    const isVertical = svgH >= svgW;
+    const crossDim = isVertical ? svgW : svgH;
+    const ratio = Math.abs(referenceWidth) / Math.max(1, torsoSvgWidth);
+    const crossWidth = Math.max(crossDim * ratio, MIN_CROSS_WIDTH);
+    const hw = (crossWidth / 2) * scale.x;
 
-    // Source corners in SVG-pixel space
+    // Apply length scale factor
+    const scaledTo: PointAnchor = {
+      x: from.x + dx * scale.y,
+      y: from.y + dy * scale.y,
+    };
+
+    // Source corners (always SVG rectangle corners)
     const src0: PointAnchor = { x: 0, y: 0 };
     const src1: PointAnchor = { x: svgW, y: 0 };
     const src2: PointAnchor = { x: 0, y: svgH };
+
     let dst0: PointAnchor, dst1: PointAnchor, dst2: PointAnchor;
 
-    if (armsDown) {
-      // SVG authored vertically (h > w): top→wrist, bottom→finger
-      const hw = (svgW / 2) * crossScale * scale.x;
-      dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
-      dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
-      dst2 = { x: finger.x - px * hw, y: finger.y - py * hw };
+    if (isVertical) {
+      // SVG top → from, SVG bottom → to (y-axis along segment)
+      dst0 = { x: from.x + px * hw, y: from.y + py * hw };
+      dst1 = { x: from.x - px * hw, y: from.y - py * hw };
+      dst2 = { x: scaledTo.x + px * hw, y: scaledTo.y + py * hw };
     } else {
-      // SVG authored horizontally (w >= h): left→wrist, right→finger
-      const hh = (svgH / 2) * crossScale * scale.y;
-      dst0 = { x: wrist.x + px * hh, y: wrist.y + py * hh };
-      dst1 = { x: finger.x + px * hh, y: finger.y + py * hh };
-      dst2 = { x: wrist.x - px * hh, y: wrist.y - py * hh };
+      // SVG left → from, SVG right → to (x-axis along segment)
+      dst0 = { x: from.x + px * hw, y: from.y + py * hw };
+      dst1 = { x: scaledTo.x + px * hw, y: scaledTo.y + py * hw };
+      dst2 = { x: from.x - px * hw, y: from.y - py * hw };
     }
 
     const M = affineFrom3Points(src0, src1, src2, dst0, dst1, dst2);
@@ -180,76 +154,6 @@ export function drawHandSvg(
     ctx.save();
     ctx.setTransform(M.a, M.b, M.c, M.d, M.e, M.f);
     ctx.drawImage(img, 0, 0, svgW, svgH);
-    ctx.restore();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/* ── Legs ─────────────────────────────────────────────────────────────── */
-export function drawLegSvg(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  anchors: SegmentAnchor,
-  torsoDims: TorsoDimensions,
-  scale: ScaleVector,
-): boolean {
-  try {
-    const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from, to } = anchors;
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const angle = Math.atan2(dy, dx);
-    const length = Math.hypot(dx, dy);
-
-    const scaleY = length / Math.max(1, svgH);
-    const scaleX =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
-
-    ctx.save();
-    ctx.translate(from.x, from.y);
-    ctx.rotate(angle - Math.PI / 2);
-    ctx.scale(scaleX * scale.x, scaleY * scale.y);
-    ctx.drawImage(img, -svgW / 2, 0, svgW, svgH);
-    ctx.restore();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/* ── Feet ─────────────────────────────────────────────────────────────── */
-export function drawFootSvg(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  anchors: SegmentAnchor,
-  torsoDims: TorsoDimensions,
-  scale: ScaleVector,
-): boolean {
-  try {
-    const { w: svgW, h: svgH } = getSvgSize(img);
-    const { from, to } = anchors;
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const angle = Math.atan2(dy, dx);
-
-    const scaleY =
-      (Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-      Math.max(1, torsoDims.torsoSvgHeight);
-    const scaleX =
-      (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-      Math.max(1, torsoDims.torsoSvgWidth);
-
-    ctx.save();
-    ctx.translate(from.x, from.y);
-    ctx.rotate(angle - Math.PI / 2);
-    ctx.scale(scaleX * scale.x, scaleY * scale.y);
-    ctx.drawImage(img, -svgW / 2, 0, svgW, svgH);
     ctx.restore();
     return true;
   } catch {

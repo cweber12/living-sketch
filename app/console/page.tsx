@@ -104,15 +104,21 @@ export default function ConsolePage() {
       const data = await res.json();
       const raw: Record<string, string> = data.images ?? {};
 
-      // Normalize keys: "head-front" / "torso-back" → "head" / "torso"
-      // Prefer front-side images when both exist.
+      // Normalize keys: "head-front" → "head", "torso-back" → "torso-back"
+      // Front images use plain part names; back images keep the "-back" suffix.
       const normalized: Record<string, string> = {};
       for (const [key, value] of Object.entries(raw)) {
         const match = key.match(/^(.+)-(front|back)$/);
-        const partName = match ? match[1] : key;
-        const side = match ? match[2] : 'front';
-        if (!normalized[partName] || side === 'front') {
-          normalized[partName] = value;
+        if (match) {
+          const partName = match[1];
+          const side = match[2];
+          if (side === 'front') {
+            normalized[partName] = value;
+          } else {
+            normalized[`${partName}-back`] = value;
+          }
+        } else {
+          normalized[key] = value;
         }
       }
 
