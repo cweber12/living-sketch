@@ -35,7 +35,7 @@ export interface SegmentAnchor {
   to: PointAnchor;
 }
 
-/** Fully-computed head placement anchor — derived from shoulders, hips, and ears. */
+/** Fully-computed head placement anchor — derived from shoulders, hips, ears, and nose. */
 export interface HeadAnchor {
   /** Bottom-center of the head SVG; maps to the shoulder midpoint. */
   base: PointAnchor;
@@ -45,6 +45,8 @@ export interface HeadAnchor {
   up: PointAnchor;
   /** Smoothed ear-to-ear distance in screen pixels (head width reference). */
   earWidth: number;
+  /** Distance from nose to shoulder midpoint in screen pixels (head height reference). */
+  noseToShoulderDist: number;
 }
 
 export type PartAnchors = QuadAnchor | SegmentAnchor | HeadAnchor;

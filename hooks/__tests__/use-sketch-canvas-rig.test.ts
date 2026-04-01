@@ -120,7 +120,7 @@ describe('useSketchCanvasRig', () => {
 
     // Undo after clearAll should do nothing (stack was cleared)
     act(() => {
-      result.current.undo('front', 'head');
+      result.current.undo();
     });
     // putImageData should not have been called since the stack was emptied
     expect(c1.ctx.putImageData).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe('useSketchCanvasRig', () => {
 
     // Now undo — should restore that snapshot
     act(() => {
-      result.current.undo(side, part);
+      result.current.undo();
     });
 
     expect(mock.ctx.putImageData).toHaveBeenCalledWith(
@@ -167,7 +167,7 @@ describe('useSketchCanvasRig', () => {
     });
 
     act(() => {
-      result.current.undo(side, part);
+      result.current.undo();
     });
 
     expect(mock.ctx.putImageData).not.toHaveBeenCalled();
@@ -193,7 +193,7 @@ describe('useSketchCanvasRig', () => {
     for (let i = 0; i < 41; i++) {
       const callsBefore = mock.ctx.putImageData.mock.calls.length;
       act(() => {
-        result.current.undo(side, part);
+        result.current.undo();
       });
       if (mock.ctx.putImageData.mock.calls.length > callsBefore) {
         undoCount++;

@@ -67,6 +67,7 @@ export function setTorsoAnchors(
 export function setHeadAnchors(
   scaledLandmarks: LandmarkFrame,
   map: {
+    nose: number;
     leftEar: number;
     rightEar: number;
     leftShoulder: number;
@@ -76,6 +77,7 @@ export function setHeadAnchors(
   earDist: EarDistance,
   shifts: ShiftFactors,
 ): HeadAnchor | undefined {
+  const nose = kp(scaledLandmarks, map.nose);
   const leftEar = kp(scaledLandmarks, map.leftEar);
   const rightEar = kp(scaledLandmarks, map.rightEar);
   const leftShoulder = kp(scaledLandmarks, map.leftShoulder);
@@ -93,8 +95,15 @@ export function setHeadAnchors(
   const s = shifts.headShift;
 
   // Shoulder midpoint (bottom-center anchor), shifted by headShift
-  const baseX = (leftShoulder.x + rightShoulder.x) / 2 + s.x * tw;
-  const baseY = (leftShoulder.y + rightShoulder.y) / 2 + s.y * th;
+  const shoulderMidX = (leftShoulder.x + rightShoulder.x) / 2;
+  const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+  const baseX = shoulderMidX + s.x * tw;
+  const baseY = shoulderMidY + s.y * th;
+
+  // Nose-to-shoulder distance drives head height
+  const noseToShoulderDist = valid(nose)
+    ? Math.hypot(nose.x - shoulderMidX, nose.y - shoulderMidY)
+    : earDist.avgEarDistance; // fallback if nose not detected
 
   // Torso right unit vector (left shoulder → right shoulder)
   const sdx = rightShoulder.x - leftShoulder.x;
@@ -131,6 +140,7 @@ export function setHeadAnchors(
     right: { x: rx, y: ry },
     up: { x: ux, y: uy },
     earWidth: earDist.avgEarDistance,
+    noseToShoulderDist,
   };
 }
 

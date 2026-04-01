@@ -18,6 +18,8 @@ export function useSketchCanvasRig() {
   // One ref per canvas (28 total: 14 parts × 2 sides)
   const refs = useRef<Map<CanvasKey, HTMLCanvasElement | null>>(new Map());
   const undoStacks = useRef<Map<CanvasKey, ImageData[]>>(new Map());
+  // Global ordered history — every stroke from every canvas in draw order
+  const globalHistory = useRef<Array<{ side: Side; part: BodyPartName }>>([]);
 
   /** Called from the canvas component after each canvas mounts */
   const setCanvasRef = useCallback(
@@ -42,10 +44,16 @@ export function useSketchCanvasRig() {
     // Keep at most 40 steps per canvas to cap memory
     if (stack.length > 40) stack.shift();
     undoStacks.current.set(key, stack);
+    // Record in global history
+    globalHistory.current.push({ side, part });
+    if (globalHistory.current.length > 40 * 28) globalHistory.current.shift();
   }, []);
 
-  /** Restore the last snapshot for a single part/side */
-  const undo = useCallback((side: Side, part: BodyPartName) => {
+  /** Restore the last snapshot in global draw order (cross-canvas undo) */
+  const undo = useCallback(() => {
+    const entry = globalHistory.current.pop();
+    if (!entry) return;
+    const { side, part } = entry;
     const ctx = getContext(side, part);
     if (!ctx) return;
     const key = makeKey(side, part);

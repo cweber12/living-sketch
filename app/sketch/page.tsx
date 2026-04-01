@@ -235,7 +235,6 @@ export default function SketchPage() {
   const effectiveArms: ArmPose = isMobile ? 'down' : armPose;
   const focusPart = PARTS_ORDER[focusIdx];
 
-  const lastDrawnRef = useRef<{ side: Side; part: BodyPartName } | null>(null);
   const {
     setCanvasRef,
     pushUndoSnapshot,
@@ -261,15 +260,13 @@ export default function SketchPage() {
 
   const handleStrokeStart = useCallback(
     (strokeSide: Side, part: BodyPartName) => {
-      lastDrawnRef.current = { side: strokeSide, part };
       pushUndoSnapshot(strokeSide, part);
     },
     [pushUndoSnapshot],
   );
 
   const handleUndo = useCallback(() => {
-    if (!lastDrawnRef.current) return;
-    undo(lastDrawnRef.current.side, lastDrawnRef.current.part);
+    undo();
   }, [undo]);
 
   const handleSave = useCallback(async () => {

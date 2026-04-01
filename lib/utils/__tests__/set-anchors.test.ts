@@ -52,7 +52,7 @@ describe('setTorsoAnchors', () => {
 });
 
 describe('setHeadAnchors', () => {
-  it('returns HeadAnchor with base, right, up, earWidth', () => {
+  it('returns HeadAnchor with base, right, up, earWidth, noseToShoulderDist', () => {
     const frame = makeFrame();
     const td = new TorsoDimensions();
     td.updateAvgTorsoWidth(100);
@@ -71,6 +71,8 @@ describe('setHeadAnchors', () => {
     expect(result!.right).toHaveProperty('x');
     expect(result!.up).toHaveProperty('y');
     expect(typeof result!.earWidth).toBe('number');
+    expect(typeof result!.noseToShoulderDist).toBe('number');
+    expect(result!.noseToShoulderDist).toBeGreaterThan(0);
   });
 });
 
