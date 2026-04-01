@@ -9,7 +9,14 @@ import {
   setLegAnchors,
   setFootAnchors,
 } from './set-anchors';
-import { drawTorsoSvg, drawHeadSvg, drawSegmentSvg } from './drawing-utils';
+import {
+  drawTorsoSvg,
+  drawHeadSvg,
+  drawSegmentSvg,
+  drawHandSvg,
+  drawLegSvg,
+  drawFootSvg,
+} from './drawing-utils';
 import { TorsoDimensions } from './torso-dimensions';
 import { EarDistance } from './ear-distance';
 import type { PointAnchor, SegmentAnchor, QuadAnchor } from '@/lib/types';
@@ -93,14 +100,13 @@ export function renderPartSvg(
       rc.ctx,
       img,
       a,
-      Math.abs(rc.torsoDims.avgTorsoWidth),
-      rc.torsoDims.torsoSvgWidth,
+      rc.torsoDims,
       rc.scales.armScale,
       rc.armsDown,
     );
   }
 
-  /* Hands — cross-width relative to shoulder width */
+  /* Hands — dedicated affine transform with armsDown toggle */
   if (isHand) {
     const a = setHandAnchors(
       part,
@@ -110,18 +116,18 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawSegmentSvg(
+    return drawHandSvg(
       rc.ctx,
       img,
       a,
-      Math.abs(rc.torsoDims.avgTorsoWidth),
-      rc.torsoDims.torsoSvgWidth,
-      rc.scales.handScale,
       rc.armsDown,
+      part,
+      rc.torsoDims,
+      rc.scales.handScale,
     );
   }
 
-  /* Legs — cross-width relative to hip width */
+  /* Legs — dedicated rotate+scale drawing */
   if (isLeg) {
     const a = setLegAnchors(
       part,
@@ -131,17 +137,10 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawSegmentSvg(
-      rc.ctx,
-      img,
-      a,
-      Math.abs(rc.torsoDims.avgHipWidth),
-      rc.torsoDims.torsoSvgWidth,
-      rc.scales.legScale,
-    );
+    return drawLegSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.legScale);
   }
 
-  /* Feet — cross-width relative to hip width */
+  /* Feet — dedicated rotate+scale drawing */
   if (isFoot) {
     const a = setFootAnchors(
       part,
@@ -151,14 +150,7 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawSegmentSvg(
-      rc.ctx,
-      img,
-      a,
-      Math.abs(rc.torsoDims.avgHipWidth),
-      rc.torsoDims.torsoSvgWidth,
-      rc.scales.footScale,
-    );
+    return drawFootSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.footScale);
   }
 
   return false;

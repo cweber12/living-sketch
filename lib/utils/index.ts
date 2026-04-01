@@ -2,7 +2,6 @@ export * from './pose-utils';
 export * from './svg-utils';
 export * from './drawing-utils';
 export * from './set-anchors';
-export * from './calc-foot-vectors';
 export * from './validation-utils';
 export * from './render-part-svg';
 export * from './torso-dimensions';
