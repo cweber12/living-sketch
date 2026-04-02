@@ -33,6 +33,8 @@ export interface RenderContext {
   armsDown: boolean;
   /** When true, draw anchor points and vectors over SVG parts */
   showAnchors?: boolean;
+  /** Optional background fill colour (CSS colour string). */
+  bgColor?: string;
 }
 
 /**
@@ -158,7 +160,9 @@ export function renderPartSvg(
 
 /**
  * Render ALL body parts for a single frame.
- * Detects facing direction for front/back SVG selection and z-order.
+ * Uses per-section facing direction (upper body vs lower body) for accurate
+ * front/back SVG selection. Lower arm follows upper arm canvas; lower leg
+ * follows lower body.
  */
 export function renderFrame(
   scaledLandmarks: LandmarkFrame,
@@ -167,24 +171,79 @@ export function renderFrame(
 ) {
   rc.ctx.clearRect(0, 0, rc.width, rc.height);
 
-  // Detect facing direction via cross product of torso vectors
+  // Fill background colour when specified
+  if (rc.bgColor) {
+    rc.ctx.fillStyle = rc.bgColor;
+    rc.ctx.fillRect(0, 0, rc.width, rc.height);
+  }
+
   const ls = scaledLandmarks[11]; // left shoulder
   const rs = scaledLandmarks[12]; // right shoulder
   const lh = scaledLandmarks[23]; // left hip
-  if (ls && rs && lh) {
-    const v1x = rs.x - ls.x;
-    const v1y = rs.y - ls.y;
-    const v2x = lh.x - ls.x;
-    const v2y = lh.y - ls.y;
-    const cross = v1x * v2y - v1y * v2x;
-    rc.torsoDims.updateFacing(cross);
+  const rh = scaledLandmarks[24]; // right hip
+
+  // Update per-section facing (mirrored view: left x > right x = front)
+  if (ls && rs) {
+    rc.torsoDims.updateUpperBodyFacing(ls.x, rs.x);
+    // Keep cross-product for backward-compat isFront getter
+    if (lh) {
+      const v1x = rs.x - ls.x;
+      const v1y = rs.y - ls.y;
+      const v2x = lh.x - ls.x;
+      const v2y = lh.y - ls.y;
+      rc.torsoDims.updateFacing(v1x * v2y - v1y * v2x);
+    }
+  }
+  if (lh && rh) {
+    rc.torsoDims.updateLowerBodyFacing(lh.x, rh.x);
   }
 
-  const facingFront = rc.torsoDims.isFront;
+  // Update arm same-direction tracking for lower-arm canvas flip
+  const leftUpperArmDx =
+    (scaledLandmarks[13]?.x ?? 0) - (scaledLandmarks[11]?.x ?? 0);
+  const leftLowerArmDx =
+    (scaledLandmarks[15]?.x ?? 0) - (scaledLandmarks[13]?.x ?? 0);
+  rc.torsoDims.updateLeftArmSameDir(leftUpperArmDx, leftLowerArmDx);
+
+  const rightUpperArmDx =
+    (scaledLandmarks[14]?.x ?? 0) - (scaledLandmarks[12]?.x ?? 0);
+  const rightLowerArmDx =
+    (scaledLandmarks[16]?.x ?? 0) - (scaledLandmarks[14]?.x ?? 0);
+  rc.torsoDims.updateRightArmSameDir(rightUpperArmDx, rightLowerArmDx);
+
+  const upperFront = rc.torsoDims.isUpperBodyFront;
+  const lowerFront = rc.torsoDims.isLowerBodyFront;
+
+  /**
+   * Per-part facing:
+   * - Head, torso, upper arms, hands → upper body facing
+   * - Lower arm → upper arm facing; if arm segments point same direction,
+   *   use opposite canvas (anatomically correct for straight arm view)
+   * - Legs, feet → lower body facing
+   */
+  function getFacingForPart(part: string): boolean {
+    switch (part) {
+      case 'leftLowerArm':
+        return rc.torsoDims.isLeftArmSameDir ? !upperFront : upperFront;
+      case 'rightLowerArm':
+        return rc.torsoDims.isRightArmSameDir ? !upperFront : upperFront;
+      case 'head':
+      case 'torso':
+      case 'leftUpperArm':
+      case 'rightUpperArm':
+      case 'leftHand':
+      case 'rightHand':
+        return upperFront;
+      default:
+        // All legs and feet use lower body facing
+        return lowerFront;
+    }
+  }
 
   // Pick front or back SVG for a given part
   const getImg = (part: string): HTMLImageElement | undefined => {
-    if (!facingFront) {
+    const isFront = getFacingForPart(part);
+    if (!isFront) {
       const backKey = `${part}-back`;
       if (svgImages[backKey]) return svgImages[backKey];
     }
@@ -194,7 +253,7 @@ export function renderFrame(
   // Canonical part list from ANCHOR_MAP (excludes '-back' alternate keys)
   const partKeys = Object.keys(ANCHOR_MAP) as (keyof typeof ANCHOR_MAP)[];
 
-  if (facingFront) {
+  if (upperFront) {
     // Front-facing: torso first (background), then limbs on top
     const torsoImg = getImg('torso');
     if (torsoImg) {

@@ -73,15 +73,8 @@ export function setHeadAnchors(
 ): HeadAnchor | undefined {
   const leftEar = kp(scaledLandmarks, map.leftAnchor);
   const rightEar = kp(scaledLandmarks, map.rightAnchor);
-  const leftShoulder = kp(scaledLandmarks, 11);
-  const rightShoulder = kp(scaledLandmarks, 12);
-  if (
-    !valid(leftEar) ||
-    !valid(rightEar) ||
-    !valid(leftShoulder) ||
-    !valid(rightShoulder)
-  )
-    return undefined;
+  const nose = kp(scaledLandmarks, 0); // NOSE is MediaPipe landmark 0
+  if (!valid(leftEar) || !valid(rightEar)) return undefined;
 
   earDist.updateAvgEarDistance(
     Math.hypot(rightEar.x - leftEar.x, rightEar.y - leftEar.y),
@@ -91,13 +84,20 @@ export function setHeadAnchors(
   const th = torsoDims.avgTorsoHeight * SHIFT_FACTOR;
   const s = shifts.headShift;
 
-  const baseX = (leftShoulder.x + rightShoulder.x) / 2;
-  const baseY = (leftShoulder.y + rightShoulder.y) / 2;
+  // Ear midpoint; blend with nose to improve head-centre estimate
+  const earMidX = (leftEar.x + rightEar.x) / 2;
+  const earMidY = (leftEar.y + rightEar.y) / 2;
+  let centerX = earMidX;
+  let centerY = earMidY;
+  if (valid(nose)) {
+    centerX = earMidX * 0.75 + nose.x * 0.25;
+    centerY = earMidY * 0.75 + nose.y * 0.25;
+  }
 
   return {
     leftAnchor: { x: leftEar.x + s.x * tw, y: leftEar.y + s.y * th },
     rightAnchor: { x: rightEar.x + s.x * tw, y: rightEar.y + s.y * th },
-    baseAnchor: { x: baseX + s.x * tw, y: baseY + s.y * th },
+    baseAnchor: { x: centerX + s.x * tw, y: centerY + s.y * th },
   };
 }
 

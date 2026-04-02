@@ -110,6 +110,91 @@ export class TorsoDimensions {
     return this.facingSmoothed >= 0;
   }
 
+  // ── Per-section facing: upper body (shoulders) and lower body (hips) ──
+
+  /** Smoothed upper-body facing (shoulders). Positive = front-facing. */
+  upperBodyFacingSmoothed = 1;
+  /** Smoothed lower-body facing (hips). Positive = front-facing. */
+  lowerBodyFacingSmoothed = 1;
+
+  private upperFacingAlpha = 0.15;
+  private lowerFacingAlpha = 0.15;
+
+  /**
+   * Update upper-body facing from shoulder x-positions.
+   * Mirror view convention: left shoulder x > right shoulder x = front.
+   */
+  updateUpperBodyFacing(lsX: number, rsX: number): void {
+    const target = lsX > rsX ? 1 : -1;
+    this.upperBodyFacingSmoothed =
+      this.upperFacingAlpha * target +
+      (1 - this.upperFacingAlpha) * this.upperBodyFacingSmoothed;
+  }
+
+  /**
+   * Update lower-body facing from hip x-positions.
+   * Mirror view convention: left hip x > right hip x = front.
+   */
+  updateLowerBodyFacing(lhX: number, rhX: number): void {
+    const target = lhX > rhX ? 1 : -1;
+    this.lowerBodyFacingSmoothed =
+      this.lowerFacingAlpha * target +
+      (1 - this.lowerFacingAlpha) * this.lowerBodyFacingSmoothed;
+  }
+
+  /** Whether the upper body (torso, arms, head) is currently front-facing. */
+  get isUpperBodyFront(): boolean {
+    return this.upperBodyFacingSmoothed >= 0;
+  }
+
+  /** Whether the lower body (legs, feet) is currently front-facing. */
+  get isLowerBodyFront(): boolean {
+    return this.lowerBodyFacingSmoothed >= 0;
+  }
+
+  // ── Arm same-direction tracking (smoothed) ──
+
+  /** Smoothed same-direction coefficient for left arm. Positive = same dir. */
+  leftArmSameDirSmoothed = -0.5;
+  /** Smoothed same-direction coefficient for right arm. Positive = same dir. */
+  rightArmSameDirSmoothed = -0.5;
+
+  private armDirAlpha = 0.2;
+
+  /**
+   * Update left-arm same-direction tracking.
+   * @param upperDx - x component of upper-arm vector (shoulder→elbow)
+   * @param lowerDx - x component of lower-arm vector (elbow→wrist)
+   */
+  updateLeftArmSameDir(upperDx: number, lowerDx: number): void {
+    const target = upperDx * lowerDx > 0 ? 1 : -1;
+    this.leftArmSameDirSmoothed =
+      this.armDirAlpha * target +
+      (1 - this.armDirAlpha) * this.leftArmSameDirSmoothed;
+  }
+
+  /**
+   * Update right-arm same-direction tracking.
+   * @param upperDx - x component of upper-arm vector (shoulder→elbow)
+   * @param lowerDx - x component of lower-arm vector (elbow→wrist)
+   */
+  updateRightArmSameDir(upperDx: number, lowerDx: number): void {
+    const target = upperDx * lowerDx > 0 ? 1 : -1;
+    this.rightArmSameDirSmoothed =
+      this.armDirAlpha * target +
+      (1 - this.armDirAlpha) * this.rightArmSameDirSmoothed;
+  }
+
+  /** Whether left upper arm and lower arm point in the same horizontal direction. */
+  get isLeftArmSameDir(): boolean {
+    return this.leftArmSameDirSmoothed >= 0;
+  }
+
+  /** Whether right upper arm and lower arm point in the same horizontal direction. */
+  get isRightArmSameDir(): boolean {
+    return this.rightArmSameDirSmoothed >= 0;
+  }
+
   /**
    * Uniform cross-section scale factor (averaged from width + height ratios).
    * Used by segment-based drawing functions to scale SVG cross-widths.

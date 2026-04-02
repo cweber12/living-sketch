@@ -140,3 +140,96 @@ export function filterAndInterpolateFrames(
 
   return result;
 }
+
+// ── Per-landmark interpolation ─────────────────────────────────────────────
+
+/**
+ * Interpolate individual low-confidence landmarks within otherwise-valid frames.
+ *
+ * Where a specific keypoint has `score < minConfidence` in a frame, replace it
+ * with a linear interpolation from the nearest neighbouring frames where that
+ * keypoint has sufficient confidence.  Handles leading/trailing gaps by clamping
+ * to the nearest good neighbour.
+ *
+ * Run this AFTER `filterAndInterpolateFrames` to fill per-landmark holes left
+ * by partial occlusion (e.g. hand out of frame), before landmark smoothing.
+ */
+export function interpolateLowConfidenceLandmarks(
+  frames: LandmarkFrame[],
+  minConfidence = DEFAULT_MIN_CONFIDENCE,
+): LandmarkFrame[] {
+  if (frames.length === 0) return [];
+
+  const numKeypoints = frames[0].length;
+  // Deep-copy so we don't mutate the input
+  const result: LandmarkFrame[] = frames.map((f) => f.map((kp) => ({ ...kp })));
+
+  for (let kpIdx = 0; kpIdx < numKeypoints; kpIdx++) {
+    // Collect frame indices where this keypoint has sufficient confidence
+    const goodFrames: number[] = [];
+    for (let fi = 0; fi < frames.length; fi++) {
+      const kp = frames[fi][kpIdx];
+      if (kp && (kp.score === undefined || kp.score >= minConfidence)) {
+        goodFrames.push(fi);
+      }
+    }
+
+    if (goodFrames.length === 0) continue; // no good data — leave as-is
+
+    for (let fi = 0; fi < frames.length; fi++) {
+      const kp = frames[fi][kpIdx];
+      if (kp && (kp.score === undefined || kp.score >= minConfidence)) {
+        continue; // already good
+      }
+
+      // Binary search for prev good frame
+      let prevGood = -1;
+      let lo = 0;
+      let hi = goodFrames.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (goodFrames[mid] < fi) {
+          prevGood = goodFrames[mid];
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+
+      // Binary search for next good frame
+      let nextGood = -1;
+      lo = 0;
+      hi = goodFrames.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (goodFrames[mid] > fi) {
+          nextGood = goodFrames[mid];
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+
+      if (prevGood >= 0 && nextGood >= 0) {
+        const t = (fi - prevGood) / (nextGood - prevGood);
+        const a = frames[prevGood][kpIdx];
+        const b = frames[nextGood][kpIdx];
+        result[fi][kpIdx] = {
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t,
+          z:
+            a.z !== undefined && b.z !== undefined
+              ? a.z + (b.z - a.z) * t
+              : a.z,
+          score: Math.min(a.score ?? 0, b.score ?? 0),
+        };
+      } else if (prevGood >= 0) {
+        result[fi][kpIdx] = { ...frames[prevGood][kpIdx] };
+      } else {
+        result[fi][kpIdx] = { ...frames[nextGood][kpIdx] };
+      }
+    }
+  }
+
+  return result;
+}

@@ -17,8 +17,13 @@ interface AnimationCanvasProps {
   playing: boolean;
   width: number;
   height: number;
-  armsDown: boolean;
+  /** @deprecated Arms are always rendered in arms-up (horizontal) orientation. */
+  armsDown?: boolean;
   showAnchors?: boolean;
+  /** CSS colour string for the canvas background (default: transparent). */
+  bgColor?: string;
+  /** Visual scale multiplier applied via CSS (default: 1). Does not affect render resolution. */
+  previewScale?: number;
 }
 
 export default function AnimationCanvas({
@@ -29,8 +34,10 @@ export default function AnimationCanvas({
   playing,
   width,
   height,
-  armsDown,
+  armsDown = false,
   showAnchors,
+  bgColor,
+  previewScale = 1,
 }: AnimationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameIdx = useRef(0);
@@ -61,13 +68,24 @@ export default function AnimationCanvas({
           scales,
           armsDown,
           showAnchors,
+          bgColor,
         });
 
         frameIdx.current = (frameIdx.current + 1) % frames.length;
       }
       rafId.current = requestAnimationFrame((t) => drawRef.current?.(t));
     };
-  }, [frames, svgImages, shifts, scales, width, height, armsDown, showAnchors]);
+  }, [
+    frames,
+    svgImages,
+    shifts,
+    scales,
+    width,
+    height,
+    armsDown,
+    showAnchors,
+    bgColor,
+  ]);
 
   // Keep torso SVG dimensions in sync with loaded images
   useEffect(() => {
@@ -116,6 +134,7 @@ export default function AnimationCanvas({
       scales,
       armsDown,
       showAnchors,
+      bgColor,
     });
   }, [
     shifts,
@@ -127,6 +146,7 @@ export default function AnimationCanvas({
     height,
     armsDown,
     showAnchors,
+    bgColor,
   ]);
 
   return (
@@ -134,7 +154,12 @@ export default function AnimationCanvas({
       ref={canvasRef}
       width={width}
       height={height}
-      className="rounded-lg border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-950"
+      style={{
+        width: `${width * previewScale}px`,
+        height: `${height * previewScale}px`,
+        background: bgColor ?? undefined,
+      }}
+      className="rounded-lg border border-neutral-300 dark:border-neutral-700"
     />
   );
 }

@@ -370,48 +370,38 @@ export default function CapturePage() {
       </ToolbarSection>
 
       {/* ── Capture controls — direct toolbar items ── */}
-      <div className="flex flex-col gap-1.5">
-        <div
-          className="flex items-center gap-1.5 px-0.5"
-          style={{ color: 'var(--fg-muted)' }}
+
+      {isDetecting ? (
+        <button
+          onClick={handleStop}
+          className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
+          style={{ backgroundColor: 'var(--danger)', color: 'var(--bg)' }}
         >
-          <span style={{ color: 'var(--accent)' }}>{iconCapture}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
-            Capture
-          </span>
-        </div>
-        {isDetecting ? (
+          Stop
+        </button>
+      ) : (
+        <div className="flex gap-1.5">
           <button
-            onClick={handleStop}
-            className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
-            style={{ backgroundColor: 'var(--danger)', color: 'var(--bg)' }}
+            onClick={async () => {
+              if (captureComplete) handleNewCapture();
+              await handleStart();
+            }}
+            disabled={!canStart}
+            className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
           >
-            Stop
+            {captureComplete ? 'Re-detect' : 'Start'}
           </button>
-        ) : (
-          <div className="flex gap-1.5">
+          {captureComplete && (
             <button
-              onClick={async () => {
-                if (captureComplete) handleNewCapture();
-                await handleStart();
-              }}
-              disabled={!canStart}
-              className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+              onClick={handleNewCapture}
+              className="btn-ghost rounded py-2 px-2.5 text-xs uppercase tracking-widest font-bold"
+              title="Clear capture and start fresh"
             >
-              {captureComplete ? 'Re-detect' : 'Start'}
+              ✕
             </button>
-            {captureComplete && (
-              <button
-                onClick={handleNewCapture}
-                className="btn-ghost rounded py-2 px-2.5 text-xs uppercase tracking-widest font-bold"
-                title="Clear capture and start fresh"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* ── Status — direct toolbar item ── */}
       <div className="flex flex-col gap-1">
@@ -450,28 +440,17 @@ export default function CapturePage() {
       </div>
 
       {/* ── Save — direct toolbar item ── */}
-      <div className="flex flex-col gap-1.5">
-        <div
-          className="flex items-center gap-1.5 px-0.5"
-          style={{ color: 'var(--fg-muted)' }}
-        >
-          <span style={{ color: 'var(--accent)' }}>{iconSave}</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
-            Save
-          </span>
-        </div>
-        <button
-          onClick={handleUpload}
-          disabled={!canUpload}
-          className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-          title="Upload captured landmarks"
-        >
-          {uploadStatus === 'uploading' && 'Saving…'}
-          {uploadStatus === 'done' && 'Saved ✓'}
-          {uploadStatus === 'error' && 'Error'}
-          {uploadStatus === 'idle' && 'Save'}
-        </button>
-      </div>
+      <button
+        onClick={handleUpload}
+        disabled={!canUpload}
+        className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+        title="Upload captured landmarks"
+      >
+        {uploadStatus === 'uploading' && 'Saving…'}
+        {uploadStatus === 'done' && 'Saved ✓'}
+        {uploadStatus === 'error' && 'Error'}
+        {uploadStatus === 'idle' && 'Save'}
+      </button>
     </>
   );
 

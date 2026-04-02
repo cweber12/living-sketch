@@ -47,6 +47,15 @@ export function drawTorsoSvg(
 }
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
+
+/** Head SVG width as a fraction of the avg torso shoulder-width. */
+const HEAD_TORSO_FRACTION = 0.7;
+/**
+ * Ears sit roughly this far from the top of the head SVG (0–1).
+ * Used to vertically centre the SVG on the ear-midpoint + nose anchor.
+ */
+const EAR_TOP_FRACTION = 0.42;
+
 export function drawHeadSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -56,17 +65,25 @@ export function drawHeadSvg(
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { baseAnchor } = anchor;
+    const { leftAnchor, rightAnchor, baseAnchor } = anchor;
+
+    // Rotation angle from ear-to-ear line
+    const earDx = rightAnchor.x - leftAnchor.x;
+    const earDy = rightAnchor.y - leftAnchor.y;
+    const rotation = Math.atan2(earDy, earDx);
+
+    // Uniform scale: head width ≈ HEAD_TORSO_FRACTION × avg torso width
     const avgTorsoWidth = Math.abs(torsoDims.avgTorsoWidth);
-    const avgTorsoHeight = Math.abs(torsoDims.avgTorsoHeight);
-    const scaleX = (avgTorsoWidth * 0.5) / Math.max(1, torsoDims.torsoSvgWidth);
-    const scaleY =
-      (avgTorsoHeight * 0.5) / Math.max(1, torsoDims.torsoSvgHeight);
+    const targetWidth = avgTorsoWidth * HEAD_TORSO_FRACTION;
+    const uniformScale = targetWidth / Math.max(1, svgW);
+    const appliedScale = uniformScale * ((scale.x + scale.y) / 2);
+
     ctx.save();
     ctx.translate(baseAnchor.x, baseAnchor.y);
-    ctx.scale(scaleX * scale.x, scaleY * scale.y);
-    // Bottom edge of SVG sits at the anchor (shoulder midpoint); head grows upward
-    ctx.drawImage(img, -svgW / 2, -svgH, svgW, svgH);
+    ctx.rotate(rotation);
+    ctx.scale(appliedScale, appliedScale);
+    // Place SVG so the ear level (EAR_TOP_FRACTION from top) aligns with origin
+    ctx.drawImage(img, -svgW / 2, -svgH * EAR_TOP_FRACTION, svgW, svgH);
     ctx.restore();
     return true;
   } catch {
@@ -162,6 +179,15 @@ export function drawSegmentSvg(
 }
 
 /* ── Hands (affine transform wrist → finger) ─────────────────────────── */
+
+/**
+ * Render hands at a larger apparent size.
+ * The wrist→index-finger landmark distance is short on-screen, so we
+ * extend the segment and cross-section proportionally to represent the
+ * full hand relative to the torso.
+ */
+const HAND_SIZE_SCALE = 2.0;
+
 export function drawHandSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -180,11 +206,20 @@ export function drawHandSvg(
     const segLen = Math.hypot(dx, dy);
     if (segLen < 1) return false;
 
-    // Perpendicular unit vector
-    const px = -dy / segLen;
-    const py = dx / segLen;
+    // Unit direction and perpendicular
+    const ux = dx / segLen;
+    const uy = dy / segLen;
+    const px = -uy;
+    const py = ux;
 
     const crossScale = torsoDims.crossSectionScale;
+
+    // Extend the segment endpoint to make the hand larger
+    const extLen = segLen * HAND_SIZE_SCALE;
+    const extFinger: PointAnchor = {
+      x: wrist.x + ux * extLen,
+      y: wrist.y + uy * extLen,
+    };
 
     // Source corners in SVG-pixel space
     const src0: PointAnchor = { x: 0, y: 0 };
@@ -193,16 +228,16 @@ export function drawHandSvg(
     let dst0: PointAnchor, dst1: PointAnchor, dst2: PointAnchor;
 
     if (armsDown) {
-      // SVG authored vertically (h > w): top→wrist, bottom→finger
-      const hw = (svgW / 2) * crossScale * scale.x;
+      // SVG authored vertically (h > w): top→wrist, bottom→extFinger
+      const hw = (svgW / 2) * crossScale * scale.x * HAND_SIZE_SCALE;
       dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
       dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
-      dst2 = { x: finger.x - px * hw, y: finger.y - py * hw };
+      dst2 = { x: extFinger.x - px * hw, y: extFinger.y - py * hw };
     } else {
-      // SVG authored horizontally (w >= h): left→wrist, right→finger
-      const hh = (svgH / 2) * crossScale * scale.y;
+      // SVG authored horizontally (w >= h): left→wrist, right→extFinger
+      const hh = (svgH / 2) * crossScale * scale.y * HAND_SIZE_SCALE;
       dst0 = { x: wrist.x + px * hh, y: wrist.y + py * hh };
-      dst1 = { x: finger.x + px * hh, y: finger.y + py * hh };
+      dst1 = { x: extFinger.x + px * hh, y: extFinger.y + py * hh };
       dst2 = { x: wrist.x - px * hh, y: wrist.y - py * hh };
     }
 

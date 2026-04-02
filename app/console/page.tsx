@@ -12,7 +12,10 @@ import { useShiftFactorsStore } from '@/lib/stores/shift-factors-store';
 import { useScaleFactorsStore } from '@/lib/stores/scale-factors-store';
 import { useCacheSvgs } from '@/hooks/use-cache-svgs';
 import { scaleLandmarkFrames } from '@/lib/utils/pose-utils';
-import { filterAndInterpolateFrames } from '@/lib/utils/frame-filter';
+import {
+  filterAndInterpolateFrames,
+  interpolateLowConfidenceLandmarks,
+} from '@/lib/utils/frame-filter';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/canvas/animation-canvas';
@@ -22,7 +25,6 @@ import FileList from '@/components/controls/file-list';
 import {
   Toolbar,
   ToolbarSection,
-  SegmentedControl,
   type ToolbarMode,
 } from '@/components/ui/toolbar';
 
@@ -65,9 +67,10 @@ export default function ConsolePage() {
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
   const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale' | null>(null);
-  const [armsDown, setArmsDown] = useState(false);
   const [showAnchors, setShowAnchors] = useState(false);
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
+  const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
+  const [previewScale, setPreviewScale] = useState(1);
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -94,10 +97,11 @@ export default function ConsolePage() {
   );
   const svgImages = useCacheSvgs(svgParts, torsoDimsVal);
 
-  // Pipeline: filter bad frames → smooth → scale to canvas dimensions
+  // Pipeline: filter bad frames → fill per-landmark holes → smooth → scale
   const scaledFrames = useMemo(() => {
     const filtered = filterAndInterpolateFrames(frames);
-    const smoothed = smoothLandmarkFrames(filtered);
+    const filled = interpolateLowConfidenceLandmarks(filtered);
+    const smoothed = smoothLandmarkFrames(filled);
     return scaleLandmarkFrames(smoothed, origDims, {
       width: CANVAS_W,
       height: CANVAS_H,
@@ -334,6 +338,31 @@ export default function ConsolePage() {
       />
     </svg>
   );
+  const iconPreview = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="1"
+        y="2"
+        width="10"
+        height="7"
+        rx="1"
+        stroke="currentColor"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M4 10h4"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
   const iconSave = (
     <svg
       width="12"
@@ -431,12 +460,6 @@ export default function ConsolePage() {
 
         {/* Animation playback settings */}
         <ToolbarSection label="Animation" icon={iconAnimation}>
-          <SegmentedControl
-            value={armsDown ? 'down' : 'up'}
-            options={['up', 'down'] as const}
-            onChange={(v) => setArmsDown(v === 'down')}
-            labels={{ up: 'Arms Up', down: 'Arms Down' }}
-          />
           <button
             onClick={() => setShowAnchors((v) => !v)}
             className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
@@ -446,29 +469,51 @@ export default function ConsolePage() {
           </button>
         </ToolbarSection>
 
-        {/* Save — direct toolbar item, not inside a dropdown */}
-        <div className="flex flex-col gap-1.5 px-0.5">
-          <div
-            className="flex items-center gap-1.5"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            <span style={{ color: 'var(--accent)' }}>{iconSave}</span>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
-              Save
-            </span>
+        {/* Preview — background colour and display size */}
+        <ToolbarSection label="Preview" icon={iconPreview}>
+          <div className="flex flex-col gap-2 px-2 py-1.5">
+            <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
+              <span>Background</span>
+              <input
+                type="color"
+                value={previewBgColor}
+                onChange={(e) => setPreviewBgColor(e.target.value)}
+                className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+                title="Canvas background colour"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
+              <div className="flex items-center justify-between">
+                <span>Size</span>
+                <span className="font-mono text-[10px]">
+                  {Math.round(previewScale * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0.25"
+                max="2"
+                step="0.05"
+                value={previewScale}
+                onChange={(e) => setPreviewScale(parseFloat(e.target.value))}
+                className="w-full accent-[var(--accent)]"
+              />
+            </label>
           </div>
-          <button
-            onClick={save}
-            disabled={saveStatus === 'saving' || frames.length === 0}
-            className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-            title="Save animation"
-          >
-            {saveStatus === 'saving' && 'Saving…'}
-            {saveStatus === 'saved' && 'Saved ✓'}
-            {saveStatus === 'error' && 'Error'}
-            {saveStatus === 'idle' && 'Save'}
-          </button>
-        </div>
+        </ToolbarSection>
+
+        {/* Save — direct toolbar item, not inside a dropdown */}
+        <button
+          onClick={save}
+          disabled={saveStatus === 'saving' || frames.length === 0}
+          className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+          title="Save animation"
+        >
+          {saveStatus === 'saving' && 'Saving…'}
+          {saveStatus === 'saved' && 'Saved ✓'}
+          {saveStatus === 'error' && 'Error'}
+          {saveStatus === 'idle' && 'Save'}
+        </button>
       </Toolbar>
 
       {/* Canvas area */}
@@ -481,8 +526,9 @@ export default function ConsolePage() {
           playing={playing}
           width={CANVAS_W}
           height={CANVAS_H}
-          armsDown={armsDown}
           showAnchors={showAnchors}
+          bgColor={previewBgColor}
+          previewScale={previewScale}
         />
       </div>
     </main>
