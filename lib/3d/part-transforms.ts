@@ -25,7 +25,6 @@ const MIN_CONFIDENCE = 0.3;
 
 // Head
 const HEAD_HEIGHT_MULTIPLIER = 1.6;
-const NECK_OFFSET_RATIO = 0.08;
 
 // Limb width as fraction of torso width
 const WIDTH_RATIOS: Record<string, number> = {
@@ -148,12 +147,8 @@ export function computeHeadTransform(
   const noseToShoulder = dist(nose, shoulderMid);
   const height = noseToShoulder * HEAD_HEIGHT_MULTIPLIER;
 
-  // Position: shoulder midpoint + torso.up × (half head height + neck gap)
-  const neckOffset = torso.height * NECK_OFFSET_RATIO;
-  const position = add(
-    shoulderMid,
-    mul(torso.basis.up, height * 0.5 + neckOffset),
-  );
+  // Position: shoulder midpoint (head base sits on shoulders, extends upward)
+  const position = shoulderMid;
 
   return {
     position,

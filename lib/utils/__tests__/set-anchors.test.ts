@@ -52,7 +52,7 @@ describe('setTorsoAnchors', () => {
 });
 
 describe('setHeadAnchors', () => {
-  it('returns HeadAnchor with leftAnchor and rightAnchor', () => {
+  it('returns HeadAnchor with leftAnchor, rightAnchor, and baseAnchor', () => {
     const frame = makeFrame();
     const td = new TorsoDimensions();
     td.updateAvgTorsoWidth(100);
@@ -70,6 +70,31 @@ describe('setHeadAnchors', () => {
     expect(result!.leftAnchor).toHaveProperty('y');
     expect(result!.rightAnchor).toHaveProperty('x');
     expect(result!.rightAnchor).toHaveProperty('y');
+    expect(result!.baseAnchor).toHaveProperty('x');
+    expect(result!.baseAnchor).toHaveProperty('y');
+
+    // baseAnchor should be midpoint of shoulders (indices 11, 12)
+    const lsh = frame[11];
+    const rsh = frame[12];
+    expect(result!.baseAnchor.x).toBeCloseTo((lsh.x + rsh.x) / 2);
+    expect(result!.baseAnchor.y).toBeCloseTo((lsh.y + rsh.y) / 2);
+  });
+
+  it('returns undefined when shoulders have low confidence', () => {
+    const frame = makeFrame();
+    frame[11] = { x: 100, y: 200, score: 0.1 }; // low-confidence left shoulder
+    const td = new TorsoDimensions();
+    td.updateAvgTorsoWidth(100);
+    td.updateAvgTorsoHeight(200);
+    const ed = new EarDistance();
+    const result = setHeadAnchors(
+      frame,
+      ANCHOR_MAP.head,
+      td,
+      ed,
+      DEFAULT_SHIFTS,
+    );
+    expect(result).toBeUndefined();
   });
 });
 

@@ -167,4 +167,32 @@ describe('TemporalSmoother', () => {
     expect(result.torso!.width).toBeCloseTo(1.2);
     expect(result.torso!.height).toBeCloseTo(1.2);
   });
+
+  it('applies recovery ramp over multiple frames after stale gap', () => {
+    const smoother = new TemporalSmoother();
+
+    // Establish initial state
+    const frame1 = makeFullTransforms({ head: makePart(0, 0, 0) });
+    smoother.smooth(frame1);
+
+    // A few null frames to trigger stale mode + recovery flag
+    const nullHead = makeFullTransforms({ head: null });
+    smoother.smooth(nullHead);
+    smoother.smooth(nullHead);
+
+    // Recovery: first valid frame after gap should use reduced alpha
+    const frame2 = makeFullTransforms({ head: makePart(1, 0, 0) });
+    const r1 = smoother.smooth(frame2);
+
+    // With recovery alpha (0.1), position should be closer to 0 than normal alpha (0.4)
+    expect(r1.head!.position.x).toBeLessThan(0.4);
+    expect(r1.head!.position.x).toBeGreaterThan(0);
+
+    // Second recovery frame should have slightly higher alpha (ramping up)
+    const frame3 = makeFullTransforms({ head: makePart(1, 0, 0) });
+    const r2 = smoother.smooth(frame3);
+
+    // Should be further towards 1 than r1 but still ramping
+    expect(r2.head!.position.x).toBeGreaterThan(r1.head!.position.x);
+  });
 });

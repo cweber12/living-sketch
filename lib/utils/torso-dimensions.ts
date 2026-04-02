@@ -109,4 +109,18 @@ export class TorsoDimensions {
   get isFront(): boolean {
     return this.facingSmoothed >= 0;
   }
+
+  /**
+   * Uniform cross-section scale factor (averaged from width + height ratios).
+   * Used by segment-based drawing functions to scale SVG cross-widths.
+   */
+  get crossSectionScale(): number {
+    return (
+      ((Math.abs(this.avgTorsoHeight) * 0.5) /
+        Math.max(1, this.torsoSvgHeight) +
+        (Math.abs(this.avgTorsoWidth) * 0.5) /
+          Math.max(1, this.torsoSvgWidth)) /
+      2
+    );
+  }
 }

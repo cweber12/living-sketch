@@ -286,15 +286,14 @@ function drawAnchorOverlay(scaledLandmarks: LandmarkFrame, rc: RenderContext) {
         rc.shifts,
       );
       if (a) {
-        // Draw ear midpoint dot and a line between the two ear anchors
-        const mid: PointAnchor = {
-          x: (a.leftAnchor.x + a.rightAnchor.x) / 2,
-          y: (a.leftAnchor.y + a.rightAnchor.y) / 2,
-        };
-        drawDot(ctx, mid);
+        drawDot(ctx, a.baseAnchor);
         drawDot(ctx, a.leftAnchor);
         drawDot(ctx, a.rightAnchor);
         drawLine(ctx, a.leftAnchor, a.rightAnchor);
+        drawLine(ctx, a.baseAnchor, {
+          x: (a.leftAnchor.x + a.rightAnchor.x) / 2,
+          y: (a.leftAnchor.y + a.rightAnchor.y) / 2,
+        });
       }
     } else if (isFoot) {
       const a = setFootAnchors(

@@ -62,8 +62,9 @@ describe('part-transforms', () => {
       // height = 0.3 * 1.6 = 0.48
       expect(result.height).toBeCloseTo(0.48, 1);
 
-      // Position should be above shoulders
-      expect(result.position.y).toBeGreaterThan(0.3);
+      // Position should be at shoulder midpoint (head base anchored there)
+      expect(result.position.x).toBeCloseTo(0);
+      expect(result.position.y).toBeCloseTo(0.3);
 
       // Basis should match torso
       expect(result.basis.forward.z).toBeCloseTo(1);

@@ -56,18 +56,17 @@ export function drawHeadSvg(
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { leftAnchor, rightAnchor } = anchor;
-    const midX = (leftAnchor.x + rightAnchor.x) / 2;
-    const midY = (leftAnchor.y + rightAnchor.y) / 2;
+    const { baseAnchor } = anchor;
     const avgTorsoWidth = Math.abs(torsoDims.avgTorsoWidth);
     const avgTorsoHeight = Math.abs(torsoDims.avgTorsoHeight);
     const scaleX = (avgTorsoWidth * 0.5) / Math.max(1, torsoDims.torsoSvgWidth);
     const scaleY =
       (avgTorsoHeight * 0.5) / Math.max(1, torsoDims.torsoSvgHeight);
     ctx.save();
-    ctx.translate(midX, midY);
+    ctx.translate(baseAnchor.x, baseAnchor.y);
     ctx.scale(scaleX * scale.x, scaleY * scale.y);
-    ctx.drawImage(img, -svgW / 2, -svgH / 1.2, svgW, svgH);
+    // Bottom edge of SVG sits at the anchor (shoulder midpoint); head grows upward
+    ctx.drawImage(img, -svgW / 2, -svgH, svgW, svgH);
     ctx.restore();
     return true;
   } catch {
@@ -118,14 +117,10 @@ export function drawSegmentSvg(
     const isVertical = forceVertical ?? svgH > svgW;
     const crossDim = isVertical ? svgW : svgH;
 
-    // Uniform cross-section from averaged torso proportions
-    const crossScale =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
-    const crossWidth = Math.max(crossDim * crossScale, MIN_CROSS_WIDTH);
+    const crossWidth = Math.max(
+      crossDim * torsoDims.crossSectionScale,
+      MIN_CROSS_WIDTH,
+    );
     const hw = (crossWidth / 2) * scale.x;
 
     // Apply length scale factor
@@ -189,13 +184,7 @@ export function drawHandSvg(
     const px = -dy / segLen;
     const py = dx / segLen;
 
-    // Uniform cross-section from averaged torso proportions
-    const crossScale =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
+    const crossScale = torsoDims.crossSectionScale;
 
     // Source corners in SVG-pixel space
     const src0: PointAnchor = { x: 0, y: 0 };
@@ -247,13 +236,7 @@ export function drawLegSvg(
     const length = Math.hypot(dx, dy);
 
     const scaleY = length / Math.max(1, svgH);
-    // Uniform cross-section from averaged torso proportions
-    const scaleX =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
+    const scaleX = torsoDims.crossSectionScale;
 
     ctx.save();
     ctx.translate(from.x, from.y);
@@ -282,13 +265,7 @@ export function drawFootSvg(
     const dy = to.y - from.y;
     const angle = Math.atan2(dy, dx);
 
-    // Uniform scaling from averaged torso proportions
-    const uniformScale =
-      ((Math.abs(torsoDims.avgTorsoHeight) * 0.5) /
-        Math.max(1, torsoDims.torsoSvgHeight) +
-        (Math.abs(torsoDims.avgTorsoWidth) * 0.5) /
-          Math.max(1, torsoDims.torsoSvgWidth)) /
-      2;
+    const uniformScale = torsoDims.crossSectionScale;
 
     ctx.save();
     ctx.translate(from.x, from.y);

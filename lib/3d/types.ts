@@ -126,4 +126,6 @@ export interface SmootherState {
   prev: PartTransform3D | null;
   staleCount: number;
   isRecovering: boolean;
+  /** Frames elapsed since recovery began (ramps alpha back to normal). */
+  recoverFrame: number;
 }

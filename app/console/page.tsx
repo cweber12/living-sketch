@@ -12,6 +12,8 @@ import { useShiftFactorsStore } from '@/lib/stores/shift-factors-store';
 import { useScaleFactorsStore } from '@/lib/stores/scale-factors-store';
 import { useCacheSvgs } from '@/hooks/use-cache-svgs';
 import { scaleLandmarkFrames } from '@/lib/utils/pose-utils';
+import { filterAndInterpolateFrames } from '@/lib/utils/frame-filter';
+import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/canvas/animation-canvas';
 import ShiftControls from '@/components/controls/shift-controls';
@@ -95,15 +97,15 @@ export default function ConsolePage() {
   );
   const svgImages = useCacheSvgs(svgParts, torsoDimsVal);
 
-  // Scale landmarks to canvas dimensions (memoised — only recomputes when frames/dims change)
-  const scaledFrames = useMemo(
-    () =>
-      scaleLandmarkFrames(frames, origDims, {
-        width: CANVAS_W,
-        height: CANVAS_H,
-      }),
-    [frames, origDims],
-  );
+  // Pipeline: filter bad frames → smooth → scale to canvas dimensions
+  const scaledFrames = useMemo(() => {
+    const filtered = filterAndInterpolateFrames(frames);
+    const smoothed = smoothLandmarkFrames(filtered);
+    return scaleLandmarkFrames(smoothed, origDims, {
+      width: CANVAS_W,
+      height: CANVAS_H,
+    });
+  }, [frames, origDims]);
 
   /* ── Load landmark file ─────────────────────────────────────────── */
   const loadLandmarks = useCallback(async (file: FileEntry) => {

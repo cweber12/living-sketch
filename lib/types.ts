@@ -35,12 +35,14 @@ export interface SegmentAnchor {
   to: PointAnchor;
 }
 
-/** Fully-computed head placement anchor — derived from ear positions. */
+/** Fully-computed head placement anchor — derived from ear and shoulder positions. */
 export interface HeadAnchor {
   /** Adjusted left ear position (with headShift applied). */
   leftAnchor: PointAnchor;
   /** Adjusted right ear position (with headShift applied). */
   rightAnchor: PointAnchor;
+  /** Shoulder midpoint — the base (bottom) of the head SVG sits here. */
+  baseAnchor: PointAnchor;
 }
 
 export type PartAnchors = QuadAnchor | SegmentAnchor | HeadAnchor;

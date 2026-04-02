@@ -73,7 +73,15 @@ export function setHeadAnchors(
 ): HeadAnchor | undefined {
   const leftEar = kp(scaledLandmarks, map.leftAnchor);
   const rightEar = kp(scaledLandmarks, map.rightAnchor);
-  if (!valid(leftEar) || !valid(rightEar)) return undefined;
+  const leftShoulder = kp(scaledLandmarks, 11);
+  const rightShoulder = kp(scaledLandmarks, 12);
+  if (
+    !valid(leftEar) ||
+    !valid(rightEar) ||
+    !valid(leftShoulder) ||
+    !valid(rightShoulder)
+  )
+    return undefined;
 
   earDist.updateAvgEarDistance(
     Math.hypot(rightEar.x - leftEar.x, rightEar.y - leftEar.y),
@@ -83,9 +91,13 @@ export function setHeadAnchors(
   const th = torsoDims.avgTorsoHeight * SHIFT_FACTOR;
   const s = shifts.headShift;
 
+  const baseX = (leftShoulder.x + rightShoulder.x) / 2;
+  const baseY = (leftShoulder.y + rightShoulder.y) / 2;
+
   return {
     leftAnchor: { x: leftEar.x + s.x * tw, y: leftEar.y + s.y * th },
     rightAnchor: { x: rightEar.x + s.x * tw, y: rightEar.y + s.y * th },
+    baseAnchor: { x: baseX + s.x * tw, y: baseY + s.y * th },
   };
 }
 

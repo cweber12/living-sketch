@@ -89,14 +89,24 @@ export class TemporalSmoother {
 
   constructor() {
     for (const part of ALL_PARTS) {
-      this.state.set(part, { prev: null, staleCount: 0, isRecovering: false });
+      this.state.set(part, {
+        prev: null,
+        staleCount: 0,
+        isRecovering: false,
+        recoverFrame: 0,
+      });
     }
   }
 
   /** Reset all state (e.g., when switching animations). */
   reset(): void {
     for (const part of ALL_PARTS) {
-      this.state.set(part, { prev: null, staleCount: 0, isRecovering: false });
+      this.state.set(part, {
+        prev: null,
+        staleCount: 0,
+        isRecovering: false,
+        recoverFrame: 0,
+      });
     }
   }
 
@@ -119,24 +129,28 @@ export class TemporalSmoother {
       if (current) {
         // Valid current transform
         if (s.prev) {
-          // Determine effective alpha (reduced during recovery)
+          // Determine effective alpha (reduced during recovery ramp)
           let alpha = ALPHA_POSITION;
-          if (s.isRecovering && s.staleCount > 0) {
-            // Ramp from RECOVERY_ALPHA to ALPHA_POSITION over RECOVERY_FRAMES
-            const t = Math.min(s.staleCount / RECOVERY_FRAMES, 1);
+          if (s.isRecovering) {
+            const t = Math.min(s.recoverFrame / RECOVERY_FRAMES, 1);
             alpha = lerpScalar(RECOVERY_ALPHA, ALPHA_POSITION, t);
+            s.recoverFrame++;
+            if (s.recoverFrame >= RECOVERY_FRAMES) {
+              s.isRecovering = false;
+              s.recoverFrame = 0;
+            }
           }
 
           const smoothed = smoothTransform(s.prev, current, alpha);
           s.prev = smoothed;
           s.staleCount = 0;
-          s.isRecovering = false;
           result[part] = smoothed;
         } else {
           // First valid frame — use directly, no blending
           s.prev = current;
           s.staleCount = 0;
           s.isRecovering = false;
+          s.recoverFrame = 0;
           result[part] = current;
         }
       } else {
@@ -150,12 +164,14 @@ export class TemporalSmoother {
           s.prev = null;
           s.staleCount = 0;
           s.isRecovering = false;
+          s.recoverFrame = 0;
           result[part] = null;
         }
 
-        // Next time a valid transform arrives, enter recovery mode
-        if (s.prev) {
+        // Mark recovery so the next valid frame blends gently
+        if (s.prev && !s.isRecovering) {
           s.isRecovering = true;
+          s.recoverFrame = 0;
         }
       }
     }
