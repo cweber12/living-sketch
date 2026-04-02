@@ -88,10 +88,47 @@ export default async function Home() {
             className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
           >
             <div
-              className="text-4xl w-14 h-14 flex items-center justify-center rounded-lg"
+              className="w-14 h-14 flex items-center justify-center rounded-lg"
               style={{ backgroundColor: 'var(--accent-faint)' }}
             >
-              🧪
+              {/* Flask / laboratory icon */}
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 28 28"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M10 4h8M11 4v8l-5 10a1.5 1.5 0 001.4 2h13.2a1.5 1.5 0 001.4-2L17 12V4"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: 'var(--accent)' }}
+                />
+                <circle
+                  cx="12"
+                  cy="19"
+                  r="1.2"
+                  fill="currentColor"
+                  style={{ color: 'var(--accent)' }}
+                />
+                <circle
+                  cx="16"
+                  cy="17"
+                  r="0.9"
+                  fill="currentColor"
+                  style={{ color: 'var(--accent)' }}
+                />
+                <circle
+                  cx="18"
+                  cy="20"
+                  r="1.1"
+                  fill="currentColor"
+                  style={{ color: 'var(--accent)' }}
+                />
+              </svg>
             </div>
             <div>
               <p
@@ -129,10 +166,40 @@ export default async function Home() {
             className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
           >
             <div
-              className="text-4xl w-14 h-14 flex items-center justify-center rounded-lg"
+              className="w-14 h-14 flex items-center justify-center rounded-lg"
               style={{ backgroundColor: 'var(--accent-faint)' }}
             >
-              📡
+              {/* Signal / pose-capture icon */}
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 28 28"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="14"
+                  cy="14"
+                  r="3"
+                  fill="currentColor"
+                  style={{ color: 'var(--accent)' }}
+                />
+                <path
+                  d="M6.5 21.5a10.5 10.5 0 0115 0M9.5 18.5a6 6 0 019 0"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  style={{ color: 'var(--accent)' }}
+                />
+                <path
+                  d="M14 11V6M14 6l-2 2M14 6l2 2"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: 'var(--accent)' }}
+                />
+              </svg>
             </div>
             <div>
               <p
@@ -169,10 +236,27 @@ export default async function Home() {
             className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
           >
             <div
-              className="text-4xl w-14 h-14 flex items-center justify-center rounded-lg"
+              className="w-14 h-14 flex items-center justify-center rounded-lg"
               style={{ backgroundColor: 'var(--accent-faint)' }}
             >
-              ⚡
+              {/* Lightning bolt / awakening icon */}
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 28 28"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M16 3L6 16h9l-3 9 12-14h-9l3-8z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ color: 'var(--accent)' }}
+                />
+              </svg>
             </div>
             <div>
               <p

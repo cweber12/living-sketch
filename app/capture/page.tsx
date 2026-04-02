@@ -233,10 +233,11 @@ export default function CapturePage() {
   /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
+  // Re-detection is allowed: remove !captureComplete guard so users can
+  // run detection again on the same or a new video after a capture.
   const canStart =
     isModelReady &&
     !isDetecting &&
-    !captureComplete &&
     (source === 'webcam' ? webcamReady : videoReady);
   const canUpload = captureComplete && uploadStatus !== 'uploading';
 
@@ -368,39 +369,63 @@ export default function CapturePage() {
         )}
       </ToolbarSection>
 
-      <ToolbarSection label="Capture" icon={iconCapture}>
-        {captureComplete ? (
-          <button
-            onClick={handleNewCapture}
-            className="btn-ghost w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
-          >
-            New Capture
-          </button>
-        ) : !isDetecting ? (
-          <button
-            onClick={handleStart}
-            disabled={!canStart}
-            className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-          >
-            Start Detection
-          </button>
-        ) : (
+      {/* ── Capture controls — direct toolbar items ── */}
+      <div className="flex flex-col gap-1.5">
+        <div
+          className="flex items-center gap-1.5 px-0.5"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          <span style={{ color: 'var(--accent)' }}>{iconCapture}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
+            Capture
+          </span>
+        </div>
+        {isDetecting ? (
           <button
             onClick={handleStop}
             className="w-full rounded py-2 text-xs uppercase tracking-widest font-bold"
-            style={{
-              backgroundColor: 'var(--danger)',
-              color: 'var(--bg)',
-            }}
+            style={{ backgroundColor: 'var(--danger)', color: 'var(--bg)' }}
           >
             Stop
           </button>
+        ) : (
+          <div className="flex gap-1.5">
+            <button
+              onClick={async () => {
+                if (captureComplete) handleNewCapture();
+                await handleStart();
+              }}
+              disabled={!canStart}
+              className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            >
+              {captureComplete ? 'Re-detect' : 'Start'}
+            </button>
+            {captureComplete && (
+              <button
+                onClick={handleNewCapture}
+                className="btn-ghost rounded py-2 px-2.5 text-xs uppercase tracking-widest font-bold"
+                title="Clear capture and start fresh"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         )}
-      </ToolbarSection>
+      </div>
 
-      <ToolbarSection label="Status" icon={iconStatus}>
+      {/* ── Status — direct toolbar item ── */}
+      <div className="flex flex-col gap-1">
         <div
-          className="flex flex-col gap-1.5 text-[10px] uppercase tracking-widest"
+          className="flex items-center gap-1.5 px-0.5"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          <span style={{ color: 'var(--accent)' }}>{iconStatus}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
+            Status
+          </span>
+        </div>
+        <div
+          className="flex flex-col gap-1 text-[10px] uppercase tracking-widest px-0.5"
           style={{ color: 'var(--fg-muted)' }}
         >
           <span>
@@ -422,9 +447,19 @@ export default function CapturePage() {
             <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
           )}
         </div>
-      </ToolbarSection>
+      </div>
 
-      <ToolbarSection label="Save" icon={iconSave}>
+      {/* ── Save — direct toolbar item ── */}
+      <div className="flex flex-col gap-1.5">
+        <div
+          className="flex items-center gap-1.5 px-0.5"
+          style={{ color: 'var(--fg-muted)' }}
+        >
+          <span style={{ color: 'var(--accent)' }}>{iconSave}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
+            Save
+          </span>
+        </div>
         <button
           onClick={handleUpload}
           disabled={!canUpload}
@@ -436,7 +471,7 @@ export default function CapturePage() {
           {uploadStatus === 'error' && 'Error'}
           {uploadStatus === 'idle' && 'Save'}
         </button>
-      </ToolbarSection>
+      </div>
     </>
   );
 

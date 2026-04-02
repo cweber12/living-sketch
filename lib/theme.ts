@@ -32,11 +32,11 @@ export const darkTheme = {
   text: '#e2e8f0', // bright cool white
   textMuted: '#6b7e95', // muted steel blue
 
-  // ── Accent – electric cyan ────────────────────────────────────────────────
-  accent: '#22d3ee',
-  accentHover: '#67e8f9',
-  accentFaint: 'rgba(34, 211, 238, 0.08)',
-  accentGlow: '0 0 20px rgba(34, 211, 238, 0.30)',
+  // ── Accent – bright lime green ────────────────────────────────────────────
+  accent: '#4ade80',
+  accentHover: '#86efac',
+  accentFaint: 'rgba(74, 222, 128, 0.08)',
+  accentGlow: '0 0 20px rgba(74, 222, 128, 0.30)',
 
   // ── Signal – amber ────────────────────────────────────────────────────────
   signal: '#f59e0b',
@@ -47,10 +47,10 @@ export const darkTheme = {
   dangerMuted: 'rgba(239, 68, 68, 0.12)',
 
   // ── Pose canvas colors ───────────────────────────────────────────────────
-  landmarkLeft: '#22d3ee',
-  landmarkRight: '#67e8f9',
-  landmarkCenter: '#a5f3fc',
-  connectors: '#0e7490',
+  landmarkLeft: '#4ade80',
+  landmarkRight: '#86efac',
+  landmarkCenter: '#bbf7d0',
+  connectors: '#166534',
 } as const;
 
 export const lightTheme = {
@@ -68,11 +68,11 @@ export const lightTheme = {
   text: '#0f1219', // near-black
   textMuted: '#5c6370', // muted gray
 
-  // ── Accent – deep blue ────────────────────────────────────────────────────
-  accent: '#2563eb',
-  accentHover: '#1d4ed8',
-  accentFaint: 'rgba(37, 99, 235, 0.08)',
-  accentGlow: '0 0 16px rgba(37, 99, 235, 0.20)',
+  // ── Accent – dark forest green ────────────────────────────────────────────
+  accent: '#16a34a',
+  accentHover: '#15803d',
+  accentFaint: 'rgba(22, 163, 74, 0.08)',
+  accentGlow: '0 0 16px rgba(22, 163, 74, 0.20)',
 
   // ── Signal – amber ────────────────────────────────────────────────────────
   signal: '#d97706',
@@ -83,10 +83,10 @@ export const lightTheme = {
   dangerMuted: 'rgba(220, 38, 38, 0.10)',
 
   // ── Pose canvas colors ───────────────────────────────────────────────────
-  landmarkLeft: '#2563eb',
-  landmarkRight: '#1d4ed8',
-  landmarkCenter: '#1e40af',
-  connectors: '#1e40af',
+  landmarkLeft: '#16a34a',
+  landmarkRight: '#15803d',
+  landmarkCenter: '#166534',
+  connectors: '#166534',
 } as const;
 
 export type Theme = typeof darkTheme;

@@ -48,10 +48,7 @@ function formatFileTimestamp(name: string): string {
   return name;
 }
 
-function formatCreationLabel(name: string, selected: boolean): string {
-  const ts = formatFileTimestamp(name);
-  return selected ? `Created ${ts}` : `Extracted ${ts}`;
-}
+// formatCreationLabel removed — FileList now shows plain timestamps for all files
 
 export default function ConsolePage() {
   /* ── State ──────────────────────────────────────────────────────── */
@@ -67,7 +64,7 @@ export default function ConsolePage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [panel, setPanel] = useState<'files' | 'shift' | 'scale'>('files');
+  const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale' | null>(null);
   const [armsDown, setArmsDown] = useState(false);
   const [showAnchors, setShowAnchors] = useState(false);
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
@@ -361,53 +358,78 @@ export default function ConsolePage() {
     >
       {/* Toolbar / sidebar */}
       <Toolbar onModeChange={setToolbarMode}>
-        <ToolbarSection label="Panel" icon={iconPanel}>
-          <SegmentedControl
-            value={panel}
-            options={['files', 'shift', 'scale'] as const}
-            onChange={(v) => setPanel(v)}
-            labels={{ files: 'Files', shift: 'Shift', scale: 'Scale' }}
+        {/* Animations — always visible dropdown */}
+        <ToolbarSection label="Animations" icon={iconAnimations}>
+          <FileList
+            bucket="landmarks"
+            selected={landmarkFile}
+            onSelect={loadLandmarks}
+            formatLabel={(name) => formatFileTimestamp(name)}
+            onDelete={(f) => {
+              if (landmarkFile === f.key) setLandmarkFile(null);
+            }}
           />
         </ToolbarSection>
 
-        {panel === 'files' && (
-          <>
-            <ToolbarSection label="Animations" icon={iconAnimations}>
-              <FileList
-                bucket="landmarks"
-                selected={landmarkFile}
-                onSelect={loadLandmarks}
-                onDelete={(f) => {
-                  if (landmarkFile === f.key) setLandmarkFile(null);
-                }}
-              />
-            </ToolbarSection>
-            <ToolbarSection label="Creations" icon={iconCreations}>
-              <FileList
-                bucket="svgs"
-                selected={svgFile}
-                onSelect={loadSvgs}
-                formatLabel={formatCreationLabel}
-                onDelete={(f) => {
-                  if (svgFile === f.key) setSvgFile(null);
-                }}
-              />
-            </ToolbarSection>
-          </>
-        )}
+        {/* Creations — always visible dropdown */}
+        <ToolbarSection label="Creations" icon={iconCreations}>
+          <FileList
+            bucket="svgs"
+            selected={svgFile}
+            onSelect={loadSvgs}
+            formatLabel={(name) => formatFileTimestamp(name)}
+            onDelete={(f) => {
+              if (svgFile === f.key) setSvgFile(null);
+            }}
+          />
+        </ToolbarSection>
 
-        {panel === 'shift' && (
-          <ToolbarSection label="Shift Anchors" icon={iconShift}>
-            <ShiftControls />
-          </ToolbarSection>
-        )}
+        {/* Tools — contains Shift and Scale sub-panels */}
+        <ToolbarSection label="Tools" icon={iconPanel}>
+          <button
+            onClick={() =>
+              setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
+            }
+            className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
+            style={
+              toolsPanel === 'shift' ? { color: 'var(--accent)' } : undefined
+            }
+          >
+            <span style={{ color: 'var(--accent)' }}>{iconShift}</span>
+            Shift Anchors
+          </button>
+          <div
+            className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+            style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
+          >
+            <div className="pt-1.5">
+              <ShiftControls />
+            </div>
+          </div>
 
-        {panel === 'scale' && (
-          <ToolbarSection label="Scale Parts" icon={iconScale}>
-            <ScaleControls />
-          </ToolbarSection>
-        )}
+          <button
+            onClick={() =>
+              setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
+            }
+            className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
+            style={
+              toolsPanel === 'scale' ? { color: 'var(--accent)' } : undefined
+            }
+          >
+            <span style={{ color: 'var(--accent)' }}>{iconScale}</span>
+            Scale Parts
+          </button>
+          <div
+            className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+            style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
+          >
+            <div className="pt-1.5">
+              <ScaleControls />
+            </div>
+          </div>
+        </ToolbarSection>
 
+        {/* Animation playback settings */}
         <ToolbarSection label="Animation" icon={iconAnimation}>
           <SegmentedControl
             value={armsDown ? 'down' : 'up'}
@@ -424,7 +446,17 @@ export default function ConsolePage() {
           </button>
         </ToolbarSection>
 
-        <ToolbarSection label="Save" icon={iconSave}>
+        {/* Save — direct toolbar item, not inside a dropdown */}
+        <div className="flex flex-col gap-1.5 px-0.5">
+          <div
+            className="flex items-center gap-1.5"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            <span style={{ color: 'var(--accent)' }}>{iconSave}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">
+              Save
+            </span>
+          </div>
           <button
             onClick={save}
             disabled={saveStatus === 'saving' || frames.length === 0}
@@ -436,7 +468,7 @@ export default function ConsolePage() {
             {saveStatus === 'error' && 'Error'}
             {saveStatus === 'idle' && 'Save'}
           </button>
-        </ToolbarSection>
+        </div>
       </Toolbar>
 
       {/* Canvas area */}

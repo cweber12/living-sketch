@@ -1,10 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  useId,
+  type ReactNode,
+} from 'react';
+
+/* ── Accordion context: ensures only one section is open at a time ── */
+interface AccordionCtx {
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+}
+const AccordionContext = createContext<AccordionCtx | null>(null);
 
 const MOBILE_BP = 1024;
-/** Sections collapse by default below this width (phone breakpoint) */
-const SECTION_PHONE_BP = 768;
 
 export type ToolbarMode = 'side' | 'top';
 
@@ -28,6 +41,7 @@ export function Toolbar({
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
   const [open, setOpen] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -50,223 +64,230 @@ export function Toolbar({
   /* ── Top bar mode (mobile always, desktop optional) ─────────────── */
   if (mode === 'top') {
     return (
-      <div
-        className="w-full flex flex-col shrink-0"
-        style={{
-          borderBottom: '2px solid var(--border-strong)',
-          backgroundColor: 'var(--surface)',
-        }}
-      >
-        {/* Collapsible content area */}
+      <AccordionContext.Provider value={{ openId, setOpenId }}>
         <div
-          className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+          className="w-full flex flex-col shrink-0"
           style={{
-            maxHeight: open ? 2000 : 0,
+            borderBottom: '2px solid var(--border-strong)',
+            backgroundColor: 'var(--surface)',
           }}
         >
-          <div className="flex flex-wrap items-start gap-x-5 gap-y-3 px-4 py-3">
-            {children}
-          </div>
-        </div>
-
-        {/* Toggle strip */}
-        <div
-          className="flex items-center justify-between h-7 px-3"
-          style={{
-            borderTop: open ? '1px solid var(--border)' : 'none',
-          }}
-        >
-          <button
-            className="flex items-center gap-1.5 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
-            style={{ color: 'var(--fg-muted)' }}
-            onClick={toggleOpen}
-            aria-label={open ? 'Collapse toolbar' : 'Expand toolbar'}
+          {/* Collapsible content area */}
+          <div
+            className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+            style={{
+              maxHeight: open ? 2000 : 0,
+            }}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              aria-hidden="true"
-              className="transition-transform duration-200"
-              style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            >
-              <path
-                d="M2 4l4 4 4-4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-[10px] uppercase tracking-widest select-none">
-              {open ? 'Collapse' : 'Toolbar'}
-            </span>
-          </button>
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-3 px-4 py-3">
+              {children}
+            </div>
+          </div>
 
-          {!isMobile && (
+          {/* Toggle strip */}
+          <div
+            className="flex items-center justify-between h-7 px-3"
+            style={{
+              borderTop: open ? '1px solid var(--border)' : 'none',
+            }}
+          >
             <button
-              className="flex items-center gap-1 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
+              className="flex items-center gap-1.5 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
               style={{ color: 'var(--fg-muted)' }}
-              onClick={toggleMode}
-              title="Switch to sidebar"
-              aria-label="Switch to sidebar"
+              onClick={toggleOpen}
+              aria-label={open ? 'Collapse toolbar' : 'Expand toolbar'}
             >
-              <span className="text-[10px] uppercase tracking-widest select-none">
-                Sidebar
-              </span>
               <svg
                 width="12"
                 height="12"
                 viewBox="0 0 12 12"
                 fill="none"
                 aria-hidden="true"
+                className="transition-transform duration-200"
+                style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
               >
-                <rect
-                  x="1"
-                  y="1"
-                  width="10"
-                  height="10"
-                  rx="1.5"
+                <path
+                  d="M2 4l4 4 4-4"
                   stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <rect
-                  x="1"
-                  y="1"
-                  width="4"
-                  height="10"
-                  rx="1.5"
-                  fill="currentColor"
-                  opacity="0.4"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
+              <span className="text-[10px] uppercase tracking-widest select-none">
+                {open ? 'Collapse' : 'Toolbar'}
+              </span>
             </button>
-          )}
+
+            {!isMobile && (
+              <button
+                className="flex items-center gap-1 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
+                style={{ color: 'var(--fg-muted)' }}
+                onClick={toggleMode}
+                title="Switch to sidebar"
+                aria-label="Switch to sidebar"
+              >
+                <span className="text-[10px] uppercase tracking-widest select-none">
+                  Sidebar
+                </span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="1"
+                    y="1"
+                    width="10"
+                    height="10"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                  <rect
+                    x="1"
+                    y="1"
+                    width="4"
+                    height="10"
+                    rx="1.5"
+                    fill="currentColor"
+                    opacity="0.4"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </AccordionContext.Provider>
     );
   }
 
   /* ── Side bar mode (desktop default) ────────────────────────────── */
   return (
-    <div
-      className="flex flex-row shrink-0 self-stretch"
-      style={{
-        borderRight: '2px solid var(--border-strong)',
-        backgroundColor: 'var(--surface)',
-      }}
-    >
-      {/* Sidebar content */}
+    <AccordionContext.Provider value={{ openId, setOpenId }}>
       <div
-        className="overflow-hidden transition-[width] duration-300 ease-in-out self-stretch"
-        style={{ width: open ? sideWidth : 0 }}
-      >
-        <div
-          className="flex flex-col gap-2 py-3 overflow-y-auto overflow-x-hidden h-full"
-          style={{
-            width: sideWidth,
-            paddingLeft: '12px',
-            paddingRight: '12px',
-          }}
-        >
-          {children}
-        </div>
-      </div>
-
-      {/* Collapse handle strip */}
-      <div
-        className="w-6 shrink-0 flex flex-col items-center pt-3 pb-3 gap-3"
+        className="flex flex-row shrink-0 self-stretch"
         style={{
-          borderLeft: open ? '1px solid var(--border)' : 'none',
+          borderRight: '2px solid var(--border-strong)',
+          backgroundColor: 'var(--surface)',
         }}
       >
-        {/* Collapse/expand toggle */}
-        <button
-          className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:opacity-70 focus-visible:outline-none"
-          style={{ color: 'var(--fg-muted)' }}
-          onClick={toggleOpen}
-          aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
+        {/* Sidebar content */}
+        <div
+          className="overflow-hidden transition-[width] duration-300 ease-in-out self-stretch"
+          style={{ width: open ? sideWidth : 0 }}
         >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            aria-hidden="true"
-            className="transition-transform duration-300"
-            style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
+          <div
+            className="flex flex-col gap-2 py-3 overflow-y-auto overflow-x-hidden h-full"
+            style={{
+              width: sideWidth,
+              paddingLeft: '12px',
+              paddingRight: '12px',
+            }}
           >
-            <path
-              d="M7 2L3 5l4 3"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+            {children}
+          </div>
+        </div>
 
-        {/* Mode toggle (bottom) */}
-        <button
-          className="mt-auto w-5 h-5 flex items-center justify-center rounded transition-opacity hover:opacity-70 focus-visible:outline-none"
-          style={{ color: 'var(--fg-muted)' }}
-          onClick={toggleMode}
-          title="Switch to top toolbar"
-          aria-label="Switch to top toolbar"
+        {/* Collapse handle strip */}
+        <div
+          className="w-6 shrink-0 flex flex-col items-center pt-3 pb-3 gap-3"
+          style={{
+            borderLeft: open ? '1px solid var(--border)' : 'none',
+          }}
         >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            aria-hidden="true"
+          {/* Collapse/expand toggle */}
+          <button
+            className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:opacity-70 focus-visible:outline-none"
+            style={{ color: 'var(--fg-muted)' }}
+            onClick={toggleOpen}
+            aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            <rect
-              x="0.5"
-              y="0.5"
-              width="9"
-              height="9"
-              rx="1.5"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <rect
-              x="0.5"
-              y="0.5"
-              width="9"
-              height="3.5"
-              rx="1.5"
-              fill="currentColor"
-              opacity="0.4"
-            />
-          </svg>
-        </button>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              aria-hidden="true"
+              className="transition-transform duration-300"
+              style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
+            >
+              <path
+                d="M7 2L3 5l4 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          {/* Mode toggle (bottom) */}
+          <button
+            className="mt-auto w-5 h-5 flex items-center justify-center rounded transition-opacity hover:opacity-70 focus-visible:outline-none"
+            style={{ color: 'var(--fg-muted)' }}
+            onClick={toggleMode}
+            title="Switch to top toolbar"
+            aria-label="Switch to top toolbar"
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="0.5"
+                y="0.5"
+                width="9"
+                height="9"
+                rx="1.5"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <rect
+                x="0.5"
+                y="0.5"
+                width="9"
+                height="3.5"
+                rx="1.5"
+                fill="currentColor"
+                opacity="0.4"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
-    </div>
+    </AccordionContext.Provider>
   );
 }
-
-/** Visually groups related toolbar controls under a collapsible labelled section */
 export function ToolbarSection({
   label,
   icon,
   children,
-  defaultOpen,
 }: {
   label: string;
   icon?: ReactNode;
   children: ReactNode;
-  /** Override responsive default (true = expanded, false = collapsed) */
-  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(() => {
-    if (defaultOpen !== undefined) return defaultOpen;
-    if (typeof window === 'undefined') return true;
-    return window.innerWidth >= SECTION_PHONE_BP;
-  });
+  const id = useId();
+  const accordion = useContext(AccordionContext);
 
-  const toggle = useCallback(() => setOpen((o) => !o), []);
+  // When inside a Toolbar, participate in the accordion (single-open).
+  // Otherwise fall back to independent local state.
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = accordion ? accordion.openId === id : localOpen;
+
+  const toggle = useCallback(() => {
+    if (accordion) {
+      accordion.setOpenId(accordion.openId === id ? null : id);
+    } else {
+      setLocalOpen((o) => !o);
+    }
+  }, [accordion, id]);
 
   return (
     <div

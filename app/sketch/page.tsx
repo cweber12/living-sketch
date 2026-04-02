@@ -188,6 +188,40 @@ function BodyThumbnail({
 
 /* ─── Page ────────────────────────────────────────────────────────── */
 
+/** Rotate a square data-URL image 90 degrees CW (+90) or CCW (-90) */
+function rotateSquareDataURL(
+  dataUrl: string,
+  degrees: 90 | -90,
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const size = img.naturalWidth;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate((degrees * Math.PI) / 180);
+      ctx.drawImage(img, -size / 2, -size / 2);
+      resolve(canvas.toDataURL('image/webp', 0.9));
+    };
+    img.src = dataUrl;
+  });
+}
+
+/** Parts that need rotation when arms are drawn in down-pose orientation */
+const RIGHT_ARM_PARTS: BodyPartName[] = [
+  'rightUpperArm',
+  'rightLowerArm',
+  'rightHand',
+];
+const LEFT_ARM_PARTS: BodyPartName[] = [
+  'leftUpperArm',
+  'leftLowerArm',
+  'leftHand',
+];
+
 export default function SketchPage() {
   const [side, setSide] = useState<Side>('front');
   const [color, setColor] = useState(() =>
@@ -276,6 +310,28 @@ export default function SketchPage() {
     setSaveStatus('saving');
     try {
       const images = exportAll();
+
+      // When arms are drawn in down-pose orientation, rotate arm/hand canvases
+      // back to T-pose (arms-up) orientation before saving, so the animation
+      // pipeline receives consistently-oriented images.
+      if (effectiveArms === 'down') {
+        const sides: Side[] = ['front', 'back'];
+        await Promise.all([
+          ...sides.flatMap((s) =>
+            RIGHT_ARM_PARTS.map(async (part) => {
+              const url = images[s][part];
+              if (url) images[s][part] = await rotateSquareDataURL(url, 90);
+            }),
+          ),
+          ...sides.flatMap((s) =>
+            LEFT_ARM_PARTS.map(async (part) => {
+              const url = images[s][part];
+              if (url) images[s][part] = await rotateSquareDataURL(url, -90);
+            }),
+          ),
+        ]);
+      }
+
       const setName = new Date().toISOString().replace(/[:.]/g, '-');
       const res = await fetch('/api/storage/upload', {
         method: 'POST',
@@ -295,7 +351,7 @@ export default function SketchPage() {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 4000);
     }
-  }, [exportAll]);
+  }, [exportAll, effectiveArms]);
 
   const goPrev = useCallback(
     () => setFocusIdx((i) => (i > 0 ? i - 1 : PARTS_ORDER.length - 1)),
@@ -704,26 +760,31 @@ export default function SketchPage() {
       </ToolbarSection>
 
       {isMobile ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 w-full">
           <button
             onClick={handleUndo}
-            className="btn-ghost flex-1 rounded py-1.5 text-xs uppercase tracking-widest px-2"
+            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
             title="Undo last stroke"
           >
             ↩ Undo
           </button>
           <button
             onClick={clearAll}
-            className="btn-ghost flex-1 rounded py-1.5 text-xs uppercase tracking-widest px-2"
+            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
             style={{ color: 'var(--danger)' }}
             title="Clear all canvases"
           >
             ✕ Clear
           </button>
+          {/* Divider separates destructive (Undo/Clear) from constructive (Save) */}
+          <div
+            className="shrink-0 self-stretch w-px"
+            style={{ backgroundColor: 'var(--border-strong)' }}
+          />
           <button
             onClick={handleSave}
             disabled={saveStatus === 'saving'}
-            className="btn-primary flex-1 rounded py-1.5 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
             title="Save sketches to library"
           >
             {saveStatus === 'saving'
