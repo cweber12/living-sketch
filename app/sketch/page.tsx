@@ -113,8 +113,8 @@ const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
   { value: 'ellipse', label: '⬭ Ellipse' },
 ];
 
-const DEFAULT_COLOR_LIGHT = '#0f1219';
-const DEFAULT_COLOR_DARK = '#22d3ee';
+const DEFAULT_COLOR_LIGHT = '#000000';
+const DEFAULT_COLOR_DARK = '#ffffff';
 const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MOBILE_BP = 1024;
@@ -235,7 +235,6 @@ export default function SketchPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('body');
   const [focusIdx, setFocusIdx] = useState(0);
   const [tool, setTool] = useState<ShapeTool>('pen');
-  const [shapesOpen, setShapesOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
@@ -244,7 +243,6 @@ export default function SketchPage() {
   const backInitialised = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
-  const shapesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -255,17 +253,14 @@ export default function SketchPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  // Close shapes dropdown on outside click
+  // Update stroke color when OS color scheme changes
   useEffect(() => {
-    if (!shapesOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (shapesRef.current && !shapesRef.current.contains(e.target as Node)) {
-        setShapesOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [shapesOpen]);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) =>
+      setColor(e.matches ? DEFAULT_COLOR_DARK : DEFAULT_COLOR_LIGHT);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const effectiveArms: ArmPose = isMobile ? 'down' : armPose;
   const focusPart = PARTS_ORDER[focusIdx];
@@ -448,6 +443,20 @@ export default function SketchPage() {
 
   const focusProps = PART_PROPORTIONS[focusPart];
 
+  // In armsDown mode, arm/hand parts are rotated 90° — swap aspect ratio
+  const ARM_PART_SET = new Set<BodyPartName>([
+    'leftUpperArm',
+    'leftLowerArm',
+    'leftHand',
+    'rightUpperArm',
+    'rightLowerArm',
+    'rightHand',
+  ]);
+  const effectiveFocusProps =
+    ARM_PART_SET.has(focusPart) && effectiveArms === 'down'
+      ? { w: focusProps.h, h: focusProps.w }
+      : focusProps;
+
   /* ── Toolbar content ── */
   const iconLayout = (
     <svg
@@ -570,6 +579,63 @@ export default function SketchPage() {
 
   const toolbarContent = (
     <>
+      {isMobile ? (
+        <div className="flex items-center gap-1.5 w-full">
+          <button
+            onClick={handleUndo}
+            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
+            title="Undo last stroke"
+          >
+            ↩ Undo
+          </button>
+          <button
+            onClick={clearAll}
+            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
+            style={{ color: 'var(--danger)' }}
+            title="Clear all canvases"
+          >
+            ✕ Clear
+          </button>
+          {/* Divider separates destructive (Undo/Clear) from constructive (Save) */}
+          <div
+            className="shrink-0 self-stretch w-px"
+            style={{ backgroundColor: 'var(--border-strong)' }}
+          />
+          <button
+            onClick={handleSave}
+            disabled={saveStatus === 'saving'}
+            className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            title="Save sketches to library"
+          >
+            {saveStatus === 'saving'
+              ? '…'
+              : saveStatus === 'saved'
+                ? '✓'
+                : saveStatus === 'error'
+                  ? '!'
+                  : 'Save'}
+          </button>
+        </div>
+      ) : (
+        <ToolbarSection label="History" icon={iconHistory}>
+          <button
+            onClick={handleUndo}
+            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+            title="Undo last stroke"
+          >
+            ↩ Undo
+          </button>
+          <button
+            onClick={clearAll}
+            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
+            style={{ color: 'var(--danger)' }}
+            title="Clear all canvases"
+          >
+            ✕ Clear
+          </button>
+        </ToolbarSection>
+      )}
+
       <ToolbarSection label="Layout" icon={iconLayout}>
         {/* View: front / back */}
         <span
@@ -705,112 +771,33 @@ export default function SketchPage() {
       </ToolbarSection>
 
       <ToolbarSection label="Shapes" icon={iconShapes}>
-        <div className="relative" ref={shapesRef}>
-          <button
-            onClick={() => setShapesOpen((o) => !o)}
-            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center justify-between"
-          >
-            <span>
-              {SHAPE_OPTIONS.find((s) => s.value === tool)?.label ?? 'Pen'}
-            </span>
-            <span className="text-[10px]">{shapesOpen ? '▲' : '▼'}</span>
-          </button>
-          {shapesOpen && (
-            <div
-              className="absolute left-0 right-0 z-50 mt-1 rounded-lg overflow-hidden shadow-lg"
-              style={{
-                backgroundColor: 'var(--surface-raised, var(--surface))',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {SHAPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    setTool(opt.value);
-                    if (opt.value !== 'pen') setIsEraser(false);
-                    setShapesOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-xs uppercase tracking-widest transition-colors hover:opacity-80"
-                  style={
-                    tool === opt.value
-                      ? {
-                          backgroundColor: 'var(--accent)',
-                          color: 'var(--bg)',
-                        }
-                      : { color: 'var(--fg)' }
-                  }
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <select
+          value={tool}
+          onChange={(e) => {
+            const v = e.target.value as ShapeTool;
+            setTool(v);
+            if (v !== 'pen') setIsEraser(false);
+          }}
+          className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+          style={{
+            backgroundColor: 'var(--bg)',
+            color: 'var(--fg)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          {SHAPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </ToolbarSection>
-
-      {isMobile ? (
-        <div className="flex items-center gap-1.5 w-full">
-          <button
-            onClick={handleUndo}
-            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
-            title="Undo last stroke"
-          >
-            ↩ Undo
-          </button>
-          <button
-            onClick={clearAll}
-            className="btn-ghost flex-1 rounded py-2 text-xs uppercase tracking-widest px-2"
-            style={{ color: 'var(--danger)' }}
-            title="Clear all canvases"
-          >
-            ✕ Clear
-          </button>
-          {/* Divider separates destructive (Undo/Clear) from constructive (Save) */}
-          <div
-            className="shrink-0 self-stretch w-px"
-            style={{ backgroundColor: 'var(--border-strong)' }}
-          />
-          <button
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-            className="btn-primary flex-1 rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-            title="Save sketches to library"
-          >
-            {saveStatus === 'saving'
-              ? '…'
-              : saveStatus === 'saved'
-                ? '✓'
-                : saveStatus === 'error'
-                  ? '!'
-                  : 'Save'}
-          </button>
-        </div>
-      ) : (
-        <ToolbarSection label="History" icon={iconHistory}>
-          <button
-            onClick={handleUndo}
-            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-            title="Undo last stroke"
-          >
-            ↩ Undo
-          </button>
-          <button
-            onClick={clearAll}
-            className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-            style={{ color: 'var(--danger)' }}
-            title="Clear all canvases"
-          >
-            ✕ Clear
-          </button>
-        </ToolbarSection>
-      )}
 
       {!isMobile && (
         <button
           onClick={handleSave}
           disabled={saveStatus === 'saving'}
-          className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50 mt-auto"
+          className="btn-primary w-full rounded py-2 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
           title="Save sketches to library"
         >
           {saveStatus === 'saving' && 'Saving…'}
@@ -863,7 +850,7 @@ export default function SketchPage() {
             <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
               <button
                 onClick={goPrev}
-                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm"
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 style={{
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border)',
@@ -885,7 +872,7 @@ export default function SketchPage() {
                   style={{
                     maxWidth: 'min(75vw, 380px)',
                     maxHeight: '55vh',
-                    aspectRatio: `${focusProps.w} / ${focusProps.h}`,
+                    aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
                     width: '100%',
                     borderRadius: '10px',
                     overflow: 'hidden',
@@ -928,7 +915,7 @@ export default function SketchPage() {
 
               <button
                 onClick={goNext}
-                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm"
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 style={{
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border)',

@@ -13,7 +13,8 @@ import {
 interface ToolbarCtx {
   isMobile: boolean;
   /** When true, sections start expanded on â‰¥ tablet and collapsed on phone */
-  responsiveDefaults: boolean;
+  responsiveDefaults: boolean; /** Current toolbar layout mode */
+  mode: ToolbarMode;
 }
 const ToolbarContext = createContext<ToolbarCtx | null>(null);
 
@@ -63,7 +64,7 @@ export function Toolbar({
   const toggleMode = useCallback(() => setPreferSide((p) => !p), []);
   const toggleOpen = useCallback(() => setOpen((o) => !o), []);
 
-  const ctxValue: ToolbarCtx = { isMobile, responsiveDefaults };
+  const ctxValue: ToolbarCtx = { isMobile, responsiveDefaults, mode };
 
   /* â”€â”€ Top bar mode (mobile always, desktop optional) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (mode === 'top') {
@@ -278,15 +279,19 @@ export function ToolbarSection({
   label,
   icon,
   children,
+  defaultOpen,
 }: {
   label: string;
   icon?: ReactNode;
   children: ReactNode;
+  /** When true, the section starts expanded regardless of responsive defaults */
+  defaultOpen?: boolean;
 }) {
   const ctx = useContext(ToolbarContext);
   const [open, setOpen] = useState(() => {
     // Responsive default: expanded on ≥ tablet, collapsed on phones.
     // Use lazy initializer so the value is correct before the first paint.
+    if (defaultOpen) return true;
     if (!ctx?.responsiveDefaults) return false;
     if (typeof window === 'undefined') return false;
     return !window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`).matches;
@@ -353,7 +358,9 @@ export function ToolbarSection({
         style={{ maxHeight: open ? 2000 : 0 }}
       >
         <div
-          className="flex flex-col gap-1.5 px-2.5 pb-2.5 pt-1"
+          className={`flex gap-1.5 px-2.5 pb-2.5 pt-1 ${
+            ctx?.mode === 'top' ? 'flex-row flex-wrap items-start' : 'flex-col'
+          }`}
           style={{ borderTop: '1px solid var(--border)' }}
         >
           {children}

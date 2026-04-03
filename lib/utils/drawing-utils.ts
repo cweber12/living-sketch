@@ -69,12 +69,12 @@ export function drawHeadSvg(
 ): boolean {
   try {
     const { w: svgW, h: svgH } = getSvgSize(img);
-    const { leftAnchor, rightAnchor, baseAnchor } = anchor;
+    const { baseAnchor } = anchor;
 
-    // Rotation angle from ear-to-ear line
-    const earDx = rightAnchor.x - leftAnchor.x;
-    const earDy = rightAnchor.y - leftAnchor.y;
-    const rotation = Math.atan2(earDy, earDx);
+    // Keep head upright — do not derive rotation from ear-to-ear line, which
+    // produces a near-90° spin artifact when the subject faces sideways due to
+    // perspective foreshortening compressing the horizontal ear separation.
+    const rotation = 0;
 
     // Uniform scale: prefer hypotenuse (orientation-stable) over shoulder width
     const torsoHyp = Math.abs(torsoDims.avgTorsoHypotenuse);
@@ -200,7 +200,7 @@ export function drawHandSvg(
   img: HTMLImageElement,
   anchors: SegmentAnchor,
   armsDown: boolean,
-  _part: string,
+  part: string,
   torsoDims: TorsoDimensions,
   scale: ScaleVector,
 ): boolean {
@@ -237,12 +237,22 @@ export function drawHandSvg(
     if (armsDown) {
       // SVG authored vertically (h > w): top→wrist, bottom→extFinger
       const hw = (svgW / 2) * crossScale * scale.x * HAND_SIZE_SCALE;
-      dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
-      dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
-      dst2 = { x: extFinger.x - px * hw, y: extFinger.y - py * hw };
+      const isRight = part.startsWith('right');
+      if (isRight) {
+        // Right hand: flip perpendicular direction so the SVG renders without
+        // horizontal mirroring, matching the right-hand SVG authoring convention.
+        dst0 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
+        dst1 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
+        dst2 = { x: extFinger.x + px * hw, y: extFinger.y + py * hw };
+      } else {
+        dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
+        dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
+        dst2 = { x: extFinger.x - px * hw, y: extFinger.y - py * hw };
+      }
     } else {
       // SVG authored horizontally (w >= h): left→wrist, right→extFinger
-      const hh = (svgH / 2) * crossScale * scale.y * HAND_SIZE_SCALE;
+      // Use scale.x for cross-section (consistent with drawSegmentSvg convention)
+      const hh = (svgH / 2) * crossScale * scale.x * HAND_SIZE_SCALE;
       dst0 = { x: wrist.x + px * hh, y: wrist.y + py * hh };
       dst1 = { x: extFinger.x + px * hh, y: extFinger.y + py * hh };
       dst2 = { x: wrist.x - px * hh, y: wrist.y - py * hh };

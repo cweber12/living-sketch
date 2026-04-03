@@ -312,12 +312,22 @@ export default function CapturePage() {
       fill="none"
       aria-hidden="true"
     >
-      <path
-        d="M1 9l2.5-3 2 2 3-4L11 7"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <rect x="1" y="7" width="2.5" height="4" rx="0.5" fill="currentColor" />
+      <rect
+        x="4.75"
+        y="4.5"
+        width="2.5"
+        height="6.5"
+        rx="0.5"
+        fill="currentColor"
+      />
+      <rect
+        x="8.5"
+        y="1.5"
+        width="2.5"
+        height="9.5"
+        rx="0.5"
+        fill="currentColor"
       />
     </svg>
   );
@@ -341,7 +351,7 @@ export default function CapturePage() {
 
   const toolbarContent = (
     <>
-      <ToolbarSection label="Source" icon={iconSource}>
+      <ToolbarSection label="Source" icon={iconSource} defaultOpen>
         <SegmentedControl
           options={['webcam', 'upload'] as Source[]}
           value={source}
@@ -450,34 +460,20 @@ export default function CapturePage() {
       {/* ── Reduce Jitter — shown only after capture complete ── */}
       {captureComplete && (
         <ToolbarSection label="Reduce Jitter" icon={iconJitter}>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={jitterInterval}
-              onChange={(e) => setJitterInterval(Number(e.target.value))}
-              onMouseUp={() => {
-                setActiveJitterInterval(jitterInterval);
-                previewIdxRef.current = 0;
-              }}
-              className="flex-1 accent-accent"
-              title="Frame interval"
-            />
-            <span
-              className="text-[10px] tabular-nums w-4 shrink-0"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              {jitterInterval}
-            </span>
-          </div>
-          <span
-            className="text-[10px] uppercase tracking-widest"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            {jitterInterval === 1 ? 'Every frame' : `1 of ${jitterInterval}`}
-          </span>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step={1}
+            value={jitterInterval}
+            onChange={(e) => setJitterInterval(Number(e.target.value))}
+            onMouseUp={() => {
+              setActiveJitterInterval(jitterInterval);
+              previewIdxRef.current = 0;
+            }}
+            className="w-full accent-accent"
+            title="Frame interval"
+          />
         </ToolbarSection>
       )}
 
