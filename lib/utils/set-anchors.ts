@@ -49,6 +49,8 @@ export function setTorsoAnchors(
   );
   torsoDims.updateAvgTorsoWidth(shoulderWidth);
   torsoDims.updateAvgHipWidth(hipWidth);
+  // Torso diagonal (rightHip → leftShoulder) stays stable across orientation changes
+  torsoDims.updateAvgTorsoHypotenuse(Math.hypot(br.x - tl.x, br.y - tl.y));
 
   const tw = torsoDims.avgTorsoWidth * SHIFT_FACTOR;
   const th = torsoDims.avgTorsoHeight * SHIFT_FACTOR;

@@ -25,6 +25,7 @@ import FileList from '@/components/controls/file-list';
 import {
   Toolbar,
   ToolbarSection,
+  SegmentedControl,
   type ToolbarMode,
 } from '@/components/ui/toolbar';
 
@@ -71,6 +72,9 @@ export default function ConsolePage() {
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
+  const [fileView, setFileView] = useState<'animations' | 'creations'>(
+    'animations',
+  );
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -245,18 +249,7 @@ export default function ConsolePage() {
       />
     </svg>
   );
-  const iconAnimations = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path d="M3 2.5L10 6l-7 3.5V2.5z" fill="currentColor" />
-    </svg>
-  );
-  const iconCreations = (
+  const iconFiles = (
     <svg
       width="12"
       height="12"
@@ -265,11 +258,9 @@ export default function ConsolePage() {
       aria-hidden="true"
     >
       <path
-        d="M2 10L7.5 4.5M7.5 4.5L9.5 2l1 1L8 5.5M5 3l.5-.5M9 7l-.5.5M3.5 2.5L3 3M9.5 8.5L9 9"
+        d="M2 2.5h3.5L7 4H10a1 1 0 011 1v4a1 1 0 01-1 1H2a1 1 0 01-1-1V3.5A1 1 0 012 2.5z"
         stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeWidth="1.2"
       />
     </svg>
   );
@@ -313,31 +304,6 @@ export default function ConsolePage() {
       />
     </svg>
   );
-  const iconAnimation = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="1.5"
-        y="2.5"
-        width="9"
-        height="7"
-        rx="1"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <path
-        d="M1.5 4.5h9M1.5 7.5h9M4 2.5v2M8 2.5v2M4 7.5v2M8 7.5v2"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
   const iconPreview = (
     <svg
       width="12"
@@ -363,54 +329,43 @@ export default function ConsolePage() {
       />
     </svg>
   );
-  const iconSave = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M2.5 9.5h7M6 7.5V2.5M4 4.5L6 2.5 8 4.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
   return (
     <main
       className={`flex flex-1 ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
     >
       {/* Toolbar / sidebar */}
       <Toolbar onModeChange={setToolbarMode}>
-        {/* Animations — always visible dropdown */}
-        <ToolbarSection label="Animations" icon={iconAnimations}>
-          <FileList
-            bucket="landmarks"
-            selected={landmarkFile}
-            onSelect={loadLandmarks}
-            formatLabel={(name) => formatFileTimestamp(name)}
-            onDelete={(f) => {
-              if (landmarkFile === f.key) setLandmarkFile(null);
-            }}
+        {/* Files — Animations and Creations merged under a toggled view */}
+        <ToolbarSection label="Files" icon={iconFiles}>
+          <SegmentedControl
+            options={['animations', 'creations'] as const}
+            value={fileView}
+            onChange={setFileView}
+            labels={{ animations: 'Animations', creations: 'Creations' }}
           />
-        </ToolbarSection>
-
-        {/* Creations — always visible dropdown */}
-        <ToolbarSection label="Creations" icon={iconCreations}>
-          <FileList
-            bucket="svgs"
-            selected={svgFile}
-            onSelect={loadSvgs}
-            formatLabel={(name) => formatFileTimestamp(name)}
-            onDelete={(f) => {
-              if (svgFile === f.key) setSvgFile(null);
-            }}
-          />
+          <div className="max-h-48 overflow-y-auto">
+            {fileView === 'animations' ? (
+              <FileList
+                bucket="landmarks"
+                selected={landmarkFile}
+                onSelect={loadLandmarks}
+                formatLabel={(name) => formatFileTimestamp(name)}
+                onDelete={(f) => {
+                  if (landmarkFile === f.key) setLandmarkFile(null);
+                }}
+              />
+            ) : (
+              <FileList
+                bucket="svgs"
+                selected={svgFile}
+                onSelect={loadSvgs}
+                formatLabel={(name) => formatFileTimestamp(name)}
+                onDelete={(f) => {
+                  if (svgFile === f.key) setSvgFile(null);
+                }}
+              />
+            )}
+          </div>
         </ToolbarSection>
 
         {/* Tools — contains Shift and Scale sub-panels */}
@@ -456,10 +411,7 @@ export default function ConsolePage() {
               <ScaleControls />
             </div>
           </div>
-        </ToolbarSection>
 
-        {/* Animation playback settings */}
-        <ToolbarSection label="Animation" icon={iconAnimation}>
           <button
             onClick={() => setShowAnchors((v) => !v)}
             className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}

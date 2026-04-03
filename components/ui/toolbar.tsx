@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   useState,
@@ -6,16 +6,16 @@ import {
   useCallback,
   createContext,
   useContext,
-  useId,
   type ReactNode,
 } from 'react';
 
-/* ── Accordion context: ensures only one section is open at a time ── */
-interface AccordionCtx {
-  openId: string | null;
-  setOpenId: (id: string | null) => void;
+/* â”€â”€ Toolbar context: shared layout metadata for child sections â”€â”€â”€â”€â”€ */
+interface ToolbarCtx {
+  isMobile: boolean;
+  /** When true, sections start expanded on â‰¥ tablet and collapsed on phone */
+  responsiveDefaults: boolean;
 }
-const AccordionContext = createContext<AccordionCtx | null>(null);
+const ToolbarContext = createContext<ToolbarCtx | null>(null);
 
 const MOBILE_BP = 1024;
 
@@ -27,21 +27,23 @@ interface ToolbarProps {
   sideWidth?: number;
   /** Called whenever the toolbar switches between side / top modes */
   onModeChange?: (mode: ToolbarMode) => void;
+  /** When true, ToolbarSections start expanded on â‰¥ tablet and collapsed on phone */
+  responsiveDefaults?: boolean;
 }
 
 /**
  * Responsive toolbar: left sidebar on desktop, collapsible top bar on mobile.
- * Desktop can toggle between side and top mode via a small icon.
+ * Multiple sections can be open simultaneously â€” no accordion restriction.
  */
 export function Toolbar({
   children,
   sideWidth = 224,
   onModeChange,
+  responsiveDefaults = false,
 }: ToolbarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
   const [open, setOpen] = useState(true);
-  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -61,10 +63,12 @@ export function Toolbar({
   const toggleMode = useCallback(() => setPreferSide((p) => !p), []);
   const toggleOpen = useCallback(() => setOpen((o) => !o), []);
 
-  /* ── Top bar mode (mobile always, desktop optional) ─────────────── */
+  const ctxValue: ToolbarCtx = { isMobile, responsiveDefaults };
+
+  /* â”€â”€ Top bar mode (mobile always, desktop optional) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (mode === 'top') {
     return (
-      <AccordionContext.Provider value={{ openId, setOpenId }}>
+      <ToolbarContext.Provider value={ctxValue}>
         <div
           className="w-full flex flex-col shrink-0"
           style={{
@@ -160,13 +164,13 @@ export function Toolbar({
             )}
           </div>
         </div>
-      </AccordionContext.Provider>
+      </ToolbarContext.Provider>
     );
   }
 
-  /* ── Side bar mode (desktop default) ────────────────────────────── */
+  /* â”€â”€ Side bar mode (desktop default) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   return (
-    <AccordionContext.Provider value={{ openId, setOpenId }}>
+    <ToolbarContext.Provider value={ctxValue}>
       <div
         className="flex flex-row shrink-0 self-stretch"
         style={{
@@ -261,9 +265,15 @@ export function Toolbar({
           </button>
         </div>
       </div>
-    </AccordionContext.Provider>
+    </ToolbarContext.Provider>
   );
 }
+
+/**
+ * Collapsible section inside a Toolbar.
+ * Each section manages its own open state independently â€” multiple sections
+ * can be open at the same time.
+ */
 export function ToolbarSection({
   label,
   icon,
@@ -273,21 +283,16 @@ export function ToolbarSection({
   icon?: ReactNode;
   children: ReactNode;
 }) {
-  const id = useId();
-  const accordion = useContext(AccordionContext);
+  const ctx = useContext(ToolbarContext);
+  const [open, setOpen] = useState(() => {
+    // Responsive default: expanded on ≥ tablet, collapsed on phones.
+    // Use lazy initializer so the value is correct before the first paint.
+    if (!ctx?.responsiveDefaults) return false;
+    if (typeof window === 'undefined') return false;
+    return !window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`).matches;
+  });
 
-  // When inside a Toolbar, participate in the accordion (single-open).
-  // Otherwise fall back to independent local state.
-  const [localOpen, setLocalOpen] = useState(false);
-  const open = accordion ? accordion.openId === id : localOpen;
-
-  const toggle = useCallback(() => {
-    if (accordion) {
-      accordion.setOpenId(accordion.openId === id ? null : id);
-    } else {
-      setLocalOpen((o) => !o);
-    }
-  }, [accordion, id]);
+  const toggle = useCallback(() => setOpen((o) => !o), []);
 
   return (
     <div
@@ -297,7 +302,7 @@ export function ToolbarSection({
         backgroundColor: 'var(--surface-raised)',
       }}
     >
-      {/* Section header — click to expand / collapse */}
+      {/* Section header â€” click to expand / collapse */}
       <button
         className="flex items-center gap-2 w-full text-left px-2.5 py-1.5 transition-colors hover:brightness-110 focus-visible:outline-none"
         style={{ backgroundColor: 'var(--surface-raised)' }}
@@ -342,7 +347,7 @@ export function ToolbarSection({
         </svg>
       </button>
 
-      {/* Content — always in DOM, collapsed via max-height transition */}
+      {/* Content â€” always in DOM, collapsed via max-height transition */}
       <div
         className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
         style={{ maxHeight: open ? 2000 : 0 }}
@@ -358,7 +363,7 @@ export function ToolbarSection({
   );
 }
 
-/** Pill-shaped segmented control for 2–4 mutually exclusive options */
+/** Pill-shaped segmented control for 2â€“4 mutually exclusive options */
 export function SegmentedControl<T extends string>({
   options,
   value,

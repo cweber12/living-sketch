@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { PoseCanvas } from '@/components/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
@@ -11,6 +11,11 @@ import {
   type ToolbarMode,
 } from '@/components/ui/toolbar';
 import type { LandmarkFrame } from '@/lib/types';
+import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
+import {
+  filterAndInterpolateFrames,
+  applyFrameInterval,
+} from '@/lib/utils/frame-filter';
 
 const PREVIEW_FRAME_MS = 1000 / 30;
 
@@ -33,6 +38,8 @@ export default function CapturePage() {
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
+  const [jitterInterval, setJitterInterval] = useState(1);
+  const [activeJitterInterval, setActiveJitterInterval] = useState(1);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -233,6 +240,18 @@ export default function CapturePage() {
   /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
+  // Smoothed, filtered frames for preview — computed once after capture completes
+  const smoothedBaseFrames = useMemo(() => {
+    if (!captureComplete || frames.length === 0) return frames;
+    return smoothLandmarkFrames(filterAndInterpolateFrames(frames));
+  }, [captureComplete, frames]);
+
+  // Apply jitter reduction interval on top of smoothed frames
+  const previewFrames = useMemo(
+    () => applyFrameInterval(smoothedBaseFrames, activeJitterInterval),
+    [smoothedBaseFrames, activeJitterInterval],
+  );
+
   // Re-detection is allowed: remove !captureComplete guard so users can
   // run detection again on the same or a new video after a capture.
   const canStart =
@@ -246,25 +265,26 @@ export default function CapturePage() {
 
   /* ── Animated skeleton preview ──────────────────────────────────── */
   useEffect(() => {
-    if (!captureComplete || frames.length === 0) {
+    if (!captureComplete || previewFrames.length === 0) {
       cancelAnimationFrame(previewRafRef.current);
       setPreviewLandmarks(null);
       return;
     }
     previewIdxRef.current = 0;
     previewLastTimeRef.current = 0;
-    setPreviewLandmarks(frames[0]);
+    setPreviewLandmarks(previewFrames[0]);
     function loop(ts: number) {
       if (ts - previewLastTimeRef.current >= PREVIEW_FRAME_MS) {
         previewLastTimeRef.current = ts;
-        setPreviewLandmarks(frames[previewIdxRef.current]);
-        previewIdxRef.current = (previewIdxRef.current + 1) % frames.length;
+        setPreviewLandmarks(previewFrames[previewIdxRef.current]);
+        previewIdxRef.current =
+          (previewIdxRef.current + 1) % previewFrames.length;
       }
       previewRafRef.current = requestAnimationFrame(loop);
     }
     previewRafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(previewRafRef.current);
-  }, [captureComplete, frames]);
+  }, [captureComplete, previewFrames]);
 
   /* ── Toolbar content ─────────────────────────────────────────── */
   const iconSource = (
@@ -284,18 +304,6 @@ export default function CapturePage() {
       />
     </svg>
   );
-  const iconCapture = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.3" />
-      <circle cx="6" cy="6" r="1.5" fill="currentColor" />
-    </svg>
-  );
   const iconStatus = (
     <svg
       width="12"
@@ -313,7 +321,7 @@ export default function CapturePage() {
       />
     </svg>
   );
-  const iconSave = (
+  const iconJitter = (
     <svg
       width="12"
       height="12"
@@ -322,9 +330,9 @@ export default function CapturePage() {
       aria-hidden="true"
     >
       <path
-        d="M2.5 9.5h7M6 7.5V2.5M4 4.5L6 2.5 8 4.5"
+        d="M1 8l2-3 2 2 2-4 2 3 2-2"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -438,6 +446,40 @@ export default function CapturePage() {
           )}
         </div>
       </div>
+
+      {/* ── Reduce Jitter — shown only after capture complete ── */}
+      {captureComplete && (
+        <ToolbarSection label="Reduce Jitter" icon={iconJitter}>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              value={jitterInterval}
+              onChange={(e) => setJitterInterval(Number(e.target.value))}
+              onMouseUp={() => {
+                setActiveJitterInterval(jitterInterval);
+                previewIdxRef.current = 0;
+              }}
+              className="flex-1 accent-accent"
+              title="Frame interval"
+            />
+            <span
+              className="text-[10px] tabular-nums w-4 shrink-0"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              {jitterInterval}
+            </span>
+          </div>
+          <span
+            className="text-[10px] uppercase tracking-widest"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            {jitterInterval === 1 ? 'Every frame' : `1 of ${jitterInterval}`}
+          </span>
+        </ToolbarSection>
+      )}
 
       {/* ── Save — direct toolbar item ── */}
       <button

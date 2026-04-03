@@ -60,6 +60,29 @@ export class TorsoDimensions {
     }
   }
 
+  /** EMA-smoothed hypotenuse of the torso diagonal (right hip → left shoulder).
+   *  Stays stable across orientation changes — use for head size scaling. */
+  avgTorsoHypotenuse = 0;
+  private torsoHypAlpha = 0.1;
+
+  updateAvgTorsoHypotenuse(value: number): void {
+    if (this.avgTorsoHypotenuse === 0) {
+      this.avgTorsoHypotenuse = value;
+    } else {
+      this.avgTorsoHypotenuse =
+        this.torsoHypAlpha * value +
+        (1 - this.torsoHypAlpha) * this.avgTorsoHypotenuse;
+    }
+  }
+
+  /** Hypotenuse of the torso SVG bounding box. */
+  get torsoSvgHypotenuse(): number {
+    return Math.hypot(
+      Math.max(1, this.torsoSvgWidth),
+      Math.max(1, this.torsoSvgHeight),
+    );
+  }
+
   updateAvgHipWidth(newWidth: number) {
     this.currentTorsoWidth = newWidth;
 

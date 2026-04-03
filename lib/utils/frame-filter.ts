@@ -39,7 +39,7 @@ export function isFrameValid(
  * @param b - End frame
  * @param t - Interpolation factor (0 = a, 1 = b)
  */
-function lerpFrame(
+export function lerpFrame(
   a: LandmarkFrame,
   b: LandmarkFrame,
   t: number,
@@ -232,4 +232,29 @@ export function interpolateLowConfidenceLandmarks(
   }
 
   return result;
+}
+
+// ── Frame interval (jitter reduction) ─────────────────────────────────────
+
+/**
+ * Downsample frames by `interval` and linearly interpolate the gaps.
+ *
+ * interval = 1 → every frame unchanged.
+ * interval = N → only every Nth frame is used as a keyframe; intermediate
+ *   frames are interpolated from the bracketing keyframes, giving a smoother
+ *   (lower-frequency) motion.
+ */
+export function applyFrameInterval(
+  frames: LandmarkFrame[],
+  interval: number,
+): LandmarkFrame[] {
+  if (interval <= 1 || frames.length <= 1) return frames;
+  const step = Math.max(1, Math.round(interval));
+  return frames.map((_, i) => {
+    const keyA = Math.floor(i / step) * step;
+    const keyB = Math.min(keyA + step, frames.length - 1);
+    if (keyB <= keyA) return frames[Math.min(keyA, frames.length - 1)];
+    const t = (i - keyA) / (keyB - keyA);
+    return lerpFrame(frames[keyA], frames[keyB], Math.min(1, t));
+  });
 }

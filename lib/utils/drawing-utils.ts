@@ -48,7 +48,11 @@ export function drawTorsoSvg(
 
 /* ── Head ─────────────────────────────────────────────────────────────── */
 
-/** Head SVG width as a fraction of the avg torso shoulder-width. */
+/** Head size as fraction of torso hypotenuse (right hip → left shoulder diagonal).
+ *  The diagonal is orientation-stable — stays roughly constant whether the person
+ *  is facing front, side, or back. */
+const HEAD_HYPO_FRACTION = 0.6;
+/** Fallback fraction when hypotenuse is not yet accumulated. */
 const HEAD_TORSO_FRACTION = 0.7;
 /**
  * Ears sit roughly this far from the top of the head SVG (0–1).
@@ -72,9 +76,12 @@ export function drawHeadSvg(
     const earDy = rightAnchor.y - leftAnchor.y;
     const rotation = Math.atan2(earDy, earDx);
 
-    // Uniform scale: head width ≈ HEAD_TORSO_FRACTION × avg torso width
-    const avgTorsoWidth = Math.abs(torsoDims.avgTorsoWidth);
-    const targetWidth = avgTorsoWidth * HEAD_TORSO_FRACTION;
+    // Uniform scale: prefer hypotenuse (orientation-stable) over shoulder width
+    const torsoHyp = Math.abs(torsoDims.avgTorsoHypotenuse);
+    const targetWidth =
+      torsoHyp > 0
+        ? torsoHyp * HEAD_HYPO_FRACTION
+        : Math.abs(torsoDims.avgTorsoWidth) * HEAD_TORSO_FRACTION;
     const uniformScale = targetWidth / Math.max(1, svgW);
     const appliedScale = uniformScale * ((scale.x + scale.y) / 2);
 
