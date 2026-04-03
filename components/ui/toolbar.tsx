@@ -4,52 +4,74 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   createContext,
   useContext,
+  Children,
+  isValidElement,
   type ReactNode,
+  type CSSProperties,
 } from 'react';
+import { createPortal } from 'react-dom';
 
-/* â”€â”€ Toolbar context: shared layout metadata for child sections â”€â”€â”€â”€â”€ */
+/* ── Types ─────────────────────────────────────────────────────────── */
+
+export type ToolbarMode = 'side' | 'top';
+
 interface ToolbarCtx {
   isMobile: boolean;
-  /** When true, sections start expanded on â‰¥ tablet and collapsed on phone */
-  responsiveDefaults: boolean; /** Current toolbar layout mode */
+  responsiveDefaults: boolean;
   mode: ToolbarMode;
 }
 const ToolbarContext = createContext<ToolbarCtx | null>(null);
 
+export const useToolbarContext = () => useContext(ToolbarContext);
+
 const MOBILE_BP = 1024;
 
-export type ToolbarMode = 'side' | 'top';
+/* ── ToolbarDropdown ───────────────────────────────────────────────── */
 
-interface ToolbarProps {
+export interface ToolbarDropdownProps {
+  id: string;
+  label: string;
+  icon?: ReactNode;
   children: ReactNode;
-  /** Width in px when in side mode (default 224) */
+}
+
+export function ToolbarDropdown(_props: ToolbarDropdownProps): null {
+  return null;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────── */
+
+export interface ToolbarProps {
+  children: ReactNode;
   sideWidth?: number;
-  /** Called whenever the toolbar switches between side / top modes */
   onModeChange?: (mode: ToolbarMode) => void;
-  /** When true, ToolbarSections start expanded on â‰¥ tablet and collapsed on phone */
   responsiveDefaults?: boolean;
 }
 
-/**
- * Responsive toolbar: left sidebar on desktop, collapsible top bar on mobile.
- * Multiple sections can be open simultaneously â€” no accordion restriction.
- */
 export function Toolbar({
   children,
-  sideWidth = 224,
+  sideWidth = 48,
   onModeChange,
   responsiveDefaults = false,
 }: ToolbarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
-  const [open, setOpen] = useState(true);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarRect, setToolbarRect] = useState<DOMRect | null>(null);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
-    const handler = (e: MediaQueryListEvent | MediaQueryList) =>
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
       setIsMobile(e.matches);
+    };
     handler(mq);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
@@ -61,316 +83,412 @@ export function Toolbar({
     onModeChange?.(mode);
   }, [mode, onModeChange]);
 
-  const toggleMode = useCallback(() => setPreferSide((p) => !p), []);
-  const toggleOpen = useCallback(() => setOpen((o) => !o), []);
+  const measureToolbar = useCallback(() => {
+    if (toolbarRef.current) {
+      setToolbarRect(toolbarRef.current.getBoundingClientRect());
+    }
+  }, []);
 
+  useEffect(() => {
+    if (!activeId) {
+      return;
+    }
+    measureToolbar();
+    const ro = new ResizeObserver(measureToolbar);
+    if (toolbarRef.current) ro.observe(toolbarRef.current);
+    window.addEventListener('resize', measureToolbar);
+    window.addEventListener('scroll', measureToolbar, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measureToolbar);
+      window.removeEventListener('scroll', measureToolbar, true);
+    };
+  }, [activeId, measureToolbar]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (toolbarRef.current?.contains(target)) return;
+      const panelEl = document.getElementById('toolbar-panel-overlay');
+      if (panelEl?.contains(target)) return;
+      setActiveId(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [activeId]);
+
+  /* ── Extract ToolbarDropdown children ── */
+  const dropdowns: ToolbarDropdownProps[] = [];
+  Children.forEach(children, (child) => {
+    if (isValidElement(child) && child.type === ToolbarDropdown) {
+      dropdowns.push(child.props as ToolbarDropdownProps);
+    }
+  });
+
+  const activeDropdown = dropdowns.find((d) => d.id === activeId) ?? null;
   const ctxValue: ToolbarCtx = { isMobile, responsiveDefaults, mode };
 
-  /* â”€â”€ Top bar mode (mobile always, desktop optional) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-  if (mode === 'top') {
+  const togglePanel = useCallback((id: string) => {
+    setActiveId((prev) => (prev === id ? null : id));
+  }, []);
+
+  /* ── Panel positioning ── */
+  const getPanelStyle = (): CSSProperties => {
+    if (!toolbarRect) return { display: 'none' };
+    if (mode === 'side') {
+      return {
+        position: 'fixed',
+        left: toolbarRect.right,
+        top: toolbarRect.top,
+        bottom: 0,
+        minWidth: 220,
+        maxWidth: 300,
+        zIndex: 50,
+        overflowY: 'auto',
+      };
+    }
+    return {
+      position: 'fixed',
+      top: toolbarRect.bottom,
+      left: 0,
+      right: 0,
+      zIndex: 50,
+      maxHeight: '55vh',
+      overflowY: 'auto',
+    };
+  };
+
+  /* ── Mode-toggle icons ── */
+  const iconToTop = (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="0.5"
+        y="0.5"
+        width="9"
+        height="9"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="9"
+        height="3.5"
+        rx="1.5"
+        fill="currentColor"
+        opacity="0.4"
+      />
+    </svg>
+  );
+  const iconToSide = (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="0.5"
+        y="0.5"
+        width="9"
+        height="9"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="4"
+        height="9"
+        rx="1.5"
+        fill="currentColor"
+        opacity="0.4"
+      />
+    </svg>
+  );
+
+  /* ── Overlay panel (portal to document.body) ── */
+  const overlayPanel =
+    mounted && activeDropdown && toolbarRect
+      ? createPortal(
+          <div
+            id="toolbar-panel-overlay"
+            style={{
+              ...getPanelStyle(),
+              backgroundColor: 'var(--surface)',
+              borderRight:
+                mode === 'side' ? '1px solid var(--border-strong)' : undefined,
+              borderBottom:
+                mode === 'top' ? '1px solid var(--border-strong)' : undefined,
+            }}
+          >
+            {/* Panel header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 10px',
+                borderBottom: '1px solid var(--border)',
+                backgroundColor: 'var(--surface-raised)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 1,
+              }}
+            >
+              {activeDropdown.icon && (
+                <span
+                  style={{
+                    color: 'var(--accent)',
+                    lineHeight: 0,
+                    flexShrink: 0,
+                  }}
+                  aria-hidden="true"
+                >
+                  {activeDropdown.icon}
+                </span>
+              )}
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: 'var(--fg-muted)',
+                  flex: 1,
+                }}
+              >
+                {activeDropdown.label}
+              </span>
+              <button
+                onClick={() => setActiveId(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--fg-muted)',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  lineHeight: 1,
+                  fontSize: 14,
+                  borderRadius: 2,
+                  flexShrink: 0,
+                }}
+                aria-label="Close panel"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Panel content */}
+            <div
+              style={{
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: mode === 'top' ? 'row' : 'column',
+                flexWrap: mode === 'top' ? 'wrap' : undefined,
+                gap: mode === 'top' ? 20 : 6,
+                alignItems: 'flex-start',
+              }}
+            >
+              {activeDropdown.children}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
+  /* ── Side mode ─────────────────────────────────────────────────── */
+  if (mode === 'side') {
     return (
       <ToolbarContext.Provider value={ctxValue}>
         <div
-          className="w-full flex flex-col shrink-0"
+          ref={toolbarRef}
+          className="shrink-0 flex flex-col self-stretch"
           style={{
-            borderBottom: '2px solid var(--border-strong)',
+            width: sideWidth,
             backgroundColor: 'var(--surface)',
+            borderRight: '2px solid var(--border-strong)',
           }}
         >
-          {/* Collapsible content area */}
-          <div
-            className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
-            style={{
-              maxHeight: open ? 2000 : 0,
-            }}
-          >
-            <div className="flex flex-wrap items-start gap-x-5 gap-y-3 px-4 py-3">
-              {children}
-            </div>
-          </div>
-
-          {/* Toggle strip */}
-          <div
-            className="flex items-center justify-between h-7 px-3"
-            style={{
-              borderTop: open ? '1px solid var(--border)' : 'none',
-            }}
-          >
-            <button
-              className="flex items-center gap-1.5 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
-              style={{ color: 'var(--fg-muted)' }}
-              onClick={toggleOpen}
-              aria-label={open ? 'Collapse toolbar' : 'Expand toolbar'}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-                className="transition-transform duration-200"
-                style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              >
-                <path
-                  d="M2 4l4 4 4-4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-[10px] uppercase tracking-widest select-none">
-                {open ? 'Collapse' : 'Toolbar'}
-              </span>
-            </button>
-
-            {!isMobile && (
-              <button
-                className="flex items-center gap-1 h-full transition-opacity hover:opacity-70 focus-visible:outline-none"
-                style={{ color: 'var(--fg-muted)' }}
-                onClick={toggleMode}
-                title="Switch to sidebar"
-                aria-label="Switch to sidebar"
-              >
-                <span className="text-[10px] uppercase tracking-widest select-none">
-                  Sidebar
-                </span>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  aria-hidden="true"
+          <div className="flex flex-col flex-1">
+            {dropdowns.map((d) => {
+              const isActive = activeId === d.id;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => togglePanel(d.id)}
+                  aria-pressed={isActive}
+                  title={d.label}
+                  style={{
+                    width: '100%',
+                    padding: '10px 4px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 5,
+                    border: 'none',
+                    borderBottom: '1px solid var(--border)',
+                    borderLeft: `2px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+                    borderRadius: 0,
+                    backgroundColor: isActive
+                      ? 'var(--surface-raised)'
+                      : 'transparent',
+                    color: isActive ? 'var(--fg)' : 'var(--fg-muted)',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
                 >
-                  <rect
-                    x="1"
-                    y="1"
-                    width="10"
-                    height="10"
-                    rx="1.5"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                  />
-                  <rect
-                    x="1"
-                    y="1"
-                    width="4"
-                    height="10"
-                    rx="1.5"
-                    fill="currentColor"
-                    opacity="0.4"
-                  />
-                </svg>
-              </button>
-            )}
+                  {d.icon && (
+                    <span
+                      style={{
+                        color: isActive ? 'var(--accent)' : 'inherit',
+                        lineHeight: 0,
+                        flexShrink: 0,
+                      }}
+                      aria-hidden="true"
+                    >
+                      {d.icon}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      writingMode: 'vertical-rl',
+                      textOrientation: 'mixed',
+                      fontSize: 9,
+                      fontWeight: 600,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {d.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+
+          {/* Mode toggle */}
+          <button
+            style={{
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--fg-muted)',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: 'none',
+              borderTop: '1px solid var(--border)',
+              width: '100%',
+            }}
+            onClick={() => setPreferSide(false)}
+            title="Switch to top toolbar"
+            aria-label="Switch to top toolbar"
+          >
+            {iconToTop}
+          </button>
         </div>
+        {overlayPanel}
       </ToolbarContext.Provider>
     );
   }
 
-  /* â”€â”€ Side bar mode (desktop default) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Top mode ──────────────────────────────────────────────────── */
   return (
     <ToolbarContext.Provider value={ctxValue}>
       <div
-        className="flex flex-row shrink-0 self-stretch"
+        ref={toolbarRef}
+        className="w-full shrink-0 flex flex-row items-stretch"
         style={{
-          borderRight: '2px solid var(--border-strong)',
           backgroundColor: 'var(--surface)',
+          borderBottom: '2px solid var(--border-strong)',
+          minHeight: 36,
         }}
       >
-        {/* Sidebar content */}
-        <div
-          className="overflow-hidden transition-[width] duration-300 ease-in-out self-stretch"
-          style={{ width: open ? sideWidth : 0 }}
-        >
-          <div
-            className="flex flex-col gap-2 py-3 overflow-y-auto overflow-x-hidden h-full"
+        {dropdowns.map((d) => {
+          const isActive = activeId === d.id;
+          return (
+            <button
+              key={d.id}
+              onClick={() => togglePanel(d.id)}
+              aria-pressed={isActive}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                padding: '0 12px',
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                border: 'none',
+                borderRight: '1px solid var(--border)',
+                borderTop: `2px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+                borderRadius: 0,
+                backgroundColor: isActive
+                  ? 'var(--surface-raised)'
+                  : 'transparent',
+                color: isActive ? 'var(--fg)' : 'var(--fg-muted)',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {d.icon && (
+                <span
+                  style={{
+                    color: isActive ? 'var(--accent)' : 'inherit',
+                    lineHeight: 0,
+                  }}
+                  aria-hidden="true"
+                >
+                  {d.icon}
+                </span>
+              )}
+              <span>{d.label}</span>
+            </button>
+          );
+        })}
+
+        {!isMobile && (
+          <button
             style={{
-              width: sideWidth,
-              paddingLeft: '12px',
-              paddingRight: '12px',
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 12px',
+              color: 'var(--fg-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderLeft: '1px solid var(--border)',
+              cursor: 'pointer',
             }}
+            onClick={() => setPreferSide(true)}
+            title="Switch to sidebar"
+            aria-label="Switch to sidebar"
           >
-            {children}
-          </div>
-        </div>
-
-        {/* Collapse handle strip */}
-        <div
-          className="w-6 shrink-0 flex flex-col items-center pt-3 pb-3 gap-3"
-          style={{
-            borderLeft: open ? '1px solid var(--border)' : 'none',
-          }}
-        >
-          {/* Collapse/expand toggle */}
-          <button
-            className="w-5 h-5 flex items-center justify-center rounded transition-colors hover:opacity-70 focus-visible:outline-none"
-            style={{ color: 'var(--fg-muted)' }}
-            onClick={toggleOpen}
-            aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              aria-hidden="true"
-              className="transition-transform duration-300"
-              style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
-            >
-              <path
-                d="M7 2L3 5l4 3"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {iconToSide}
           </button>
-
-          {/* Mode toggle (bottom) */}
-          <button
-            className="mt-auto w-5 h-5 flex items-center justify-center rounded transition-opacity hover:opacity-70 focus-visible:outline-none"
-            style={{ color: 'var(--fg-muted)' }}
-            onClick={toggleMode}
-            title="Switch to top toolbar"
-            aria-label="Switch to top toolbar"
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              aria-hidden="true"
-            >
-              <rect
-                x="0.5"
-                y="0.5"
-                width="9"
-                height="9"
-                rx="1.5"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-              <rect
-                x="0.5"
-                y="0.5"
-                width="9"
-                height="3.5"
-                rx="1.5"
-                fill="currentColor"
-                opacity="0.4"
-              />
-            </svg>
-          </button>
-        </div>
+        )}
       </div>
+      {overlayPanel}
     </ToolbarContext.Provider>
   );
 }
 
-/**
- * Collapsible section inside a Toolbar.
- * Each section manages its own open state independently â€” multiple sections
- * can be open at the same time.
- */
-export function ToolbarSection({
-  label,
-  icon,
-  children,
-  defaultOpen,
-}: {
-  label: string;
-  icon?: ReactNode;
-  children: ReactNode;
-  /** When true, the section starts expanded regardless of responsive defaults */
-  defaultOpen?: boolean;
-}) {
-  const ctx = useContext(ToolbarContext);
-  const [open, setOpen] = useState(() => {
-    // Responsive default: expanded on ≥ tablet, collapsed on phones.
-    // Use lazy initializer so the value is correct before the first paint.
-    if (defaultOpen) return true;
-    if (!ctx?.responsiveDefaults) return false;
-    if (typeof window === 'undefined') return false;
-    return !window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`).matches;
-  });
+/* ── SegmentedControl ──────────────────────────────────────────────── */
 
-  const toggle = useCallback(() => setOpen((o) => !o), []);
-
-  return (
-    <div
-      className="flex flex-col rounded-md overflow-hidden"
-      style={{
-        border: '1px solid var(--border)',
-        backgroundColor: 'var(--surface-raised)',
-      }}
-    >
-      {/* Section header â€” click to expand / collapse */}
-      <button
-        className="flex items-center gap-2 w-full text-left px-2.5 py-1.5 transition-colors hover:brightness-110 focus-visible:outline-none"
-        style={{ backgroundColor: 'var(--surface-raised)' }}
-        onClick={toggle}
-        aria-expanded={open}
-      >
-        {icon && (
-          <span
-            className="shrink-0"
-            style={{ color: 'var(--accent)' }}
-            aria-hidden="true"
-          >
-            {icon}
-          </span>
-        )}
-        <span
-          className="flex-1 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap select-none"
-          style={{ color: 'var(--fg-muted)' }}
-        >
-          {label}
-        </span>
-        {/* Chevron */}
-        <svg
-          width="8"
-          height="8"
-          viewBox="0 0 8 8"
-          fill="none"
-          aria-hidden="true"
-          className="shrink-0 transition-transform duration-200"
-          style={{
-            transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
-            color: 'var(--fg-muted)',
-          }}
-        >
-          <path
-            d="M1.5 2.5l2.5 3 2.5-3"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-      {/* Content â€” always in DOM, collapsed via max-height transition */}
-      <div
-        className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-        style={{ maxHeight: open ? 2000 : 0 }}
-      >
-        <div
-          className={`flex gap-1.5 px-2.5 pb-2.5 pt-1 ${
-            ctx?.mode === 'top' ? 'flex-row flex-wrap items-start' : 'flex-col'
-          }`}
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Pill-shaped segmented control for 2â€“4 mutually exclusive options */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -386,7 +504,7 @@ export function SegmentedControl<T extends string>({
 }) {
   return (
     <div
-      className="flex rounded-md overflow-hidden"
+      className="flex rounded overflow-hidden"
       style={{
         border: '1px solid var(--border)',
         backgroundColor: 'var(--surface-raised)',
@@ -400,7 +518,7 @@ export function SegmentedControl<T extends string>({
           <button
             key={o}
             onClick={() => onChange(o)}
-            className="flex-1 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
+            className="flex-1 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
             style={{
               ...(isDanger
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }

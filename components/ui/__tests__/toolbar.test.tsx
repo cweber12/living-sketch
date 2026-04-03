@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
   Toolbar,
-  ToolbarSection,
+  ToolbarDropdown,
   SegmentedControl,
 } from '@/components/ui/toolbar';
 
-// Mock matchMedia — default to desktop (> 640px)
+// Mock matchMedia -- default to desktop (no mobile match)
 function mockMatchMedia(matches = false) {
   const listeners: Array<(e: MediaQueryListEvent) => void> = [];
   Object.defineProperty(window, 'matchMedia', {
@@ -84,57 +84,85 @@ describe('SegmentedControl', () => {
   });
 });
 
-describe('ToolbarSection', () => {
-  it('renders label and children', () => {
-    render(
-      <ToolbarSection label="Draw">
-        <button>Test Button</button>
-      </ToolbarSection>,
+describe('ToolbarDropdown', () => {
+  it('renders nothing by itself', () => {
+    const { container } = render(
+      <ToolbarDropdown id="test" label="Test">
+        <span>Panel content</span>
+      </ToolbarDropdown>,
     );
-    expect(screen.getByText('Draw')).toBeInTheDocument();
-    expect(screen.getByText('Test Button')).toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
 describe('Toolbar', () => {
-  it('renders children inside side mode on desktop', () => {
+  it('renders dropdown buttons in side mode on desktop', () => {
     mockMatchMedia(false); // desktop
     render(
-      <Toolbar sideWidth={200}>
-        <span>Tool Content</span>
+      <Toolbar>
+        <ToolbarDropdown id="draw" label="Draw">
+          <span>Draw Panel</span>
+        </ToolbarDropdown>
       </Toolbar>,
     );
-    expect(screen.getByText('Tool Content')).toBeInTheDocument();
+    expect(screen.getByTitle('Draw')).toBeInTheDocument();
   });
 
-  it('renders children inside top mode on mobile', () => {
+  it('renders dropdown buttons in top mode on mobile', () => {
     mockMatchMedia(true); // mobile
     render(
-      <Toolbar sideWidth={200}>
-        <span>Mobile Content</span>
+      <Toolbar>
+        <ToolbarDropdown id="draw" label="Draw">
+          <span>Draw Panel</span>
+        </ToolbarDropdown>
       </Toolbar>,
     );
-    expect(screen.getByText('Mobile Content')).toBeInTheDocument();
+    expect(screen.getByText('Draw')).toBeInTheDocument();
   });
 
-  it('has collapse/expand toggle', () => {
-    mockMatchMedia(false);
+  it('shows panel content when button is clicked', async () => {
+    mockMatchMedia(false); // desktop (side mode)
     render(
-      <Toolbar sideWidth={200}>
-        <span>Content</span>
+      <Toolbar>
+        <ToolbarDropdown id="draw" label="Draw">
+          <span>Draw Panel Content</span>
+        </ToolbarDropdown>
       </Toolbar>,
     );
-    const collapseBtn = screen.getByLabelText('Collapse sidebar');
-    expect(collapseBtn).toBeInTheDocument();
-    fireEvent.click(collapseBtn);
-    expect(screen.getByLabelText('Expand sidebar')).toBeInTheDocument();
+    const btn = screen.getByTitle('Draw');
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(screen.getByText('Draw Panel Content')).toBeInTheDocument();
+    });
+  });
+
+  it('closes panel when same button is clicked again', async () => {
+    mockMatchMedia(false);
+    render(
+      <Toolbar>
+        <ToolbarDropdown id="draw" label="Draw">
+          <span>Draw Panel Content</span>
+        </ToolbarDropdown>
+      </Toolbar>,
+    );
+    const btn = screen.getByTitle('Draw');
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(screen.getByText('Draw Panel Content')).toBeInTheDocument();
+    });
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(screen.queryByText('Draw Panel Content')).not.toBeInTheDocument();
+    });
   });
 
   it('has mode switch button on desktop', () => {
     mockMatchMedia(false);
     render(
-      <Toolbar sideWidth={200}>
-        <span>Content</span>
+      <Toolbar>
+        <ToolbarDropdown id="draw" label="Draw">
+          <span>Panel</span>
+        </ToolbarDropdown>
       </Toolbar>,
     );
     expect(screen.getByTitle('Switch to top toolbar')).toBeInTheDocument();
