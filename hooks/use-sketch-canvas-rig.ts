@@ -130,6 +130,34 @@ export function useSketchCanvasRig() {
     [],
   );
 
+  /**
+   * Copy pixels from one canvas to another with a horizontal mirror (flip X).
+   * Used when initialising the back view so left/right parts are swapped and
+   * the drawing appears mirrored — matching how the back of a figure looks
+   * when rotated 180° around the vertical axis.
+   */
+  const mirrorCopyCanvas = useCallback(
+    (
+      fromSide: Side,
+      fromPart: BodyPartName,
+      toSide: Side,
+      toPart: BodyPartName,
+    ) => {
+      const src = refs.current.get(makeKey(fromSide, fromPart));
+      const dst = refs.current.get(makeKey(toSide, toPart));
+      if (!src || !dst) return;
+      const dstCtx = dst.getContext('2d');
+      if (!dstCtx) return;
+      dstCtx.save();
+      dstCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      dstCtx.translate(CANVAS_SIZE, 0);
+      dstCtx.scale(-1, 1);
+      dstCtx.drawImage(src, 0, 0);
+      dstCtx.restore();
+    },
+    [],
+  );
+
   return {
     setCanvasRef,
     pushUndoSnapshot,
@@ -138,5 +166,6 @@ export function useSketchCanvasRig() {
     clearAll,
     exportAll,
     copyCanvas,
+    mirrorCopyCanvas,
   };
 }

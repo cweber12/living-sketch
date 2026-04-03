@@ -220,6 +220,28 @@ const LEFT_ARM_PARTS: BodyPartName[] = [
   'leftHand',
 ];
 
+/**
+ * Maps each front part to its mirrored back counterpart.
+ * Left/right limbs swap (a rotated figure shows opposite limbs);
+ * symmetric parts (head, torso) map to themselves.
+ */
+const MIRROR_PART_MAP: Record<BodyPartName, BodyPartName> = {
+  head: 'head',
+  torso: 'torso',
+  rightUpperArm: 'leftUpperArm',
+  rightLowerArm: 'leftLowerArm',
+  rightHand: 'leftHand',
+  leftUpperArm: 'rightUpperArm',
+  leftLowerArm: 'rightLowerArm',
+  leftHand: 'rightHand',
+  rightUpperLeg: 'leftUpperLeg',
+  rightLowerLeg: 'leftLowerLeg',
+  rightFoot: 'leftFoot',
+  leftUpperLeg: 'rightUpperLeg',
+  leftLowerLeg: 'rightLowerLeg',
+  leftFoot: 'rightFoot',
+};
+
 export default function SketchPage() {
   const [side, setSide] = useState<Side>('front');
   const [color, setColor] = useState(() =>
@@ -271,21 +293,22 @@ export default function SketchPage() {
     undo,
     clearAll,
     exportAll,
-    copyCanvas,
+    mirrorCopyCanvas,
   } = useSketchCanvasRig();
 
-  /** First time user selects "back", copy all front canvases to back */
+  /** First time user selects "back", mirror all front canvases to back with L/R swap */
   const handleSideChange = useCallback(
     (newSide: Side) => {
       if (newSide === 'back' && !backInitialised.current) {
         backInitialised.current = true;
         for (const part of BODY_PARTS) {
-          copyCanvas('front', part, 'back', part);
+          const backPart = MIRROR_PART_MAP[part];
+          mirrorCopyCanvas('front', part, 'back', backPart);
         }
       }
       setSide(newSide);
     },
-    [copyCanvas],
+    [mirrorCopyCanvas],
   );
 
   const handleStrokeStart = useCallback(
@@ -458,121 +481,66 @@ export default function SketchPage() {
       : focusProps;
 
   /* ── Toolbar content ── */
+  // Layout icon: stylised cadaver / body figure
   const iconLayout = (
     <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
       fill="none"
       aria-hidden="true"
     >
-      <rect
-        x="1"
-        y="1"
-        width="4"
-        height="4"
-        rx="0.5"
+      {/* Head */}
+      <circle cx="7" cy="2.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+      {/* Torso */}
+      <path
+        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
         stroke="currentColor"
-        strokeWidth="1.2"
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+        fill="none"
       />
-      <rect
-        x="7"
-        y="1"
-        width="4"
-        height="4"
-        rx="0.5"
+      {/* Arms */}
+      <path
+        d="M4.5 5.5 L2 8 M9.5 5.5 L12 8"
         stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <rect
-        x="1"
-        y="7"
-        width="4"
-        height="4"
-        rx="0.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <rect
-        x="7"
-        y="7"
-        width="4"
-        height="4"
-        rx="0.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
+        strokeWidth="1.1"
+        strokeLinecap="round"
       />
     </svg>
   );
 
+  // Tools icon: surgical scalpel
   const iconDraw = (
     <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
       fill="none"
       aria-hidden="true"
     >
+      {/* Blade */}
       <path
-        d="M2 10l3-1 5-5-2-2-5 5-1 3zM8 2l2 2"
+        d="M2.5 11.5 L9 4 L10.5 5 L4.5 12.5 C3.8 13.1 2.5 13.2 2.2 12.5 C1.9 11.8 2.1 11.8 2.5 11.5Z"
+        fill="currentColor"
+        opacity="0.9"
+      />
+      {/* Handle / spine */}
+      <path
+        d="M8.5 3.5 L11.5 2 L12 2.5 L10.5 5"
         stroke="currentColor"
         strokeWidth="1.2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        fill="none"
       />
-    </svg>
-  );
-  const iconShapes = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="1.5"
-        y="1.5"
-        width="4"
-        height="4"
-        rx="0.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <circle
-        cx="8.5"
-        cy="8.5"
-        r="2.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-      />
-    </svg>
-  );
-  const iconHistory = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
+      {/* Guard notch */}
       <path
-        d="M2 6a4 4 0 118 0 4 4 0 01-8 0z"
+        d="M9 4 L10 3"
         stroke="currentColor"
-        strokeWidth="1.2"
-      />
-      <path
-        d="M6 4v2.5l1.5 1"
-        stroke="currentColor"
-        strokeWidth="1.2"
+        strokeWidth="1"
         strokeLinecap="round"
-      />
-      <path
-        d="M2 3v3h3"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        opacity="0.6"
       />
     </svg>
   );
@@ -626,8 +594,8 @@ export default function SketchPage() {
           <ToolbarDropdown id="layout" label="Layout" icon={iconLayout}>
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: toolbarMode === 'side' ? '1fr 1fr' : '1fr',
+                display: 'flex',
+                flexDirection: toolbarMode === 'side' ? 'row' : 'column',
                 gap: toolbarMode === 'side' ? '0 16px' : 0,
                 width: '100%',
               }}
@@ -674,8 +642,6 @@ export default function SketchPage() {
                     ))}
                   </select>
                 )}
-              </div>
-              <div className="flex flex-col gap-1.5">
                 {!isMobile && (
                   <>
                     <span
@@ -727,8 +693,9 @@ export default function SketchPage() {
           </ToolbarDropdown>
 
           {/* Draw */}
-          <ToolbarDropdown id="draw" label="Draw" icon={iconDraw}>
+          <ToolbarDropdown id="tools" label="Tools" icon={iconDraw}>
             <div className="flex flex-col gap-2 w-full">
+              {/* Row 1: Color swatch + shape selector */}
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -740,6 +707,39 @@ export default function SketchPage() {
                   className="color-swatch shrink-0"
                   title="Stroke color"
                 />
+                {!isEraser && (
+                  <select
+                    value={tool}
+                    onChange={(e) => {
+                      const v = e.target.value as ShapeTool;
+                      setTool(v);
+                      if (v !== 'pen') setIsEraser(false);
+                    }}
+                    className="flex-1 min-w-0 rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+                    style={{
+                      backgroundColor: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {SHAPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {isEraser && (
+                  <span
+                    className="flex-1 text-[10px] uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Eraser active
+                  </span>
+                )}
+              </div>
+              {/* Row 2: Brush size slider + circle preview */}
+              <div className="flex items-center gap-2">
                 <input
                   type="range"
                   min={1}
@@ -749,64 +749,32 @@ export default function SketchPage() {
                   className="flex-1 accent-accent"
                   title="Brush size"
                 />
-                <span
-                  className="text-[10px] tabular-nums w-5 shrink-0"
-                  style={{ color: 'var(--fg-muted)' }}
+                {/* Fixed-size circle preview — wrapper always 48px so layout never shifts */}
+                <div
+                  className="shrink-0 flex items-center justify-center"
+                  style={{ width: 48, height: 48 }}
                 >
-                  {brushSize}
-                </span>
+                  <div
+                    style={{
+                      width: brushSize,
+                      height: brushSize,
+                      borderRadius: '50%',
+                      backgroundColor: isEraser ? 'var(--danger)' : color,
+                      opacity: isEraser ? 0.5 : 0.85,
+                      border: '1px solid var(--border-strong)',
+                      flexShrink: 0,
+                    }}
+                  />
+                </div>
               </div>
               <SegmentedControl
-                options={['pen', 'eraser'] as ('pen' | 'eraser')[]}
-                value={isEraser ? 'eraser' : 'pen'}
-                onChange={(v) => setIsEraser(v === 'eraser')}
-                labels={{ pen: 'Pen', eraser: 'Erase' }}
-                dangerValue="eraser"
+                options={['draw', 'erase'] as ('draw' | 'erase')[]}
+                value={isEraser ? 'erase' : 'draw'}
+                onChange={(v) => setIsEraser(v === 'erase')}
+                labels={{ draw: 'Draw', erase: 'Erase' }}
+                dangerValue="erase"
               />
             </div>
-          </ToolbarDropdown>
-
-          {/* History */}
-          <ToolbarDropdown id="history" label="History" icon={iconHistory}>
-            <button
-              onClick={handleUndo}
-              className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-              title="Undo last stroke"
-            >
-              ↩ Undo
-            </button>
-            <button
-              onClick={clearAll}
-              className="btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2"
-              style={{ color: 'var(--danger)' }}
-              title="Clear all canvases"
-            >
-              ✕ Clear
-            </button>
-          </ToolbarDropdown>
-
-          {/* Shapes */}
-          <ToolbarDropdown id="shapes" label="Shapes" icon={iconShapes}>
-            <select
-              value={tool}
-              onChange={(e) => {
-                const v = e.target.value as ShapeTool;
-                setTool(v);
-                if (v !== 'pen') setIsEraser(false);
-              }}
-              className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-              style={{
-                backgroundColor: 'var(--bg)',
-                color: 'var(--fg)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {SHAPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
           </ToolbarDropdown>
         </Toolbar>
 

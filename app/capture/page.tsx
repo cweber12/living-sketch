@@ -40,6 +40,7 @@ export default function CapturePage() {
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
   const [jitterInterval, setJitterInterval] = useState(1);
   const [activeJitterInterval, setActiveJitterInterval] = useState(1);
+  const [toolbarOpenId, setToolbarOpenId] = useState<string | null>('source');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -240,6 +241,11 @@ export default function CapturePage() {
   /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
+  // Auto-open status panel when detection starts
+  useEffect(() => {
+    if (isDetecting) setToolbarOpenId('status');
+  }, [isDetecting]);
+
   // Smoothed, filtered frames for preview — computed once after capture completes
   const smoothedBaseFrames = useMemo(() => {
     if (!captureComplete || frames.length === 0) return frames;
@@ -287,64 +293,109 @@ export default function CapturePage() {
   }, [captureComplete, previewFrames]);
 
   /* ── Toolbar content ─────────────────────────────────────────── */
+  // Source icon: jumper-cable clamps with spark — bio-electric
   const iconSource = (
     <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
       fill="none"
       aria-hidden="true"
     >
-      <circle cx="6" cy="4" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      {/* Left cable */}
       <path
-        d="M1.5 11a4.5 4.5 0 019 0"
+        d="M1 7 L4.5 7"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="1.5"
         strokeLinecap="round"
       />
-    </svg>
-  );
-  const iconStatus = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect x="1" y="7" width="2.5" height="4" rx="0.5" fill="currentColor" />
+      {/* Left clamp */}
       <rect
-        x="4.75"
-        y="4.5"
-        width="2.5"
-        height="6.5"
+        x="4"
+        y="5"
+        width="2"
+        height="4"
         rx="0.5"
-        fill="currentColor"
-      />
-      <rect
-        x="8.5"
-        y="1.5"
-        width="2.5"
-        height="9.5"
-        rx="0.5"
-        fill="currentColor"
-      />
-    </svg>
-  );
-  const iconJitter = (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M1 8l2-3 2 2 2-4 2 3 2-2"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="1.1"
+        fill="none"
+      />
+      {/* Right cable */}
+      <path
+        d="M13 7 L9.5 7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Right clamp */}
+      <rect
+        x="8"
+        y="5"
+        width="2"
+        height="4"
+        rx="0.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+      />
+      {/* Spark between clamps */}
+      <path
+        d="M6.5 5.5 L7.5 7 L6.5 8.5"
+        stroke="currentColor"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
+        opacity="0.9"
+      />
+    </svg>
+  );
+  // Status icon: EEG / pulse monitor trace
+  const iconStatus = (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1 8 L3.5 8 L4.5 5 L6 10 L7 4 L8.5 8 L10 8 L11 6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  // Jitter icon: test tube / vial (reduce noise = purify sample)
+  const iconJitter = (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Tube body */}
+      <path
+        d="M5 1.5 L5 9.5 C5 11 5.6 12 7 12 C8.4 12 9 11 9 9.5 L9 1.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Cap */}
+      <path
+        d="M4 1.5 L10 1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Liquid fill */}
+      <path
+        d="M5 9 C5 11 5.6 12 7 12 C8.4 12 9 11 9 9 L9 7.5 L5 7.5 Z"
+        fill="currentColor"
+        opacity="0.65"
       />
     </svg>
   );
@@ -375,7 +426,7 @@ export default function CapturePage() {
                 await handleStart();
               }}
               disabled={!canStart}
-              className="btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+              className={`btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50${canStart && !captureComplete ? ' glow-pulse' : ''}`}
             >
               {captureComplete ? 'Re-detect' : 'Start'}
             </button>
@@ -394,7 +445,7 @@ export default function CapturePage() {
           <button
             onClick={handleUpload}
             disabled={!canUpload}
-            className="btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+            className={`btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50${captureComplete && uploadStatus === 'idle' ? ' glow-pulse' : ''}`}
             title="Upload captured landmarks"
           >
             {uploadStatus === 'uploading' && '…'}
@@ -409,7 +460,11 @@ export default function CapturePage() {
       <div
         className={`flex flex-1 overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
       >
-        <Toolbar onModeChange={setToolbarMode}>
+        <Toolbar
+          onModeChange={setToolbarMode}
+          openId={toolbarOpenId}
+          onOpenIdChange={setToolbarOpenId}
+        >
           {/* Source */}
           <ToolbarDropdown id="source" label="Source" icon={iconSource}>
             <SegmentedControl

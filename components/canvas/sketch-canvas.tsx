@@ -25,6 +25,30 @@ interface Props {
 const CANVAS_SIZE = 400;
 
 /**
+ * Generate a CSS cursor string showing a circle matching the current brush size.
+ * Uses an inline SVG data URI; the hotspot is centred on the circle.
+ */
+function makeBrushCursor(
+  size: number,
+  color: string,
+  isEraser: boolean,
+): string {
+  const diameter = Math.max(size, 2);
+  const pad = 4;
+  const total = diameter + pad * 2;
+  const c = total / 2;
+  const r = diameter / 2;
+
+  const circleContent = isEraser
+    ? `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2"/>`
+    : `<circle cx="${c}" cy="${c}" r="${r}" fill="${color}" fill-opacity="0.22" stroke="#aaa" stroke-width="1"/><line x1="${c - 2}" y1="${c}" x2="${c + 2}" y2="${c}" stroke="white" stroke-width="0.75"/><line x1="${c}" y1="${c - 2}" x2="${c}" y2="${c + 2}" stroke="white" stroke-width="0.75"/>`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="${total}">${circleContent}</svg>`;
+  const hotspot = Math.round(c);
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hotspot} ${hotspot}, ${isEraser ? 'cell' : 'crosshair'}`;
+}
+
+/**
  * Convert perfect-freehand outline points into an SVG path string.
  * Uses quadratic bezier curves through midpoints for smooth closed shapes.
  */
@@ -258,7 +282,7 @@ export function SketchCanvas({
       onPointerLeave={handlePointerUp}
       className="w-full h-full block touch-none"
       style={{
-        cursor: isEraser ? 'cell' : 'crosshair',
+        cursor: makeBrushCursor(brushSize, color, isEraser),
         backgroundColor: 'transparent',
       }}
     />

@@ -3,6 +3,7 @@
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useRef,
   createContext,
@@ -49,6 +50,9 @@ export interface ToolbarProps {
   sideWidth?: number;
   onModeChange?: (mode: ToolbarMode) => void;
   responsiveDefaults?: boolean;
+  /** Controlled active panel id. Pass null to close, undefined for uncontrolled. */
+  openId?: string | null;
+  onOpenIdChange?: (id: string | null) => void;
 }
 
 export function Toolbar({
@@ -56,13 +60,22 @@ export function Toolbar({
   sideWidth = 48,
   onModeChange,
   responsiveDefaults = false,
+  openId,
+  onOpenIdChange,
 }: ToolbarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [preferSide, setPreferSide] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [internalActiveId, setInternalActiveId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [toolbarRect, setToolbarRect] = useState<DOMRect | null>(null);
+  const [activeButtonRect, setActiveButtonRect] = useState<DOMRect | null>(
+    null,
+  );
+
+  const isControlled = openId !== undefined;
+  const activeId = isControlled ? (openId ?? null) : internalActiveId;
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
@@ -89,21 +102,57 @@ export function Toolbar({
     }
   }, []);
 
+  // Track active-button position so we can align the panel below it (top mode)
+  // Re-measure when viewport changes too
+  const measureActiveButton = useCallback(() => {
+    if (!activeId) {
+      setActiveButtonRect(null);
+      return;
+    }
+    const el = buttonRefs.current.get(activeId);
+    if (el) setActiveButtonRect(el.getBoundingClientRect());
+  }, [activeId]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // DOM measurement — reads external system (getBoundingClientRect)
+  useLayoutEffect(() => {
+    measureActiveButton();
+  }, [activeId, measureActiveButton]);
+
+  const applyActiveId = useCallback(
+    (id: string | null) => {
+      if (!isControlled) setInternalActiveId(id);
+      onOpenIdChange?.(id);
+    },
+    [isControlled, onOpenIdChange],
+  );
+
   useEffect(() => {
     if (!activeId) {
       return;
     }
+    /* eslint-disable react-hooks/set-state-in-effect */
+    // DOM measurements — syncing with external layout system
     measureToolbar();
-    const ro = new ResizeObserver(measureToolbar);
+    measureActiveButton();
+    const ro = new ResizeObserver(() => {
+      measureToolbar();
+      measureActiveButton();
+    });
+    /* eslint-enable react-hooks/set-state-in-effect */
     if (toolbarRef.current) ro.observe(toolbarRef.current);
-    window.addEventListener('resize', measureToolbar);
-    window.addEventListener('scroll', measureToolbar, true);
+    const onViewChange = () => {
+      measureToolbar();
+      measureActiveButton();
+    };
+    window.addEventListener('resize', onViewChange);
+    window.addEventListener('scroll', onViewChange, true);
     return () => {
       ro.disconnect();
-      window.removeEventListener('resize', measureToolbar);
-      window.removeEventListener('scroll', measureToolbar, true);
+      window.removeEventListener('resize', onViewChange);
+      window.removeEventListener('scroll', onViewChange, true);
     };
-  }, [activeId, measureToolbar]);
+  }, [activeId, measureToolbar, measureActiveButton]);
 
   useEffect(() => {
     if (!activeId) return;
@@ -112,11 +161,11 @@ export function Toolbar({
       if (toolbarRef.current?.contains(target)) return;
       const panelEl = document.getElementById('toolbar-panel-overlay');
       if (panelEl?.contains(target)) return;
-      setActiveId(null);
+      applyActiveId(null);
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
-  }, [activeId]);
+  }, [activeId, applyActiveId]);
 
   /* ── Extract ToolbarDropdown children ── */
   const dropdowns: ToolbarDropdownProps[] = [];
@@ -129,11 +178,14 @@ export function Toolbar({
   const activeDropdown = dropdowns.find((d) => d.id === activeId) ?? null;
   const ctxValue: ToolbarCtx = { isMobile, responsiveDefaults, mode };
 
-  const togglePanel = useCallback((id: string) => {
-    setActiveId((prev) => (prev === id ? null : id));
-  }, []);
+  const togglePanel = useCallback(
+    (id: string) => {
+      applyActiveId(activeId === id ? null : id);
+    },
+    [activeId, applyActiveId],
+  );
 
-  /* ── Panel positioning ── */
+  /* ── Panel positioning (fit-content) ── */
   const getPanelStyle = (): CSSProperties => {
     if (!toolbarRect) return { display: 'none' };
     if (mode === 'side') {
@@ -141,18 +193,22 @@ export function Toolbar({
         position: 'fixed',
         left: toolbarRect.right,
         top: toolbarRect.top,
-        bottom: 0,
+        maxHeight: `calc(100vh - ${toolbarRect.top}px - 8px)`,
         minWidth: 220,
-        maxWidth: 300,
+        maxWidth: 320,
         zIndex: 50,
         overflowY: 'auto',
       };
     }
+    // Top mode: align below the active button
+    const bLeft = activeButtonRect ? activeButtonRect.left : toolbarRect.left;
+    const safeLeft = Math.min(Math.max(bLeft, 0), window.innerWidth - 260);
     return {
       position: 'fixed',
       top: toolbarRect.bottom,
-      left: 0,
-      right: 0,
+      left: safeLeft,
+      minWidth: 240,
+      maxWidth: 360,
       zIndex: 50,
       maxHeight: '55vh',
       overflowY: 'auto',
@@ -271,7 +327,7 @@ export function Toolbar({
                 {activeDropdown.label}
               </span>
               <button
-                onClick={() => setActiveId(null)}
+                onClick={() => applyActiveId(null)}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -362,7 +418,7 @@ export function Toolbar({
                   )}
                   <span
                     style={{
-                      writingMode: 'vertical-rl',
+                      writingMode: 'vertical-lr',
                       textOrientation: 'mixed',
                       fontSize: 9,
                       fontWeight: 600,
@@ -420,6 +476,10 @@ export function Toolbar({
           return (
             <button
               key={d.id}
+              ref={(el) => {
+                if (el) buttonRefs.current.set(d.id, el);
+                else buttonRefs.current.delete(d.id);
+              }}
               onClick={() => togglePanel(d.id)}
               aria-pressed={isActive}
               style={{
@@ -518,7 +578,7 @@ export function SegmentedControl<T extends string>({
           <button
             key={o}
             onClick={() => onChange(o)}
-            className="flex-1 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
+            className="flex-1 py-1.5 px-3 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
             style={{
               ...(isDanger
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }
