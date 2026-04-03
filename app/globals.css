@@ -1,50 +1,63 @@
 @import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Living Sketch – Reanimation Theme
-   Mirrors lib/theme.ts — update both files together
+   Living Sketch – Re-Animator Theme
+   ─────────────────────────────────────────────────────────────────────────
+   Retro horror laboratory · neon bio-electric chemistry · dark experimental
+   lab · glowing reagent green · clinical off-whites · deep shadows ·
+   high contrast · cinematic cult sci-fi horror energy
 
-   Light: cool steel lab surfaces + deep blue accent + warm amber signals
-   Dark:  deep lab darkness + electric cyan accent + amber warning tones
+   Light:  green-tinted clinical lab – off-whites, sharp contrast, deep green
+   Dark:   black-green abyss – luminous acid green, chemical red, amber signals
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Light mode – modern laboratory / steel surfaces */
-  --bg: #f4f5f7;
-  --surface: #e8eaee;
-  --surface-raised: #dde0e6;
-  --surface-hover: #d0d4dc;
-  --border: #bcc2cc;
-  --border-strong: #9aa0ae;
-  --fg: #0f1219;
-  --fg-muted: #5c6370;
-  --accent: #16a34a;
-  --accent-hover: #15803d;
-  --accent-faint: rgba(22, 163, 74, 0.08);
-  --danger: #dc2626;
+  /* ── Light mode: green-tinted clinical laboratory ── */
+  --bg: #f2f5f1; /* off-white, imperceptible green tint       */
+  --surface: #e7ede5; /* panel surface                             */
+  --surface-raised: #dbe4d8; /* elevated card / section                   */
+  --surface-inset: #d3ddd0; /* recessed input / inset area               */
+  --surface-hover: #ccd8c8; /* hover state                               */
+  --border: #b2c4ac; /* default border                            */
+  --border-strong: #88a882; /* prominent border                          */
+  --fg: #0d180d; /* near-black, green-tinted                  */
+  --fg-muted: #4e6b49; /* muted secondary text                      */
+  --accent: #16a34a; /* deep reagent green (AA contrast on white) */
+  --accent-hover: #15803d; /* darker on hover                           */
+  --accent-active: #166534; /* pressed / active                          */
+  --accent-faint: rgba(22, 163, 74, 0.09);
+  --accent-glow: rgba(22, 163, 74, 0.18);
+  --danger: #dc2626; /* chemical red                              */
+  --danger-hover: #b91c1c;
   --danger-muted: rgba(220, 38, 38, 0.1);
-  --signal: #d97706;
-  --signal-faint: rgba(217, 119, 6, 0.1);
+  --signal: #b45309; /* amber warning (darker for light mode)     */
+  --signal-faint: rgba(180, 83, 9, 0.1);
+  --overlay: rgba(0, 0, 0, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark mode – deep lab + electric cyan + amber signals */
-    --bg: #0a0e14;
-    --surface: #111822;
-    --surface-raised: #172030;
-    --surface-hover: #1e293b;
-    --border: #1e3048;
-    --border-strong: #2d4a6a;
-    --fg: #e2e8f0;
-    --fg-muted: #6b7e95;
-    --accent: #4ade80;
-    --accent-hover: #86efac;
-    --accent-faint: rgba(74, 222, 128, 0.08);
-    --danger: #ef4444;
-    --danger-muted: rgba(239, 68, 68, 0.12);
-    --signal: #f59e0b;
-    --signal-faint: rgba(245, 158, 11, 0.1);
+    /* ── Dark mode: black-green laboratory abyss ── */
+    --bg: #060a06; /* near-black, green-tinted void            */
+    --surface: #0d140d; /* primary panel surface                    */
+    --surface-raised: #131d13; /* elevated section / card                  */
+    --surface-inset: #0a100a; /* recessed input / inset area              */
+    --surface-hover: #1b271b; /* hover state                              */
+    --border: #1e301e; /* default border — dark green              */
+    --border-strong: #2c482c; /* prominent border                         */
+    --fg: #e4f0e4; /* clinical off-white, slight green tint    */
+    --fg-muted: #5e875e; /* muted green text                         */
+    --accent: #4ade80; /* luminous reagent green — bio-electric     */
+    --accent-hover: #86efac; /* brighter on hover                        */
+    --accent-active: #22c55e; /* pressed / active                         */
+    --accent-faint: rgba(74, 222, 128, 0.1);
+    --accent-glow: rgba(74, 222, 128, 0.22);
+    --danger: #f87171; /* chemical red                             */
+    --danger-hover: #fca5a5;
+    --danger-muted: rgba(248, 113, 113, 0.12);
+    --signal: #fbbf24; /* amber warning signal                     */
+    --signal-faint: rgba(251, 191, 36, 0.1);
+    --overlay: rgba(0, 0, 0, 0.72);
   }
 }
 
@@ -54,6 +67,7 @@
   --color-foreground: var(--fg);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
+  --color-surface-inset: var(--surface-inset);
   --color-surface-hover: var(--surface-hover);
   --color-edge: var(--border);
   --color-edge-strong: var(--border-strong);
@@ -67,44 +81,309 @@
   --font-display: var(--font-space-grotesk);
 }
 
-/* ── Base styles ─────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 body {
   background-color: var(--bg);
   color: var(--fg);
-  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  font-family: var(--font-geist-sans, system-ui, Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── Display headings use Space Grotesk ──────────────────────────────────── */
+/* ── Display headings: Space Grotesk ────────────────────────────────────── */
 .font-display {
   font-family: var(--font-space-grotesk, var(--font-geist-sans), sans-serif);
+  letter-spacing: 0.03em;
+}
+
+/* ── Monospace data / readout text ──────────────────────────────────────── */
+.font-data {
+  font-family: var(--font-geist-mono, 'Courier New', monospace);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
 
-/* ── Volt glow – accent luminance ─────────────────────────────────────────── */
-.glow-accent {
-  text-shadow:
-    0 0 24px var(--accent-faint),
-    0 0 48px var(--accent-faint);
+/* ── Overline label: small-caps uppercase tracking ──────────────────────── */
+.label-overline {
+  font-size: 0.625rem; /* 10px */
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
 }
 
-/* ── Card with themed border and hover lift ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Scrollbars (WebKit only — degrades gracefully)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fg-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Focus rings — consistent with accent
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Range inputs — themed slider
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+  transition: box-shadow 120ms ease;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 1px var(--border-strong),
+    0 0 0 3px var(--accent-faint);
+}
+input[type='range']:hover::-webkit-slider-thumb {
+  background: var(--accent-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Glow utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Vivid reagent glow on display text */
+.glow-accent {
+  text-shadow:
+    0 0 20px var(--accent-glow),
+    0 0 60px var(--accent-faint);
+}
+
+/* Pulsing glow for live-state indicators */
+.glow-pulse {
+  animation: glowPulse 2.2s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 2px var(--accent-faint);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Cards
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .card-themed {
   background-color: var(--surface-raised);
   border: 1px solid var(--border);
   transition:
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
 }
 .card-themed:hover {
   border-color: var(--accent);
   box-shadow:
     0 0 0 1px var(--accent),
-    0 8px 32px var(--accent-faint);
+    0 8px 40px var(--accent-glow);
   transform: translateY(-2px);
 }
 
-/* ── Color swatch input ──────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Buttons
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Primary — reagent green fill */
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-space-grotesk, var(--font-geist-sans), sans-serif);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 80ms ease;
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.btn-primary:active:not(:disabled) {
+  background-color: var(--accent-active);
+  transform: scale(0.97);
+}
+
+/* Ghost / secondary */
+.btn-ghost {
+  background-color: transparent;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--border-strong);
+  background-color: var(--surface-hover);
+}
+.btn-ghost:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Danger */
+.btn-danger {
+  background-color: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 80ms ease;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--danger-hover);
+  box-shadow: 0 0 16px var(--danger-muted);
+}
+.btn-danger:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Inputs
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.input-themed {
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.input-themed::placeholder {
+  color: var(--fg-muted);
+  opacity: 0.65;
+}
+.input-themed:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-faint);
+}
+
+/* Native select styled to match inputs */
+.select-themed {
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.select-themed:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-faint);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Status / alert chips
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.alert-danger {
+  background-color: var(--danger-muted);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.alert-success {
+  background-color: var(--accent-faint);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+/* Inline badge pill */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.badge-accent {
+  color: var(--accent);
+  background-color: var(--accent-faint);
+}
+.badge-danger {
+  color: var(--danger);
+  background-color: var(--danger-muted);
+}
+.badge-signal {
+  color: var(--signal);
+  background-color: var(--signal-faint);
+}
+.badge-muted {
+  color: var(--fg-muted);
+  border-color: var(--border);
+  background-color: var(--surface-raised);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Color swatch input
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .color-swatch {
   appearance: none;
   -webkit-appearance: none;
@@ -116,6 +395,10 @@ body {
   cursor: pointer;
   background: none;
   flex-shrink: 0;
+  transition: border-color 140ms ease;
+}
+.color-swatch:hover {
+  border-color: var(--border-strong);
 }
 .color-swatch::-webkit-color-swatch-wrapper {
   padding: 0;
@@ -129,70 +412,11 @@ body {
   border-radius: 2px;
 }
 
-/* ── Primary CTA button ──────────────────────────────────────────────────── */
-.btn-primary {
-  background-color: var(--accent);
-  color: var(--bg);
-  font-family: var(--font-space-grotesk, var(--font-geist-sans), sans-serif);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  transition:
-    background-color 150ms ease,
-    box-shadow 150ms ease;
-}
-.btn-primary:hover {
-  background-color: var(--accent-hover);
-  box-shadow: 0 0 24px var(--accent-faint);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   Structural layout utilities
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Ghost / secondary button ────────────────────────────────────────────── */
-.btn-ghost {
-  background-color: transparent;
-  color: var(--fg-muted);
-  border: 1px solid var(--border);
-  transition:
-    color 150ms ease,
-    border-color 150ms ease;
-}
-.btn-ghost:hover {
-  color: var(--fg);
-  border-color: var(--border-strong);
-}
-
-/* ── Themed form input ───────────────────────────────────────────────────── */
-.input-themed {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--fg);
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease;
-}
-.input-themed::placeholder {
-  color: var(--fg-muted);
-  opacity: 0.7;
-}
-.input-themed:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-faint);
-}
-
-/* ── Danger / error alert ────────────────────────────────────────────────── */
-.alert-danger {
-  background-color: var(--danger-muted);
-  border: 1px solid var(--danger);
-  color: var(--danger);
-}
-
-/* ── Success / info alert ────────────────────────────────────────────────── */
-.alert-success {
-  background-color: var(--accent-faint);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-}
-
-/* ── Hero background: subtle circuit-lab grid ────────────────────────────── */
+/* Hero background: subtle circuit-lab grid */
 .hero-grid {
   background-image:
     linear-gradient(var(--border) 1px, transparent 1px),
@@ -201,7 +425,7 @@ body {
   background-position: center center;
 }
 
-/* ── Accent divider line ──────────────────────────────────────────────────── */
+/* Accent divider line */
 .divider-accent {
   height: 1px;
   background: linear-gradient(
@@ -210,5 +434,23 @@ body {
     var(--accent),
     transparent
   );
-  opacity: 0.4;
+  opacity: 0.45;
+}
+
+/* Panel data row — monospace readout inside toolbar/panel */
+.panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.panel-row strong {
+  font-family: var(--font-geist-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
 }

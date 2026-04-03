@@ -26,8 +26,17 @@ export default function ScaleControls() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg bg-neutral-100 p-3 dark:bg-neutral-900">
-      <h3 className="text-sm font-semibold uppercase tracking-wide">
+    <div
+      className="flex flex-col gap-3 rounded-lg p-3"
+      style={{
+        backgroundColor: 'var(--surface-raised)',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <h3
+        className="text-[10px] font-bold uppercase tracking-[0.18em]"
+        style={{ color: 'var(--fg-muted)' }}
+      >
         Scale Parts
       </h3>
 
@@ -36,18 +45,23 @@ export default function ScaleControls() {
           <button
             key={p.id}
             onClick={() => setSelected(p.id)}
-            className={`rounded px-2 py-1 text-xs transition-colors ${
-              selected === p.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700'
-            }`}
+            className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors"
+            style={{
+              backgroundColor:
+                selected === p.id ? 'var(--accent)' : 'var(--surface-inset)',
+              color: selected === p.id ? 'var(--bg)' : 'var(--fg-muted)',
+              border: '1px solid var(--border)',
+            }}
           >
             {p.label}
           </button>
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-xs">
+      <label
+        className="flex items-center gap-2 text-[11px]"
+        style={{ color: 'var(--fg-muted)' }}
+      >
         <span className="w-4">X</span>
         <input
           type="range"
@@ -58,12 +72,18 @@ export default function ScaleControls() {
           onChange={(e) => setAxis('x', e.target.value)}
           className="flex-1"
         />
-        <span className="w-10 text-right tabular-nums">
+        <span
+          className="w-10 text-right font-data"
+          style={{ color: 'var(--fg)' }}
+        >
           {current.x.toFixed(2)}
         </span>
       </label>
 
-      <label className="flex items-center gap-2 text-xs">
+      <label
+        className="flex items-center gap-2 text-[11px]"
+        style={{ color: 'var(--fg-muted)' }}
+      >
         <span className="w-4">Y</span>
         <input
           type="range"
@@ -74,7 +94,10 @@ export default function ScaleControls() {
           onChange={(e) => setAxis('y', e.target.value)}
           className="flex-1"
         />
-        <span className="w-10 text-right tabular-nums">
+        <span
+          className="w-10 text-right font-data"
+          style={{ color: 'var(--fg)' }}
+        >
           {current.y.toFixed(2)}
         </span>
       </label>

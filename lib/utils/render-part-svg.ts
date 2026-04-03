@@ -109,7 +109,7 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawHandSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.handScale);
+    return drawHandSvg(rc.ctx, img, part, a, rc.torsoDims, rc.scales.handScale);
   }
 
   /* Legs — dedicated rotate+scale drawing */

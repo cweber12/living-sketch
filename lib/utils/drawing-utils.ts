@@ -206,6 +206,7 @@ const HAND_TORSO_FRACTION = 0.35;
 export function drawHandSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
+  part: string,
   anchors: SegmentAnchor,
   torsoDims: TorsoDimensions,
   scale: ScaleVector,
@@ -263,6 +264,10 @@ export function drawHandSvg(
 
     ctx.save();
     ctx.setTransform(M.a, M.b, M.c, M.d, M.e, M.f);
+    if (part.toLowerCase().includes('right')) {
+      ctx.scale(-1, 1);
+      ctx.translate(-svgW, 0);
+    }
     ctx.drawImage(img, 0, 0, svgW, svgH);
     ctx.restore();
     return true;

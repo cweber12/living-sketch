@@ -60,13 +60,21 @@ export default function FileList({
 
   if (loading) {
     return (
-      <div className="py-2 text-center text-xs text-neutral-500">Loading…</div>
+      <div
+        className="py-2 text-center text-[11px] uppercase tracking-widest"
+        style={{ color: 'var(--fg-muted)' }}
+      >
+        Loading…
+      </div>
     );
   }
 
   if (files.length === 0) {
     return (
-      <div className="py-2 text-center text-xs text-neutral-500">
+      <div
+        className="py-2 text-center text-[11px] uppercase tracking-widest"
+        style={{ color: 'var(--fg-muted)' }}
+      >
         No saved files
       </div>
     );
@@ -81,18 +89,34 @@ export default function FileList({
           <li key={f.key} className="flex items-center gap-1">
             <button
               onClick={() => onSelect(f)}
-              className={`flex-1 rounded px-2 py-1 text-left text-xs transition-colors ${
-                isSelected
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700'
-              }`}
+              className="flex-1 rounded px-2 py-1 text-left text-[11px] transition-colors truncate"
+              style={{
+                backgroundColor: isSelected
+                  ? 'var(--accent)'
+                  : 'var(--surface-inset)',
+                color: isSelected ? 'var(--bg)' : 'var(--fg)',
+                border: '1px solid var(--border)',
+              }}
             >
               {label}
             </button>
             <button
               onClick={() => handleDelete(f)}
               disabled={deleting === f.key}
-              className="rounded p-1 text-neutral-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900 dark:hover:text-red-400 disabled:opacity-50"
+              className="rounded p-1 transition-colors disabled:opacity-40"
+              style={{ color: 'var(--fg-muted)' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color =
+                  'var(--danger)';
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  'var(--danger-muted)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.color =
+                  'var(--fg-muted)';
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  'transparent';
+              }}
               title="Delete"
               aria-label="Delete file"
             >
