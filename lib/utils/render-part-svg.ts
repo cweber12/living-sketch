@@ -29,8 +29,6 @@ export interface RenderContext {
   earDist: EarDistance;
   shifts: ShiftFactors;
   scales: ScaleFactors;
-  /** true when SVGs were drawn in arms-down pose (top/bottom anchored) */
-  armsDown: boolean;
   /** When true, draw anchor points and vectors over SVG parts */
   showAnchors?: boolean;
   /** Optional background fill colour (CSS colour string). */
@@ -98,17 +96,10 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawSegmentSvg(
-      rc.ctx,
-      img,
-      a,
-      rc.torsoDims,
-      rc.scales.armScale,
-      rc.armsDown,
-    );
+    return drawSegmentSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.armScale);
   }
 
-  /* Hands — dedicated affine transform with armsDown toggle */
+  /* Hands — torso-proportional affine transform, always arms-up (horizontal) orientation */
   if (isHand) {
     const a = setHandAnchors(
       part,
@@ -118,15 +109,7 @@ export function renderPartSvg(
       rc.shifts,
     );
     if (!a) return false;
-    return drawHandSvg(
-      rc.ctx,
-      img,
-      a,
-      rc.armsDown,
-      part,
-      rc.torsoDims,
-      rc.scales.handScale,
-    );
+    return drawHandSvg(rc.ctx, img, a, rc.torsoDims, rc.scales.handScale);
   }
 
   /* Legs — dedicated rotate+scale drawing */

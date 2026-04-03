@@ -187,20 +187,26 @@ export function drawSegmentSvg(
 
 /* ── Hands (affine transform wrist → finger) ─────────────────────────── */
 
-/**
- * Render hands at a larger apparent size.
- * The wrist→index-finger landmark distance is short on-screen, so we
- * extend the segment and cross-section proportionally to represent the
- * full hand relative to the torso.
- */
-const HAND_SIZE_SCALE = 2.0;
+/** Hand size as fraction of torso hypotenuse — mirrors the head scaling approach. */
+const HAND_HYPO_FRACTION = 0.3;
+/** Fallback fraction (of torso width) when hypotenuse is not yet accumulated. */
+const HAND_TORSO_FRACTION = 0.35;
 
+/**
+ * Render a hand SVG onto the canvas.
+ *
+ * Hand SVGs are **always saved in arms-up (horizontal) orientation**: left edge
+ * anchors to the wrist, right edge to the finger end.  No arms-down branching
+ * is needed here because the save pipeline normalises orientation at write time.
+ *
+ * Size is derived from the torso hypotenuse so the hand stays proportionate
+ * to the body regardless of the drawn SVG's pixel dimensions — the same
+ * method used for the head.
+ */
 export function drawHandSvg(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   anchors: SegmentAnchor,
-  armsDown: boolean,
-  part: string,
   torsoDims: TorsoDimensions,
   scale: ScaleVector,
 ): boolean {
@@ -219,44 +225,38 @@ export function drawHandSvg(
     const px = -uy;
     const py = ux;
 
-    const crossScale = torsoDims.crossSectionScale;
+    // Uniform scale: torso-proportional (same pattern as drawHeadSvg)
+    const torsoHyp = Math.abs(torsoDims.avgTorsoHypotenuse);
+    const svgHyp = Math.hypot(svgW, svgH);
+    const targetSize =
+      torsoHyp > 0
+        ? torsoHyp * HAND_HYPO_FRACTION
+        : Math.abs(torsoDims.avgTorsoWidth) * HAND_TORSO_FRACTION;
+    const uniformScale = targetSize / Math.max(1, svgHyp);
+    const appliedScale = uniformScale * ((scale.x + scale.y) / 2);
 
-    // Extend the segment endpoint to make the hand larger
-    const extLen = segLen * HAND_SIZE_SCALE;
+    // Hand dimensions in screen pixels
+    const handWidth = svgW * appliedScale;
+    const hh = (svgH / 2) * appliedScale;
+
+    // Place finger end at wrist + handWidth along the arm direction
     const extFinger: PointAnchor = {
-      x: wrist.x + ux * extLen,
-      y: wrist.y + uy * extLen,
+      x: wrist.x + ux * handWidth,
+      y: wrist.y + uy * handWidth,
     };
 
     // Source corners in SVG-pixel space
     const src0: PointAnchor = { x: 0, y: 0 };
     const src1: PointAnchor = { x: svgW, y: 0 };
     const src2: PointAnchor = { x: 0, y: svgH };
-    let dst0: PointAnchor, dst1: PointAnchor, dst2: PointAnchor;
 
-    if (armsDown) {
-      // SVG authored vertically (h > w): top→wrist, bottom→extFinger
-      const hw = (svgW / 2) * crossScale * scale.x * HAND_SIZE_SCALE;
-      const isRight = part.startsWith('right');
-      if (isRight) {
-        // Right hand: flip perpendicular direction so the SVG renders without
-        // horizontal mirroring, matching the right-hand SVG authoring convention.
-        dst0 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
-        dst1 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
-        dst2 = { x: extFinger.x + px * hw, y: extFinger.y + py * hw };
-      } else {
-        dst0 = { x: wrist.x - px * hw, y: wrist.y - py * hw };
-        dst1 = { x: wrist.x + px * hw, y: wrist.y + py * hw };
-        dst2 = { x: extFinger.x - px * hw, y: extFinger.y - py * hw };
-      }
-    } else {
-      // SVG authored horizontally (w >= h): left→wrist, right→extFinger
-      // Use scale.x for cross-section (consistent with drawSegmentSvg convention)
-      const hh = (svgH / 2) * crossScale * scale.x * HAND_SIZE_SCALE;
-      dst0 = { x: wrist.x + px * hh, y: wrist.y + py * hh };
-      dst1 = { x: extFinger.x + px * hh, y: extFinger.y + py * hh };
-      dst2 = { x: wrist.x - px * hh, y: wrist.y - py * hh };
-    }
+    // Horizontal orientation: SVG left → wrist, SVG right → finger
+    const dst0: PointAnchor = { x: wrist.x + px * hh, y: wrist.y + py * hh };
+    const dst1: PointAnchor = {
+      x: extFinger.x + px * hh,
+      y: extFinger.y + py * hh,
+    };
+    const dst2: PointAnchor = { x: wrist.x - px * hh, y: wrist.y - py * hh };
 
     const M = affineFrom3Points(src0, src1, src2, dst0, dst1, dst2);
     if (!M) return false;

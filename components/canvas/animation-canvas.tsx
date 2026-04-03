@@ -17,8 +17,6 @@ interface AnimationCanvasProps {
   playing: boolean;
   width: number;
   height: number;
-  /** @deprecated Arms are always rendered in arms-up (horizontal) orientation. */
-  armsDown?: boolean;
   showAnchors?: boolean;
   /** CSS colour string for the canvas background (default: transparent). */
   bgColor?: string;
@@ -34,7 +32,6 @@ export default function AnimationCanvas({
   playing,
   width,
   height,
-  armsDown = false,
   showAnchors,
   bgColor,
   previewScale = 1,
@@ -66,7 +63,6 @@ export default function AnimationCanvas({
           earDist: earDist.current,
           shifts,
           scales,
-          armsDown,
           showAnchors,
           bgColor,
         });
@@ -75,17 +71,7 @@ export default function AnimationCanvas({
       }
       rafId.current = requestAnimationFrame((t) => drawRef.current?.(t));
     };
-  }, [
-    frames,
-    svgImages,
-    shifts,
-    scales,
-    width,
-    height,
-    armsDown,
-    showAnchors,
-    bgColor,
-  ]);
+  }, [frames, svgImages, shifts, scales, width, height, showAnchors, bgColor]);
 
   // Keep torso SVG dimensions in sync with loaded images
   useEffect(() => {
@@ -132,7 +118,6 @@ export default function AnimationCanvas({
       earDist: earDist.current,
       shifts,
       scales,
-      armsDown,
       showAnchors,
       bgColor,
     });
@@ -144,7 +129,6 @@ export default function AnimationCanvas({
     svgImages,
     width,
     height,
-    armsDown,
     showAnchors,
     bgColor,
   ]);
