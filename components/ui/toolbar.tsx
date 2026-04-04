@@ -352,7 +352,7 @@ export function Toolbar({
                 display: 'flex',
                 flexDirection: mode === 'top' ? 'row' : 'column',
                 flexWrap: mode === 'top' ? 'wrap' : undefined,
-                gap: mode === 'top' ? 20 : 6,
+                gap: mode === 'top' ? 6 : 6,
                 alignItems: 'flex-start',
               }}
             >
@@ -559,7 +559,7 @@ export function SegmentedControl<T extends string>({
   options: T[];
   value: T;
   onChange: (v: T) => void;
-  labels?: Partial<Record<T, string>>;
+  labels?: Partial<Record<T, ReactNode>>;
   dangerValue?: T;
 }) {
   return (

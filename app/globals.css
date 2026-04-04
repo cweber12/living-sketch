@@ -12,27 +12,33 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Light mode: green-tinted clinical laboratory ── */
-  --bg: #f2f5f1; /* off-white, imperceptible green tint       */
-  --surface: #e7ede5; /* panel surface                             */
-  --surface-raised: #dbe4d8; /* elevated card / section                   */
-  --surface-inset: #d3ddd0; /* recessed input / inset area               */
-  --surface-hover: #ccd8c8; /* hover state                               */
-  --border: #b2c4ac; /* default border                            */
-  --border-strong: #88a882; /* prominent border                          */
-  --fg: #0d180d; /* near-black, green-tinted                  */
-  --fg-muted: #4e6b49; /* muted secondary text                      */
-  --accent: #16a34a; /* deep reagent green (AA contrast on white) */
-  --accent-hover: #15803d; /* darker on hover                           */
-  --accent-active: #166534; /* pressed / active                          */
-  --accent-faint: rgba(22, 163, 74, 0.09);
-  --accent-glow: rgba(22, 163, 74, 0.18);
-  --danger: #dc2626; /* chemical red                              */
-  --danger-hover: #b91c1c;
-  --danger-muted: rgba(220, 38, 38, 0.1);
-  --signal: #b45309; /* amber warning (darker for light mode)     */
-  --signal-faint: rgba(180, 83, 9, 0.1);
-  --overlay: rgba(0, 0, 0, 0.55);
+  /* ── Light mode: high-contrast Re-Animator laboratory ── */
+  --bg: #f3efdf; /* bright aged ivory / lab light */
+  --surface: #ddd7c2; /* pale instrument housing */
+  --surface-raised: #c8c09f; /* stronger elevated panel */
+  --surface-inset: #aea57f; /* deeper recessed well */
+  --surface-hover: #9a9068; /* pronounced hover contrast */
+
+  --border: #0f0e0e; /* dark olive-brass */
+  --border-strong: #000000; /* hard equipment edge */
+
+  --fg: #131108; /* deep near-black brown/olive */
+  --fg-muted: #4e4d2b; /* murky olive text */
+
+  --accent: #89af00; /* vivid reagent green */
+  --accent-hover: #374600; /* darker hover green */
+  --accent-active: #5e7411; /* pressed / active */
+  --accent-faint: rgba(140, 171, 31, 0.16);
+  --accent-glow: rgba(170, 210, 40, 0.28);
+
+  --danger: #8a2b24; /* blood-vial red */
+  --danger-hover: #6f211c;
+  --danger-muted: rgba(138, 43, 36, 0.15);
+
+  --signal: #a87418; /* iodine / chemical amber */
+  --signal-faint: rgba(168, 116, 24, 0.16);
+
+  --overlay: rgba(24, 19, 9, 0.64);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -209,6 +215,22 @@ input[type='range']:hover::-webkit-slider-thumb {
   50% {
     opacity: 0.6;
     box-shadow: 0 0 2px var(--accent-faint);
+  }
+}
+
+/* Brief 360° spin for side-flip icon transition */
+.side-flip {
+  animation: sideFlip 0.35s ease-in-out;
+}
+@keyframes sideFlip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
   }
 }
 

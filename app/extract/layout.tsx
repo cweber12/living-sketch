@@ -1,4 +1,4 @@
-export default function CaptureLayout({
+export default function ExtractLayout({
   children,
 }: {
   children: React.ReactNode;

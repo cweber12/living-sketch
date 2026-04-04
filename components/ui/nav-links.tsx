@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 
 const TABS = [
   { href: '/sketch', label: 'Sketch' },
-  { href: '/capture', label: 'Capture' },
-  { href: '/console', label: 'Animate' },
+  { href: '/extract', label: 'Extract' },
+  { href: '/console', label: 'Re-Animate' },
 ] as const;
 
 export function NavLinks() {
@@ -14,7 +14,7 @@ export function NavLinks() {
 
   return (
     <nav
-      className="flex items-center gap-1 w-full rounded-md overflow-hidden"
+      className="flex items-center w-full rounded-md overflow-hidden"
       style={{
         border: '1px solid var(--border)',
         backgroundColor: 'var(--surface-raised)',

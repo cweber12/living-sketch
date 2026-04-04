@@ -72,8 +72,8 @@ export default function ConsolePage() {
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
-  const [fileView, setFileView] = useState<'animations' | 'creations'>(
-    'animations',
+  const [fileView, setFileView] = useState<'activity' | 'creations'>(
+    'activity',
   );
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
@@ -359,16 +359,88 @@ export default function ConsolePage() {
         className={`flex flex-1 overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
       >
         <Toolbar onModeChange={setToolbarMode}>
-          {/* Files */}
-          <ToolbarDropdown id="files" label="Files" icon={iconFiles}>
+          {/* Archives */}
+          <ToolbarDropdown id="files" label="Archives" icon={iconFiles}>
             <SegmentedControl
-              options={['animations', 'creations'] as const}
+              options={['activity', 'creations'] as const}
               value={fileView}
               onChange={setFileView}
-              labels={{ animations: 'Animations', creations: 'Creations' }}
+              labels={{
+                activity: (
+                  <span className="flex items-center justify-center gap-1">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M7 4 C7 4 5.5 3 4 3.5 C2.5 4 1.5 5.5 2 7 C2.5 8 3 8.5 2.5 9.5 C2 10.5 3 11.5 4.5 11.5 L7 11.5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M7 4 C7 4 8.5 3 10 3.5 C11.5 4 12.5 5.5 12 7 C11.5 8 11 8.5 11.5 9.5 C12 10.5 11 11.5 9.5 11.5 L7 11.5"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <line
+                        x1="7"
+                        y1="4"
+                        x2="7"
+                        y2="11.5"
+                        stroke="currentColor"
+                        strokeWidth="0.8"
+                        opacity="0.4"
+                      />
+                    </svg>
+                    Activity
+                  </span>
+                ),
+                creations: (
+                  <span className="flex items-center justify-center gap-1">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="7"
+                        cy="2.8"
+                        r="1.8"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                      />
+                      <path
+                        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        fill="none"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M4.5 6 L2.5 8 M9.5 6 L11.5 8"
+                        stroke="currentColor"
+                        strokeWidth="1.1"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    Creations
+                  </span>
+                ),
+              }}
             />
-            <div className="max-h-48 overflow-y-auto">
-              {fileView === 'animations' ? (
+            <div className="overflow-y-auto">
+              {fileView === 'activity' ? (
                 <FileList
                   bucket="landmarks"
                   selected={landmarkFile}
@@ -394,55 +466,61 @@ export default function ConsolePage() {
 
           {/* Tools */}
           <ToolbarDropdown id="tools" label="Tools" icon={iconPanel}>
-            <button
-              onClick={() =>
-                setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
-              }
-              className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
-              style={
-                toolsPanel === 'shift' ? { color: 'var(--accent)' } : undefined
-              }
-            >
-              <span style={{ color: 'var(--accent)' }}>{iconShift}</span>
-              Shift Anchors
-            </button>
-            <div
-              className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-              style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
-            >
-              <div className="pt-1.5">
-                <ShiftControls />
+            <div className="flex flex-col gap-0.5 w-full">
+              <button
+                onClick={() =>
+                  setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
+                }
+                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
+                style={
+                  toolsPanel === 'shift'
+                    ? { color: 'var(--accent)' }
+                    : undefined
+                }
+              >
+                <span style={{ color: 'var(--accent)' }}>{iconShift}</span>
+                Shift Anchors
+              </button>
+              <div
+                className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
+              >
+                <div className="pt-1.5">
+                  <ShiftControls />
+                </div>
               </div>
-            </div>
 
-            <button
-              onClick={() =>
-                setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
-              }
-              className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
-              style={
-                toolsPanel === 'scale' ? { color: 'var(--accent)' } : undefined
-              }
-            >
-              <span style={{ color: 'var(--accent)' }}>{iconScale}</span>
-              Scale Parts
-            </button>
-            <div
-              className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-              style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
-            >
-              <div className="pt-1.5">
-                <ScaleControls />
+              <button
+                onClick={() =>
+                  setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
+                }
+                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
+                style={
+                  toolsPanel === 'scale'
+                    ? { color: 'var(--accent)' }
+                    : undefined
+                }
+              >
+                <span style={{ color: 'var(--accent)' }}>{iconScale}</span>
+                Scale Parts
+              </button>
+              <div
+                className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
+              >
+                <div className="pt-1.5">
+                  <ScaleControls />
+                </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => setShowAnchors((v) => !v)}
-              className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
-              style={showAnchors ? { color: 'var(--accent)' } : undefined}
-            >
-              {showAnchors ? '⊙ Hide Anchors' : '⊙ Show Anchors'}
-            </button>
+              <button
+                onClick={() => setShowAnchors((v) => !v)}
+                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
+                style={showAnchors ? { color: 'var(--accent)' } : undefined}
+              >
+                {showAnchors ? '⊙ Hide Anchors' : '⊙ Show Anchors'}
+              </button>
+            </div>
           </ToolbarDropdown>
 
           {/* Preview */}

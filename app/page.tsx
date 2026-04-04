@@ -34,7 +34,7 @@ export default async function Home() {
             className="text-lg sm:text-xl max-w-lg leading-relaxed"
             style={{ color: 'var(--fg-muted)' }}
           >
-            Draw the parts. Capture the motion.
+            Draw the parts. Extract the motion.
             <br />
             Watch your creation <em style={{ color: 'var(--fg)' }}>wake.</em>
           </p>
@@ -160,9 +160,9 @@ export default async function Home() {
             </span>
           </Link>
 
-          {/* Card 2 – Capture */}
+          {/* Card 2 – Extract */}
           <Link
-            href="/capture"
+            href="/extract"
             className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
           >
             <div
@@ -206,7 +206,7 @@ export default async function Home() {
                 className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
                 style={{ color: 'var(--accent)' }}
               >
-                II — Capture
+                II — Extract
               </p>
               <h3
                 className="font-display font-bold uppercase text-xl mb-3"
@@ -226,7 +226,7 @@ export default async function Home() {
               className="mt-auto text-xs font-semibold tracking-widest uppercase group-hover:translate-x-1 transition-transform inline-flex items-center gap-1"
               style={{ color: 'var(--accent)' }}
             >
-              Start Capture →
+              Start Extract →
             </span>
           </Link>
 
@@ -263,7 +263,7 @@ export default async function Home() {
                 className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
                 style={{ color: 'var(--accent)' }}
               >
-                III — Animate
+                III — Re-Animate
               </p>
               <h3
                 className="font-display font-bold uppercase text-xl mb-3"
@@ -310,8 +310,8 @@ export default async function Home() {
           <Link href="/sketch" className="hover:opacity-80 transition-opacity">
             Sketch
           </Link>
-          <Link href="/capture" className="hover:opacity-80 transition-opacity">
-            Capture
+          <Link href="/extract" className="hover:opacity-80 transition-opacity">
+            Extract
           </Link>
           <Link href="/console" className="hover:opacity-80 transition-opacity">
             Console

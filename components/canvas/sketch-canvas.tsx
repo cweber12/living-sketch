@@ -20,6 +20,7 @@ interface Props {
     el: HTMLCanvasElement | null,
   ) => void;
   onStrokeStart: (side: Side, part: BodyPartName) => void;
+  onStrokeEnd?: (side: Side, part: BodyPartName) => void;
 }
 
 const CANVAS_SIZE = 400;
@@ -79,6 +80,7 @@ export function SketchCanvas({
   tool = 'pen',
   onMount,
   onStrokeStart,
+  onStrokeEnd,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawing = useRef(false);
@@ -271,7 +273,8 @@ export function SketchCanvas({
     currentPoints.current = [];
     shapeStartRef.current = null;
     committedImage.current = null;
-  }, []);
+    onStrokeEnd?.(side, part);
+  }, [side, part, onStrokeEnd]);
 
   return (
     <canvas

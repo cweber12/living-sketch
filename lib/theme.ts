@@ -55,7 +55,7 @@ export const darkTheme = {
 
 export const lightTheme = {
   // ── Backgrounds ──────────────────────────────────────────────────────────
-  bg: '#f4f5f7', // cool gray-white
+  bg: '#000000', // cool gray-white
   surface: '#e8eaee', // raised surface
   surfaceRaised: '#dde0e6', // deeper card
   surfaceHover: '#d0d4dc', // card hover

@@ -22,7 +22,7 @@ export async function NavBar() {
         <Link
           href="/"
           className="font-display font-bold tracking-wide uppercase text-sm sm:text-base shrink-0"
-          style={{ color: 'var(--accent)' }}
+          style={{ color: 'var(--fg)' }}
         >
           Living Sketch
         </Link>

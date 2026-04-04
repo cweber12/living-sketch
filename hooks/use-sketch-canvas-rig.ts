@@ -14,6 +14,8 @@ function makeKey(side: Side, part: BodyPartName): CanvasKey {
   return `${side}-${part}` as CanvasKey;
 }
 
+const SESSION_KEY = 'sketch-canvases';
+
 export function useSketchCanvasRig() {
   // One ref per canvas (28 total: 14 parts × 2 sides)
   const refs = useRef<Map<CanvasKey, HTMLCanvasElement | null>>(new Map());
@@ -25,6 +27,23 @@ export function useSketchCanvasRig() {
   const setCanvasRef = useCallback(
     (side: Side, part: BodyPartName, el: HTMLCanvasElement | null) => {
       refs.current.set(makeKey(side, part), el);
+      if (el) {
+        // Restore from session storage if available
+        try {
+          const stored = sessionStorage.getItem(SESSION_KEY);
+          if (stored) {
+            const data = JSON.parse(stored) as Record<string, string>;
+            const url = data[makeKey(side, part)];
+            if (url) {
+              const img = new Image();
+              img.onload = () => el.getContext('2d')?.drawImage(img, 0, 0);
+              img.src = url;
+            }
+          }
+        } catch {
+          // ignore — sessionStorage may be unavailable
+        }
+      }
     },
     [],
   );
@@ -77,6 +96,33 @@ export function useSketchCanvasRig() {
       canvas?.getContext('2d')?.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
     });
     undoStacks.current.clear();
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  /** Persist all non-blank canvases to sessionStorage */
+  const saveToSession = useCallback(() => {
+    try {
+      const data: Record<string, string> = {};
+      for (const side of ['front', 'back'] as Side[]) {
+        for (const part of BODY_PARTS) {
+          const canvas = refs.current.get(makeKey(side, part));
+          if (!canvas) continue;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) continue;
+          const pixels = ctx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data;
+          if (pixels.some((v) => v !== 0)) {
+            data[makeKey(side, part)] = canvas.toDataURL('image/webp', 0.7);
+          }
+        }
+      }
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    } catch {
+      // ignore — storage full or unavailable
+    }
   }, []);
 
   /**
@@ -167,5 +213,6 @@ export function useSketchCanvasRig() {
     exportAll,
     copyCanvas,
     mirrorCopyCanvas,
+    saveToSession,
   };
 }

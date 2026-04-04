@@ -19,11 +19,11 @@ import {
 
 const PREVIEW_FRAME_MS = 1000 / 30;
 
-type Source = 'webcam' | 'upload';
+type Source = 'live' | 'browse';
 
-export default function CapturePage() {
-  /* ── State ──────────────────────────────────────────────────────── */
-  const [source, setSource] = useState<Source>('upload');
+export default function ExtractPage() {
+  /* ── State ──────────────────────────────────────────────── */
+  const [source, setSource] = useState<Source>('browse');
   const [uploadStatus, setUploadStatus] = useState<
     'idle' | 'uploading' | 'done' | 'error'
   >('idle');
@@ -110,7 +110,7 @@ export default function CapturePage() {
   }, [stopWebcam]);
 
   useEffect(() => {
-    if (source === 'webcam') {
+    if (source === 'live') {
       startWebcam();
     } else {
       stopWebcam();
@@ -171,7 +171,7 @@ export default function CapturePage() {
     setErrorMsg('');
 
     // For uploaded video, play from current position
-    if (source === 'upload') video.play();
+    if (source === 'browse') video.play();
 
     // Wait for video to be playing (with timeout)
     try {
@@ -194,7 +194,7 @@ export default function CapturePage() {
 
   const handleStop = useCallback(() => {
     stop();
-    if (source === 'upload') videoRef.current?.pause();
+    if (source === 'browse') videoRef.current?.pause();
   }, [stop, source]);
 
   const handleNewCapture = useCallback(() => {
@@ -210,7 +210,7 @@ export default function CapturePage() {
     setUploadStatus('uploading');
     setErrorMsg('');
     try {
-      const name = `capture-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+      const name = `extract-${new Date().toISOString().replace(/[:.]/g, '-')}`;
       const res = await fetch('/api/storage/landmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -263,7 +263,7 @@ export default function CapturePage() {
   const canStart =
     isModelReady &&
     !isDetecting &&
-    (source === 'webcam' ? webcamReady : videoReady);
+    (source === 'live' ? webcamReady : videoReady);
   const canUpload = captureComplete && uploadStatus !== 'uploading';
 
   const videoW = videoDims.w || dimensions.width || 640;
@@ -293,7 +293,7 @@ export default function CapturePage() {
   }, [captureComplete, previewFrames]);
 
   /* ── Toolbar content ─────────────────────────────────────────── */
-  // Source icon: jumper-cable clamps with spark — bio-electric
+  // Source icon: brain — motor-cortex / neural extraction
   const iconSource = (
     <svg
       width="14"
@@ -302,50 +302,172 @@ export default function CapturePage() {
       fill="none"
       aria-hidden="true"
     >
-      {/* Left cable */}
+      {/* Left hemisphere */}
       <path
-        d="M1 7 L4.5 7"
+        d="M7 4 C7 4 5.5 3 4 3.5 C2.5 4 1.5 5.5 2 7 C2.5 8 3 8.5 2.5 9.5 C2 10.5 3 11.5 4.5 11.5 L7 11.5"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Right hemisphere */}
+      <path
+        d="M7 4 C7 4 8.5 3 10 3.5 C11.5 4 12.5 5.5 12 7 C11.5 8 11 8.5 11.5 9.5 C12 10.5 11 11.5 9.5 11.5 L7 11.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Center fissure */}
+      <line
+        x1="7"
+        y1="4"
+        x2="7"
+        y2="11.5"
+        stroke="currentColor"
+        strokeWidth="0.7"
+        opacity="0.45"
+      />
+      {/* Wrinkle hints */}
+      <path
+        d="M4 6.5 C4.5 6 5 6.5"
+        stroke="currentColor"
+        strokeWidth="0.9"
+        fill="none"
         strokeLinecap="round"
       />
-      {/* Left clamp */}
-      <rect
-        x="4"
-        y="5"
-        width="2"
-        height="4"
-        rx="0.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-      />
-      {/* Right cable */}
       <path
-        d="M13 7 L9.5 7"
+        d="M9.5 6 C10 5.5 10.5 6"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="0.9"
+        fill="none"
         strokeLinecap="round"
       />
-      {/* Right clamp */}
-      <rect
-        x="8"
-        y="5"
-        width="2"
-        height="4"
-        rx="0.5"
+    </svg>
+  );
+  // Extract icon: hacksaw (medical saw)
+  const iconExtract = (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* C-frame */}
+      <path
+        d="M2 4.5 L2 9.5 L5 9.5"
         stroke="currentColor"
-        strokeWidth="1.1"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
       />
-      {/* Spark between clamps */}
       <path
-        d="M6.5 5.5 L7.5 7 L6.5 8.5"
+        d="M2 4.5 L11 4.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Blade bar */}
+      <line
+        x1="5"
+        y1="9.5"
+        x2="11"
+        y2="9.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      {/* Teeth */}
+      <path
+        d="M6 8 L6.5 9.5 M7.8 8 L8.3 9.5 M9.5 8 L10 9.5"
+        stroke="currentColor"
+        strokeWidth="0.9"
+        strokeLinecap="round"
+      />
+      {/* Fasteners */}
+      <circle cx="5" cy="9.5" r="0.75" fill="currentColor" opacity="0.7" />
+      <circle cx="11" cy="9.5" r="0.75" fill="currentColor" opacity="0.7" />
+      <circle cx="11" cy="4.5" r="0.75" fill="currentColor" opacity="0.7" />
+    </svg>
+  );
+  // Archive icon: shelf with specimen jars
+  const iconArchive = (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Shelf board */}
+      <rect
+        x="1"
+        y="8.5"
+        width="12"
+        height="1.4"
+        rx="0.4"
+        fill="currentColor"
+        opacity="0.85"
+      />
+      {/* Left jar */}
+      <path
+        d="M2.8 8.5 L2.8 4.8 C2.8 4.2 3.2 4 3.8 4 C4.4 4 4.8 4.2 4.8 4.8 L4.8 8.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <line
+        x1="2.5"
+        y1="4.5"
+        x2="5.1"
+        y2="4.5"
         stroke="currentColor"
         strokeWidth="1"
         strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity="0.9"
+      />
+      {/* Right jar */}
+      <path
+        d="M7.8 8.5 L7.8 3.8 C7.8 3.1 8.2 2.8 9 2.8 C9.8 2.8 10.2 3.1 10.2 3.8 L10.2 8.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <line
+        x1="7.5"
+        y1="3.3"
+        x2="10.5"
+        y2="3.3"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      {/* Support legs */}
+      <line
+        x1="1.5"
+        y1="9.9"
+        x2="1.5"
+        y2="12.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        opacity="0.5"
+      />
+      <line
+        x1="12.5"
+        y1="9.9"
+        x2="12.5"
+        y2="12.5"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        opacity="0.5"
       />
     </svg>
   );
@@ -426,9 +548,10 @@ export default function CapturePage() {
                 await handleStart();
               }}
               disabled={!canStart}
-              className={`btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50${canStart && !captureComplete ? ' glow-pulse' : ''}`}
+              className={`btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50 inline-flex items-center gap-1.5${canStart && !captureComplete ? ' glow-pulse' : ''}`}
             >
-              {captureComplete ? 'Re-detect' : 'Start'}
+              {iconExtract}
+              {captureComplete ? 'Re-Extract' : 'Extract'}
             </button>
             {captureComplete && (
               <button
@@ -445,13 +568,13 @@ export default function CapturePage() {
           <button
             onClick={handleUpload}
             disabled={!canUpload}
-            className={`btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50${captureComplete && uploadStatus === 'idle' ? ' glow-pulse' : ''}`}
-            title="Upload captured landmarks"
+            className={`btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50 inline-flex items-center gap-1.5${captureComplete && uploadStatus === 'idle' ? ' glow-pulse' : ''}`}
+            title="Archive captured landmarks"
           >
             {uploadStatus === 'uploading' && '…'}
-            {uploadStatus === 'done' && '✓ Saved'}
+            {uploadStatus === 'done' && '✓ Archived'}
             {uploadStatus === 'error' && 'Error'}
-            {uploadStatus === 'idle' && '↑ Save'}
+            {uploadStatus === 'idle' && <>{iconArchive} Archive</>}
           </button>
         </div>
       </div>
@@ -468,11 +591,11 @@ export default function CapturePage() {
           {/* Source */}
           <ToolbarDropdown id="source" label="Source" icon={iconSource}>
             <SegmentedControl
-              options={['webcam', 'upload'] as Source[]}
+              options={['live', 'browse'] as Source[]}
               value={source}
               onChange={(v) => {
                 if (isDetecting) handleStop();
-                if (v === 'webcam') {
+                if (v === 'live') {
                   setVideoReady(false);
                   setVideoFileName('');
                 } else {
@@ -480,16 +603,106 @@ export default function CapturePage() {
                 }
                 setSource(v);
               }}
+              labels={{
+                live: (
+                  <span className="flex items-center gap-1">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 10 10"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        cx="5"
+                        cy="4.5"
+                        r="2.8"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                      />
+                      <circle cx="3.8" cy="4.2" r="0.45" fill="currentColor" />
+                      <circle cx="6.2" cy="4.2" r="0.45" fill="currentColor" />
+                      <path
+                        d="M3.5 6.5 C3.5 8 6.5 8 6.5 6.5"
+                        stroke="currentColor"
+                        strokeWidth="0.85"
+                        strokeLinecap="round"
+                        fill="none"
+                      />
+                      <circle
+                        cx="8.2"
+                        cy="1.8"
+                        r="1"
+                        fill="currentColor"
+                        opacity="0.8"
+                      />
+                    </svg>
+                    Live
+                  </span>
+                ),
+                browse: (
+                  <span className="flex items-center gap-1">
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 10 10"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <rect
+                        x="3.2"
+                        y="1"
+                        width="3.6"
+                        height="1.4"
+                        rx="0.5"
+                        stroke="currentColor"
+                        strokeWidth="0.9"
+                        fill="none"
+                      />
+                      <path
+                        d="M2.8 2.4 L2.4 9 C2.4 9.5 2.8 9.8 3.8 9.8 H6.2 C7.2 9.8 7.6 9.5 7.6 9 L7.2 2.4 Z"
+                        stroke="currentColor"
+                        strokeWidth="0.9"
+                        fill="none"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M2.6 6.5 L7.4 6.5"
+                        stroke="currentColor"
+                        strokeWidth="0.7"
+                        opacity="0.55"
+                        strokeDasharray="1.2 0.8"
+                      />
+                    </svg>
+                    Browse
+                  </span>
+                ),
+              }}
             />
-            {source === 'upload' && (
+            {source === 'browse' && (
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isDetecting}
-                  className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate"
-                  title={videoFileName || 'Choose File'}
+                  className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
+                  title={videoFileName || 'Select video file'}
                 >
-                  {videoFileName || 'Choose File…'}
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 11 11"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4.5 9.5 L3 5.5 C2.8 4.8 3.5 4.2 4 4.6 L4.5 7.5 L4.5 3 C4.5 2.3 5.5 2.3 5.5 3 L5.5 5.5 L6 2.6 C6 1.9 7 1.9 7 2.6 L7 5.5 L7.5 3.5 C7.5 2.8 8.5 3 8.5 3.7 L8 7.5 C7.8 8.8 6.9 9.8 5.8 9.8 C5.1 9.8 4.5 9.7 4.5 9.5Z"
+                      stroke="currentColor"
+                      strokeWidth="0.9"
+                      fill="none"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  {videoFileName || 'Select…'}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -601,7 +814,7 @@ export default function CapturePage() {
                   ref={videoRef}
                   playsInline
                   muted
-                  controls={source === 'upload' && !isDetecting}
+                  controls={source === 'browse' && !isDetecting}
                   className="w-full h-full object-fill"
                   style={{ display: 'block' }}
                 />
@@ -614,7 +827,7 @@ export default function CapturePage() {
                 )}
 
                 {/* Empty state */}
-                {!webcamReady && source === 'webcam' && (
+                {!webcamReady && source === 'live' && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
                     {cameraPermission === 'denied' ? (
                       <>
@@ -644,13 +857,13 @@ export default function CapturePage() {
                     )}
                   </div>
                 )}
-                {source === 'upload' && !videoReady && (
+                {source === 'browse' && !videoReady && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <p
                       className="text-sm uppercase tracking-widest"
                       style={{ color: 'var(--fg-muted)' }}
                     >
-                      Upload a video to begin
+                      Browse to select a video
                     </p>
                   </div>
                 )}

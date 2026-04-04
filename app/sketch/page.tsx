@@ -262,6 +262,8 @@ export default function SketchPage() {
   >('idle');
   const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
   const [zoom, setZoom] = useState(1);
+  const [sideAnimating, setSideAnimating] = useState(false);
+  const [usedColors, setUsedColors] = useState<string[]>([]);
   const backInitialised = useRef(false);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -294,6 +296,7 @@ export default function SketchPage() {
     clearAll,
     exportAll,
     mirrorCopyCanvas,
+    saveToSession,
   } = useSketchCanvasRig();
 
   /** First time user selects "back", mirror all front canvases to back with L/R swap */
@@ -307,6 +310,8 @@ export default function SketchPage() {
         }
       }
       setSide(newSide);
+      setSideAnimating(true);
+      setTimeout(() => setSideAnimating(false), 350);
     },
     [mirrorCopyCanvas],
   );
@@ -314,13 +319,23 @@ export default function SketchPage() {
   const handleStrokeStart = useCallback(
     (strokeSide: Side, part: BodyPartName) => {
       pushUndoSnapshot(strokeSide, part);
+      if (!isEraser) {
+        setUsedColors((prev) =>
+          prev.includes(color) ? prev : [...prev, color].slice(-12),
+        );
+      }
     },
-    [pushUndoSnapshot],
+    [pushUndoSnapshot, color, isEraser],
   );
+
+  const handleStrokeEnd = useCallback(() => {
+    saveToSession();
+  }, [saveToSession]);
 
   const handleUndo = useCallback(() => {
     undo();
-  }, [undo]);
+    saveToSession();
+  }, [undo, saveToSession]);
 
   const handleSave = useCallback(async () => {
     setSaveStatus('saving');
@@ -453,6 +468,7 @@ export default function SketchPage() {
           tool={activeTool}
           onMount={setCanvasRef}
           onStrokeStart={handleStrokeStart}
+          onStrokeEnd={handleStrokeEnd}
         />
         <span
           className="absolute bottom-0.5 left-0 right-0 text-center text-[8px] font-bold uppercase tracking-widest pointer-events-none select-none"
@@ -545,44 +561,178 @@ export default function SketchPage() {
     </svg>
   );
 
+  // Person front icon (face visible)
+  const iconPersonFront = (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="2.8" r="1.8" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="6.2" cy="2.5" r="0.42" fill="currentColor" />
+      <circle cx="7.8" cy="2.5" r="0.42" fill="currentColor" />
+      <path
+        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 6 L2.5 8 M9.5 6 L11.5 8"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
+  // Person back icon (spine visible, no face)
+  const iconPersonBack = (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="2.8" r="1.8" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M5.5 1.8 Q7 1.2 8.5 1.8"
+        stroke="currentColor"
+        strokeWidth="0.9"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      <path
+        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="7"
+        y1="5.5"
+        x2="7"
+        y2="9"
+        stroke="currentColor"
+        strokeWidth="0.8"
+        opacity="0.5"
+      />
+      <path
+        d="M4.5 6 L2.5 8 M9.5 6 L11.5 8"
+        stroke="currentColor"
+        strokeWidth="1.1"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
+  // Colors history icon: four color dots
+  const iconColors = (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="3.5" cy="3.5" r="2" fill="currentColor" opacity="0.9" />
+      <circle cx="8.5" cy="3.5" r="2" fill="currentColor" opacity="0.6" />
+      <circle cx="3.5" cy="8.5" r="2" fill="currentColor" opacity="0.4" />
+      <circle cx="8.5" cy="8.5" r="2" fill="currentColor" opacity="0.75" />
+    </svg>
+  );
+
   return (
     <main className="flex flex-col flex-1 w-full overflow-hidden">
       {/* ── Action bar ── */}
       <div
-        className="flex items-center gap-2 px-3 py-1.5 shrink-0"
+        className="flex items-center px-3 py-1.5 shrink-0"
         style={{
           borderBottom: '1px solid var(--border-strong)',
           backgroundColor: 'var(--surface)',
         }}
       >
-        <button
-          onClick={handleUndo}
-          className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
-          title="Undo last stroke"
-        >
-          ↩ Undo
-        </button>
-        <button
-          onClick={clearAll}
-          className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
-          style={{ color: 'var(--danger)' }}
-          title="Clear all canvases"
-        >
-          ✕ Clear
-        </button>
-        <div className="ml-auto">
+        {/* Left: Undo + Clear */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-            className="btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-            title="Save sketches to library"
+            onClick={handleUndo}
+            className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
+            title="Undo last stroke"
           >
-            {saveStatus === 'saving' && '…'}
-            {saveStatus === 'saved' && '✓ Saved'}
-            {saveStatus === 'error' && 'Error'}
-            {saveStatus === 'idle' && '↑ Save'}
+            ↩ Undo
+          </button>
+          <button
+            onClick={clearAll}
+            className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
+            style={{ color: 'var(--danger)' }}
+            title="Clear all canvases"
+          >
+            ✕ Clear
           </button>
         </div>
+
+        {/* Center: Front / Back side toggle */}
+        <div className="flex-1 flex justify-center items-center gap-1">
+          <button
+            onClick={() => handleSideChange('front')}
+            title="Front view"
+            className="rounded p-1.5 transition-colors"
+            style={{
+              color: side === 'front' ? 'var(--accent)' : 'var(--fg-muted)',
+              backgroundColor:
+                side === 'front' ? 'var(--accent-faint)' : 'transparent',
+            }}
+          >
+            <span
+              className={sideAnimating ? 'side-flip' : ''}
+              style={{ display: 'inline-flex' }}
+            >
+              {iconPersonFront}
+            </span>
+          </button>
+          <span
+            className="text-[9px] uppercase tracking-widest font-semibold select-none"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            {side}
+          </span>
+          <button
+            onClick={() => handleSideChange('back')}
+            title="Back view"
+            className="rounded p-1.5 transition-colors"
+            style={{
+              color: side === 'back' ? 'var(--accent)' : 'var(--fg-muted)',
+              backgroundColor:
+                side === 'back' ? 'var(--accent-faint)' : 'transparent',
+            }}
+          >
+            <span
+              className={sideAnimating ? 'side-flip' : ''}
+              style={{ display: 'inline-flex' }}
+            >
+              {iconPersonBack}
+            </span>
+          </button>
+        </div>
+
+        {/* Right: Save */}
+        <button
+          onClick={handleSave}
+          disabled={saveStatus === 'saving'}
+          className="btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
+          title="Save sketches to library"
+        >
+          {saveStatus === 'saving' && '…'}
+          {saveStatus === 'saved' && '✓ Saved'}
+          {saveStatus === 'error' && 'Error'}
+          {saveStatus === 'idle' && '↑ Save'}
+        </button>
       </div>
 
       {/* ── Toolbar + canvas ── */}
@@ -601,17 +751,6 @@ export default function SketchPage() {
               }}
             >
               <div className="flex flex-col gap-1.5">
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  View
-                </span>
-                <SegmentedControl
-                  options={['front', 'back'] as Side[]}
-                  value={side}
-                  onChange={handleSideChange}
-                />
                 <span
                   className="text-[9px] uppercase tracking-widest mt-1"
                   style={{ color: 'var(--fg-muted)' }}
@@ -759,7 +898,9 @@ export default function SketchPage() {
                       width: brushSize,
                       height: brushSize,
                       borderRadius: '50%',
-                      backgroundColor: isEraser ? 'var(--danger)' : color,
+                      backgroundColor: isEraser
+                        ? 'var(--danger)'
+                        : 'var(--accent)',
                       opacity: isEraser ? 0.5 : 0.85,
                       border: '1px solid var(--border-strong)',
                       flexShrink: 0,
@@ -776,6 +917,43 @@ export default function SketchPage() {
               />
             </div>
           </ToolbarDropdown>
+
+          {/* Colors history — only shown after first stroke */}
+          {usedColors.length > 0 && (
+            <ToolbarDropdown id="colors" label="Colors" icon={iconColors}>
+              <div className="flex flex-col gap-2 w-full">
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Recent
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {usedColors.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        setColor(c);
+                        setIsEraser(false);
+                      }}
+                      title={c}
+                      className="rounded transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: c,
+                        border:
+                          c === color && !isEraser
+                            ? '2px solid var(--accent)'
+                            : '1px solid var(--border-strong)',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </ToolbarDropdown>
+          )}
         </Toolbar>
 
         {/* ── Canvas area ── */}
@@ -862,6 +1040,7 @@ export default function SketchPage() {
                           tool={activeTool}
                           onMount={setCanvasRef}
                           onStrokeStart={handleStrokeStart}
+                          onStrokeEnd={handleStrokeEnd}
                         />
                       </div>
                     ))}
