@@ -1,4 +1,3 @@
-export { colors } from './colors';
 export {
   BODY_PROPORTIONS,
   CANVAS_RATIO,

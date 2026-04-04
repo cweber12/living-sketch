@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { PoseCanvas } from '@/components/canvas/pose-canvas';
+import { PoseCanvas } from '@/components/extract/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
 import {
@@ -9,14 +9,17 @@ import {
   ToolbarDropdown,
   SegmentedControl,
   type ToolbarMode,
-} from '@/components/ui/toolbar';
-import { BrainIcon } from '@/components/ui/icons/brain';
-import { CircularSawIcon } from '@/components/ui/icons/circular-saw';
-import { PulseIcon } from '@/components/ui/icons/pulse';
-import { FridgeClosedIcon, FridgeOpenIcon } from '@/components/ui/icons/fridge';
-import { ScalpelTrimIcon } from '@/components/ui/icons/scalpel-trim';
-import { BodyRunningIcon } from '@/components/ui/icons/body';
-import { JarIcon } from '@/components/ui/icons/jar';
+} from '@/components/shared/ui/toolbar';
+import { BrainIcon } from '@/components/shared/icons/brain';
+import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
+import { PulseIcon } from '@/components/extract/icons/pulse';
+import {
+  FridgeClosedIcon,
+  FridgeOpenIcon,
+} from '@/components/extract/icons/fridge';
+import { ScalpelTrimIcon } from '@/components/extract/icons/scalpel-trim';
+import { BodyRunningIcon } from '@/components/shared/icons/body';
+import { JarIcon } from '@/components/extract/icons/jar';
 import type { LandmarkFrame } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import {

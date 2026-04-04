@@ -4,7 +4,7 @@ import {
   Toolbar,
   ToolbarDropdown,
   SegmentedControl,
-} from '@/components/ui/toolbar';
+} from '@/components/shared/ui/toolbar';
 
 // Mock matchMedia -- default to desktop (no mobile match)
 function mockMatchMedia(matches = false) {
