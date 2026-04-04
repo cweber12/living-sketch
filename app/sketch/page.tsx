@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   SketchCanvas,
   type ShapeTool,
-} from '@/components/canvas/sketch-canvas';
+} from '@/components/sketch/canvas/sketch-canvas';
 import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
@@ -13,97 +13,20 @@ import {
   ToolbarDropdown,
   SegmentedControl,
   type ToolbarMode,
-} from '@/components/ui/toolbar';
-
-/* ─── Grid templates ──────────────────────────────────────────────── */
-
-const GRID_ARMS_UP = `
-  ".     .     .     head  head  .     .     ."
-  "rhand rlarm ruarm torso torso luarm llarm lhand"
-  ".     .     .     torso torso .     .     ."
-  ".     .     .     rulg  lulg  .     .     ."
-  ".     .     .     rllg  lllg  .     .     ."
-  ".     .     .     rfoot lfoot .     .     ."
-`;
-
-const GRID_ARMS_DOWN = `
-  ".     head  head  ."
-  "ruarm torso torso luarm"
-  "rlarm torso torso llarm"
-  "rhand rulg  lulg  lhand"
-  ".     rllg  lllg  ."
-  ".     rfoot lfoot ."
-`;
-
-// Grid areas: left body parts on screen-right, right on screen-left
-// (matches anatomical anterior view / camera mirror)
-const GRID_AREA: Record<BodyPartName, string> = {
-  head: 'head',
-  torso: 'torso',
-  leftUpperArm: 'luarm',
-  leftLowerArm: 'llarm',
-  leftHand: 'lhand',
-  rightUpperArm: 'ruarm',
-  rightLowerArm: 'rlarm',
-  rightHand: 'rhand',
-  leftUpperLeg: 'lulg',
-  leftLowerLeg: 'lllg',
-  leftFoot: 'lfoot',
-  rightUpperLeg: 'rulg',
-  rightLowerLeg: 'rllg',
-  rightFoot: 'rfoot',
-};
-
-const PART_LABEL: Record<BodyPartName, string> = {
-  head: 'Head',
-  torso: 'Torso',
-  leftUpperArm: 'L Upper Arm',
-  leftLowerArm: 'L Lower Arm',
-  leftHand: 'L Hand',
-  rightUpperArm: 'R Upper Arm',
-  rightLowerArm: 'R Lower Arm',
-  rightHand: 'R Hand',
-  leftUpperLeg: 'L Upper Leg',
-  leftLowerLeg: 'L Lower Leg',
-  leftFoot: 'L Foot',
-  rightUpperLeg: 'R Upper Leg',
-  rightLowerLeg: 'R Lower Leg',
-  rightFoot: 'R Foot',
-};
-
-const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> = {
-  head: { w: 1, h: 1 },
-  torso: { w: 2.3, h: 2.6 },
-  leftUpperArm: { w: 1.15, h: 1.3 },
-  leftLowerArm: { w: 1.15, h: 1.3 },
-  leftHand: { w: 1, h: 1.75 },
-  rightUpperArm: { w: 1.15, h: 1.3 },
-  rightLowerArm: { w: 1.15, h: 1.3 },
-  rightHand: { w: 1, h: 1.75 },
-  leftUpperLeg: { w: 1.15, h: 1.75 },
-  leftLowerLeg: { w: 1.15, h: 1.6 },
-  leftFoot: { w: 1.15, h: 1.6 },
-  rightUpperLeg: { w: 1.15, h: 1.75 },
-  rightLowerLeg: { w: 1.15, h: 1.6 },
-  rightFoot: { w: 1.15, h: 1.6 },
-};
-
-const PARTS_ORDER: BodyPartName[] = [
-  'head',
-  'torso',
-  'leftUpperArm',
-  'rightUpperArm',
-  'leftLowerArm',
-  'rightLowerArm',
-  'leftHand',
-  'rightHand',
-  'leftUpperLeg',
-  'rightUpperLeg',
-  'leftLowerLeg',
-  'rightLowerLeg',
-  'leftFoot',
-  'rightFoot',
-];
+} from '@/components/shared/ui/toolbar';
+import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
+import { LayoutBodyIcon } from '@/components/sketch/icons/layout-body';
+import { DrawScalpelIcon } from '@/components/sketch/icons/draw-scalpel';
+import { ColorPaletteIcon } from '@/components/sketch/icons/color-palette';
+import { BodyStandingIcon } from '@/components/shared/icons/body';
+import {
+  GRID_ARMS_UP,
+  GRID_ARMS_DOWN,
+  GRID_AREA,
+  PART_LABEL,
+  PART_PROPORTIONS,
+  PARTS_ORDER,
+} from '@/components/sketch/sketch-constants';
 
 const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
   { value: 'pen', label: '✏ Pen' },
@@ -121,68 +44,6 @@ const MOBILE_BP = 1024;
 
 type ArmPose = 'up' | 'down';
 type ViewMode = 'body' | 'single';
-
-/* ─── Body Thumbnail (single-part mode) ──────────────────────────── */
-
-function BodyThumbnail({
-  focusPart,
-  onSelect,
-}: {
-  focusPart: BodyPartName;
-  onSelect: (part: BodyPartName) => void;
-}) {
-  const t = 10;
-  const ac = t;
-  const lc = Math.round(t * 1.15);
-  return (
-    <div
-      className="fixed bottom-4 right-4 z-40 rounded-lg p-1.5"
-      style={{
-        backgroundColor: 'rgba(0,0,0,0.7)',
-        backdropFilter: 'blur(4px)',
-        border: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateAreas: GRID_ARMS_DOWN,
-          gridTemplateColumns: `${ac}px ${lc}px ${lc}px ${ac}px`,
-          gridTemplateRows: [
-            t * 2.3,
-            t * 1.3,
-            t * 1.3,
-            t * 1.75,
-            t * 1.6,
-            t * 1.6,
-          ]
-            .map((v) => `${Math.round(v)}px`)
-            .join(' '),
-          gap: '1px',
-        }}
-      >
-        {BODY_PARTS.map((part) => (
-          <button
-            key={`thumb-${part}`}
-            onClick={() => onSelect(part)}
-            title={PART_LABEL[part]}
-            style={{
-              gridArea: GRID_AREA[part],
-              backgroundColor:
-                part === focusPart ? 'var(--accent)' : 'var(--fg-muted)',
-              opacity: part === focusPart ? 1 : 0.3,
-              borderRadius: '1px',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              transition: 'opacity 0.15s',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ─── Page ────────────────────────────────────────────────────────── */
 
@@ -497,199 +358,6 @@ export default function SketchPage() {
       : focusProps;
 
   /* ── Toolbar content ── */
-  // Layout icon: stylised cadaver / body figure
-  const iconLayout = (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* Head */}
-      <circle cx="7" cy="2.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
-      {/* Torso */}
-      <path
-        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* Arms */}
-      <path
-        d="M4.5 5.5 L2 8 M9.5 5.5 L12 8"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-
-  // Tools icon: surgical scalpel
-  const iconDraw = (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* Blade */}
-      <path
-        d="M2.5 11.5 L9 4 L10.5 5 L4.5 12.5 C3.8 13.1 2.5 13.2 2.2 12.5 C1.9 11.8 2.1 11.8 2.5 11.5Z"
-        fill="currentColor"
-        opacity="0.9"
-      />
-      {/* Handle / spine */}
-      <path
-        d="M8.5 3.5 L11.5 2 L12 2.5 L10.5 5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* Guard notch */}
-      <path
-        d="M9 4 L10 3"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.6"
-      />
-    </svg>
-  );
-
-  // Person front icon (face visible)
-  const iconPersonFront = (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="7" cy="2.8" r="1.8" stroke="currentColor" strokeWidth="1.2" />
-      <circle cx="6.2" cy="2.5" r="0.42" fill="currentColor" />
-      <circle cx="7.8" cy="2.5" r="0.42" fill="currentColor" />
-      <path
-        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4.5 6 L2.5 8 M9.5 6 L11.5 8"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-
-  // Person back icon (spine visible, no face)
-  const iconPersonBack = (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="7" cy="2.8" r="1.8" stroke="currentColor" strokeWidth="1.2" />
-      <path
-        d="M5.5 1.8 Q7 1.2 8.5 1.8"
-        stroke="currentColor"
-        strokeWidth="0.9"
-        fill="none"
-        strokeLinecap="round"
-        opacity="0.55"
-      />
-      <path
-        d="M4.5 5.5 L9.5 5.5 L9 9 L7.5 9 L7.5 13 L6.5 13 L6.5 9 L5 9 Z"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinejoin="round"
-      />
-      <line
-        x1="7"
-        y1="5.5"
-        x2="7"
-        y2="9"
-        stroke="currentColor"
-        strokeWidth="0.8"
-        opacity="0.5"
-      />
-      <path
-        d="M4.5 6 L2.5 8 M9.5 6 L11.5 8"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-
-  // Colors history icon: four color dots
-  const iconColors = (
-    <svg
-      height="16px"
-      width="16px"
-      version="1.1"
-      id="Layer_1"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 512 512"
-    >
-      <g>
-        <g>
-          <g>
-            <path
-              d="M486.4,452.267v-179.2c14.114,0,25.6-11.486,25.6-25.6c0-14.114-11.486-25.6-25.6-25.6h-27.204
-              c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533
-              h-102.4c-4.71,0-8.533,3.814-8.533,8.533V51.2c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671
-              c-7.202,2.594-12.868,8.26-15.462,15.462h-28.809c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533
-              c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533H204.8c-4.71,0-8.533,3.814-8.533,8.533V51.2
-              c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671c-7.202,2.594-12.868,8.26-15.462,15.462h-28.809
-              c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533
-              h-102.4c-4.71,0-8.533,3.814-8.533,8.533V51.2c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671
-              c-7.202,2.594-12.868,8.26-15.462,15.462H25.6c-14.114,0-25.6,11.486-25.6,25.6c0,14.114,11.486,25.6,25.6,25.6v179.2
-              c-14.114,0-25.6,11.486-25.6,25.6s11.486,25.6,25.6,25.6h460.8c14.114,0,25.6-11.486,25.6-25.6S500.514,452.267,486.4,452.267z
-              M358.4,25.6h85.333v17.067H435.2h-68.267H358.4V25.6z M358.4,230.852c0.009-0.137,0.009-0.265,0.009-0.393
-              c0.034-4.736,3.891-8.593,8.636-8.593h68.045c4.745,0,8.602,3.857,8.636,8.593c0,0.128,0,0.256,0.008,0.393v33.229
-              c-0.008,0.128-0.008,0.265-0.008,0.393c-0.034,4.736-3.891,8.593-8.636,8.593h-68.045c-4.745,0-8.602-3.857-8.636-8.593
-              c0-0.128,0-0.256-0.009-0.393V230.852z M213.333,25.6h85.333v17.067h-8.533h-68.267h-8.533V25.6z M213.333,230.852
-              c0.008-0.137,0.008-0.265,0.008-0.393c0.034-4.736,3.891-8.593,8.636-8.593h68.045c4.745,0,8.602,3.857,8.636,8.593
-              c0,0.128,0,0.256,0.009,0.393v33.229c-0.009,0.137-0.009,0.265-0.009,0.393c-0.034,4.736-3.891,8.593-8.636,8.593h-68.045
-              c-4.745,0-8.602-3.857-8.636-8.593c0-0.128,0-0.256-0.008-0.393V230.852z M68.267,25.6H153.6v17.067h-8.533H76.8h-8.533V25.6z
-              M68.267,230.852c0.009-0.128,0.009-0.265,0.009-0.393c0.034-4.736,3.891-8.593,8.636-8.593h68.045
-              c4.745,0,8.602,3.857,8.636,8.593c0,0.128,0,0.256,0.009,0.393v33.229c-0.009,0.137-0.009,0.265-0.009,0.393
-              c-0.034,4.736-3.891,8.593-8.636,8.593H76.911c-4.745,0-8.602-3.857-8.636-8.593c0-0.128,0-0.256-0.009-0.393V230.852z
-              M469.333,452.267H42.667v-179.2h10.138c2.594,7.202,8.26,12.868,15.462,15.462v27.204H153.6v-27.204
-              c7.202-2.594,12.868-8.26,15.462-15.462h28.809c2.594,7.202,8.26,12.868,15.462,15.462V358.4h85.333v-69.871
-              c7.202-2.594,12.868-8.26,15.462-15.462h28.809c2.594,7.202,8.26,12.868,15.462,15.462v52.804h85.333v-52.804
-              c7.202-2.594,12.868-8.26,15.462-15.462h10.138V452.267z 
-              "
-              fill="currentColor"
-            />
-            <path
-              d="M213.333,392.533c0,23.526,19.14,42.667,42.667,42.667c23.526,0,42.667-19.14,42.667-42.667v-17.067h-85.333V392.533z"
-              fill="currentColor"
-            />
-            <path
-              d="M358.4,392.533c0,23.526,19.14,42.667,42.667,42.667c23.526,0,42.667-19.14,42.667-42.667V358.4H358.4V392.533z"
-              fill="currentColor"
-            />
-            <path
-              d="M68.267,396.125c0,21.547,19.14,39.074,42.667,39.074c23.526,0,42.667-17.527,42.667-39.074v-63.326H68.267V396.125z"
-              fill="currentColor"
-            />
-          </g>
-        </g>
-      </g>
-    </svg>
-  );
 
   return (
     <main className="flex flex-col flex-1 w-full overflow-hidden">
@@ -720,48 +388,25 @@ export default function SketchPage() {
           </button>
         </div>
 
-        {/* Center: Front / Back side toggle */}
-        <div className="flex-1 flex justify-center items-center gap-1">
-          <button
-            onClick={() => handleSideChange('front')}
-            title="Front view"
-            className="rounded p-1.5 transition-colors"
-            style={{
-              color: side === 'front' ? 'var(--accent)' : 'var(--fg-muted)',
-              backgroundColor:
-                side === 'front' ? 'var(--accent-faint)' : 'transparent',
-            }}
-          >
-            <span
-              className={sideAnimating ? 'side-flip' : ''}
-              style={{ display: 'inline-flex' }}
-            >
-              {iconPersonFront}
-            </span>
-          </button>
+        {/* Center: Front / Back side toggle (Goal 2) */}
+        <div className="flex-1 flex justify-center items-center gap-2">
           <span
-            className="text-[9px] uppercase tracking-widest font-semibold select-none"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            {side}
-          </span>
-          <button
-            onClick={() => handleSideChange('back')}
-            title="Back view"
-            className="rounded p-1.5 transition-colors"
+            className={`transition-all duration-300 ${sideAnimating ? 'side-flip' : ''}`}
             style={{
-              color: side === 'back' ? 'var(--accent)' : 'var(--fg-muted)',
-              backgroundColor:
-                side === 'back' ? 'var(--accent-faint)' : 'transparent',
+              color: side === 'front' ? 'var(--accent)' : 'var(--surface)',
+              filter:
+                side === 'back' ? 'drop-shadow(0 0 6px var(--accent))' : 'none',
+              display: 'inline-flex',
             }}
           >
-            <span
-              className={sideAnimating ? 'side-flip' : ''}
-              style={{ display: 'inline-flex' }}
-            >
-              {iconPersonBack}
-            </span>
-          </button>
+            <BodyStandingIcon size="20px" />
+          </span>
+          <SegmentedControl
+            options={['front', 'back'] as Side[]}
+            value={side}
+            onChange={handleSideChange}
+            labels={{ front: 'Front', back: 'Back' }}
+          />
         </div>
 
         {/* Right: Save */}
@@ -784,7 +429,7 @@ export default function SketchPage() {
       >
         <Toolbar onModeChange={setToolbarMode}>
           {/* Layout — two-column in side mode */}
-          <ToolbarDropdown id="layout" label="Layout" icon={iconLayout}>
+          <ToolbarDropdown id="layout" label="Layout" icon={<LayoutBodyIcon />}>
             <div
               style={{
                 display: 'flex',
@@ -875,7 +520,7 @@ export default function SketchPage() {
           </ToolbarDropdown>
 
           {/* Draw */}
-          <ToolbarDropdown id="tools" label="Tools" icon={iconDraw}>
+          <ToolbarDropdown id="tools" label="Tools" icon={<DrawScalpelIcon />}>
             <div className="flex flex-col gap-2 w-full">
               {/* Row 1: Color swatch + shape selector */}
               <div className="flex items-center gap-2">
@@ -952,7 +597,11 @@ export default function SketchPage() {
           </ToolbarDropdown>
 
           {/* Colors */}
-          <ToolbarDropdown id="colors" label="Colors" icon={iconColors}>
+          <ToolbarDropdown
+            id="colors"
+            label="Colors"
+            icon={<ColorPaletteIcon />}
+          >
             <div className="flex flex-col gap-2 w-full">
               <span
                 className="text-[9px] uppercase tracking-widest"
