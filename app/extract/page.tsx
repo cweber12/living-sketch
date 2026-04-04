@@ -10,6 +10,13 @@ import {
   SegmentedControl,
   type ToolbarMode,
 } from '@/components/ui/toolbar';
+import { BrainIcon } from '@/components/ui/icons/brain';
+import { CircularSawIcon } from '@/components/ui/icons/circular-saw';
+import { PulseIcon } from '@/components/ui/icons/pulse';
+import { FridgeClosedIcon, FridgeOpenIcon } from '@/components/ui/icons/fridge';
+import { ScalpelTrimIcon } from '@/components/ui/icons/scalpel-trim';
+import { BodyRunningIcon } from '@/components/ui/icons/body';
+import { JarIcon } from '@/components/ui/icons/jar';
 import type { LandmarkFrame } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import {
@@ -292,236 +299,6 @@ export default function ExtractPage() {
     return () => cancelAnimationFrame(previewRafRef.current);
   }, [captureComplete, previewFrames]);
 
-  /* ── Toolbar content ─────────────────────────────────────────── */
-  // Source icon: brain — motor-cortex / neural extraction
-  const iconSource = (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* Left hemisphere */}
-      <path
-        d="M7 4 C7 4 5.5 3 4 3.5 C2.5 4 1.5 5.5 2 7 C2.5 8 3 8.5 2.5 9.5 C2 10.5 3 11.5 4.5 11.5 L7 11.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Right hemisphere */}
-      <path
-        d="M7 4 C7 4 8.5 3 10 3.5 C11.5 4 12.5 5.5 12 7 C11.5 8 11 8.5 11.5 9.5 C12 10.5 11 11.5 9.5 11.5 L7 11.5"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Center fissure */}
-      <line
-        x1="7"
-        y1="4"
-        x2="7"
-        y2="11.5"
-        stroke="currentColor"
-        strokeWidth="0.7"
-        opacity="0.45"
-      />
-      {/* Wrinkle hints */}
-      <path
-        d="M4 6.5 C4.5 6 5 6.5"
-        stroke="currentColor"
-        strokeWidth="0.9"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path
-        d="M9.5 6 C10 5.5 10.5 6"
-        stroke="currentColor"
-        strokeWidth="0.9"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-  // Extract icon: hacksaw (medical saw)
-  const iconExtract = (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* C-frame */}
-      <path
-        d="M2 4.5 L2 9.5 L5 9.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path
-        d="M2 4.5 L11 4.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Blade bar */}
-      <line
-        x1="5"
-        y1="9.5"
-        x2="11"
-        y2="9.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      {/* Teeth */}
-      <path
-        d="M6 8 L6.5 9.5 M7.8 8 L8.3 9.5 M9.5 8 L10 9.5"
-        stroke="currentColor"
-        strokeWidth="0.9"
-        strokeLinecap="round"
-      />
-      {/* Fasteners */}
-      <circle cx="5" cy="9.5" r="0.75" fill="currentColor" opacity="0.7" />
-      <circle cx="11" cy="9.5" r="0.75" fill="currentColor" opacity="0.7" />
-      <circle cx="11" cy="4.5" r="0.75" fill="currentColor" opacity="0.7" />
-    </svg>
-  );
-  // Archive icon: shelf with specimen jars
-  const iconArchive = (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* Shelf board */}
-      <rect
-        x="1"
-        y="8.5"
-        width="12"
-        height="1.4"
-        rx="0.4"
-        fill="currentColor"
-        opacity="0.85"
-      />
-      {/* Left jar */}
-      <path
-        d="M2.8 8.5 L2.8 4.8 C2.8 4.2 3.2 4 3.8 4 C4.4 4 4.8 4.2 4.8 4.8 L4.8 8.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <line
-        x1="2.5"
-        y1="4.5"
-        x2="5.1"
-        y2="4.5"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-      />
-      {/* Right jar */}
-      <path
-        d="M7.8 8.5 L7.8 3.8 C7.8 3.1 8.2 2.8 9 2.8 C9.8 2.8 10.2 3.1 10.2 3.8 L10.2 8.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <line
-        x1="7.5"
-        y1="3.3"
-        x2="10.5"
-        y2="3.3"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-      />
-      {/* Support legs */}
-      <line
-        x1="1.5"
-        y1="9.9"
-        x2="1.5"
-        y2="12.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-      <line
-        x1="12.5"
-        y1="9.9"
-        x2="12.5"
-        y2="12.5"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-    </svg>
-  );
-  // Status icon: EEG / pulse monitor trace
-  const iconStatus = (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M1 8 L3.5 8 L4.5 5 L6 10 L7 4 L8.5 8 L10 8 L11 6"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-  // Jitter icon: test tube / vial (reduce noise = purify sample)
-  const iconJitter = (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden="true"
-    >
-      {/* Tube body */}
-      <path
-        d="M5 1.5 L5 9.5 C5 11 5.6 12 7 12 C8.4 12 9 11 9 9.5 L9 1.5"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Cap */}
-      <path
-        d="M4 1.5 L10 1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      {/* Liquid fill */}
-      <path
-        d="M5 9 C5 11 5.6 12 7 12 C8.4 12 9 11 9 9 L9 7.5 L5 7.5 Z"
-        fill="currentColor"
-        opacity="0.65"
-      />
-    </svg>
-  );
-
   return (
     <main className="flex flex-col flex-1 w-full overflow-hidden">
       {/* ── Action bar ── */}
@@ -550,7 +327,7 @@ export default function ExtractPage() {
               disabled={!canStart}
               className={`btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50 inline-flex items-center gap-1.5${canStart && !captureComplete ? ' glow-pulse' : ''}`}
             >
-              {iconExtract}
+              <CircularSawIcon />
               {captureComplete ? 'Re-Extract' : 'Extract'}
             </button>
             {captureComplete && (
@@ -572,9 +349,13 @@ export default function ExtractPage() {
             title="Archive captured landmarks"
           >
             {uploadStatus === 'uploading' && '…'}
-            {uploadStatus === 'done' && '✓ Archived'}
+            {uploadStatus === 'done' && '✓ Saved'}
             {uploadStatus === 'error' && 'Error'}
-            {uploadStatus === 'idle' && <>{iconArchive} Archive</>}
+            {uploadStatus === 'idle' && (
+              <>
+                <FridgeClosedIcon /> Save
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -589,7 +370,7 @@ export default function ExtractPage() {
           onOpenIdChange={setToolbarOpenId}
         >
           {/* Source */}
-          <ToolbarDropdown id="source" label="Source" icon={iconSource}>
+          <ToolbarDropdown id="source" label="Source" icon={<BrainIcon />}>
             <SegmentedControl
               options={['live', 'browse'] as Source[]}
               value={source}
@@ -606,74 +387,13 @@ export default function ExtractPage() {
               labels={{
                 live: (
                   <span className="flex items-center gap-1">
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        cx="5"
-                        cy="4.5"
-                        r="2.8"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                      />
-                      <circle cx="3.8" cy="4.2" r="0.45" fill="currentColor" />
-                      <circle cx="6.2" cy="4.2" r="0.45" fill="currentColor" />
-                      <path
-                        d="M3.5 6.5 C3.5 8 6.5 8 6.5 6.5"
-                        stroke="currentColor"
-                        strokeWidth="0.85"
-                        strokeLinecap="round"
-                        fill="none"
-                      />
-                      <circle
-                        cx="8.2"
-                        cy="1.8"
-                        r="1"
-                        fill="currentColor"
-                        opacity="0.8"
-                      />
-                    </svg>
+                    <BodyRunningIcon />
                     Live
                   </span>
                 ),
                 browse: (
                   <span className="flex items-center gap-1">
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <rect
-                        x="3.2"
-                        y="1"
-                        width="3.6"
-                        height="1.4"
-                        rx="0.5"
-                        stroke="currentColor"
-                        strokeWidth="0.9"
-                        fill="none"
-                      />
-                      <path
-                        d="M2.8 2.4 L2.4 9 C2.4 9.5 2.8 9.8 3.8 9.8 H6.2 C7.2 9.8 7.6 9.5 7.6 9 L7.2 2.4 Z"
-                        stroke="currentColor"
-                        strokeWidth="0.9"
-                        fill="none"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M2.6 6.5 L7.4 6.5"
-                        stroke="currentColor"
-                        strokeWidth="0.7"
-                        opacity="0.55"
-                        strokeDasharray="1.2 0.8"
-                      />
-                    </svg>
+                    <FridgeOpenIcon />
                     Browse
                   </span>
                 ),
@@ -687,21 +407,7 @@ export default function ExtractPage() {
                   className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
                   title={videoFileName || 'Select video file'}
                 >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 11 11"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4.5 9.5 L3 5.5 C2.8 4.8 3.5 4.2 4 4.6 L4.5 7.5 L4.5 3 C4.5 2.3 5.5 2.3 5.5 3 L5.5 5.5 L6 2.6 C6 1.9 7 1.9 7 2.6 L7 5.5 L7.5 3.5 C7.5 2.8 8.5 3 8.5 3.7 L8 7.5 C7.8 8.8 6.9 9.8 5.8 9.8 C5.1 9.8 4.5 9.7 4.5 9.5Z"
-                      stroke="currentColor"
-                      strokeWidth="0.9"
-                      fill="none"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <JarIcon />
                   {videoFileName || 'Select…'}
                 </button>
                 <input
@@ -716,7 +422,7 @@ export default function ExtractPage() {
           </ToolbarDropdown>
 
           {/* Status */}
-          <ToolbarDropdown id="status" label="Status" icon={iconStatus}>
+          <ToolbarDropdown id="status" label="Status" icon={<PulseIcon />}>
             <div
               className="flex flex-col gap-1 text-[10px] uppercase tracking-widest"
               style={{ color: 'var(--fg-muted)' }}
@@ -731,11 +437,13 @@ export default function ExtractPage() {
                     className="inline-block w-2 h-2 rounded-full animate-pulse"
                     style={{ backgroundColor: 'var(--danger)' }}
                   />
-                  Detecting
+                  Extracting
                 </span>
               )}
               {captureComplete && (
-                <span style={{ color: 'var(--accent)' }}>Capture complete</span>
+                <span style={{ color: 'var(--accent)' }}>
+                  Extraction complete
+                </span>
               )}
               {errorMsg && (
                 <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
@@ -745,7 +453,7 @@ export default function ExtractPage() {
 
           {/* Reduce Jitter (shown only after capture complete) */}
           {captureComplete && (
-            <ToolbarDropdown id="jitter" label="Jitter" icon={iconJitter}>
+            <ToolbarDropdown id="trim" label="Trim" icon={<ScalpelTrimIcon />}>
               <input
                 type="range"
                 min={1}

@@ -635,16 +635,59 @@ export default function SketchPage() {
   // Colors history icon: four color dots
   const iconColors = (
     <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
-      fill="none"
-      aria-hidden="true"
+      height="16px"
+      width="16px"
+      version="1.1"
+      id="Layer_1"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 512 512"
     >
-      <circle cx="3.5" cy="3.5" r="2" fill="currentColor" opacity="0.9" />
-      <circle cx="8.5" cy="3.5" r="2" fill="currentColor" opacity="0.6" />
-      <circle cx="3.5" cy="8.5" r="2" fill="currentColor" opacity="0.4" />
-      <circle cx="8.5" cy="8.5" r="2" fill="currentColor" opacity="0.75" />
+      <g>
+        <g>
+          <g>
+            <path
+              d="M486.4,452.267v-179.2c14.114,0,25.6-11.486,25.6-25.6c0-14.114-11.486-25.6-25.6-25.6h-27.204
+              c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533
+              h-102.4c-4.71,0-8.533,3.814-8.533,8.533V51.2c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671
+              c-7.202,2.594-12.868,8.26-15.462,15.462h-28.809c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533
+              c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533H204.8c-4.71,0-8.533,3.814-8.533,8.533V51.2
+              c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671c-7.202,2.594-12.868,8.26-15.462,15.462h-28.809
+              c-2.594-7.202-8.26-12.868-15.462-15.462V59.733h8.533c4.71,0,8.533-3.814,8.533-8.533V17.067c0-4.719-3.823-8.533-8.533-8.533
+              h-102.4c-4.71,0-8.533,3.814-8.533,8.533V51.2c0,4.719,3.823,8.533,8.533,8.533h8.533v146.671
+              c-7.202,2.594-12.868,8.26-15.462,15.462H25.6c-14.114,0-25.6,11.486-25.6,25.6c0,14.114,11.486,25.6,25.6,25.6v179.2
+              c-14.114,0-25.6,11.486-25.6,25.6s11.486,25.6,25.6,25.6h460.8c14.114,0,25.6-11.486,25.6-25.6S500.514,452.267,486.4,452.267z
+              M358.4,25.6h85.333v17.067H435.2h-68.267H358.4V25.6z M358.4,230.852c0.009-0.137,0.009-0.265,0.009-0.393
+              c0.034-4.736,3.891-8.593,8.636-8.593h68.045c4.745,0,8.602,3.857,8.636,8.593c0,0.128,0,0.256,0.008,0.393v33.229
+              c-0.008,0.128-0.008,0.265-0.008,0.393c-0.034,4.736-3.891,8.593-8.636,8.593h-68.045c-4.745,0-8.602-3.857-8.636-8.593
+              c0-0.128,0-0.256-0.009-0.393V230.852z M213.333,25.6h85.333v17.067h-8.533h-68.267h-8.533V25.6z M213.333,230.852
+              c0.008-0.137,0.008-0.265,0.008-0.393c0.034-4.736,3.891-8.593,8.636-8.593h68.045c4.745,0,8.602,3.857,8.636,8.593
+              c0,0.128,0,0.256,0.009,0.393v33.229c-0.009,0.137-0.009,0.265-0.009,0.393c-0.034,4.736-3.891,8.593-8.636,8.593h-68.045
+              c-4.745,0-8.602-3.857-8.636-8.593c0-0.128,0-0.256-0.008-0.393V230.852z M68.267,25.6H153.6v17.067h-8.533H76.8h-8.533V25.6z
+              M68.267,230.852c0.009-0.128,0.009-0.265,0.009-0.393c0.034-4.736,3.891-8.593,8.636-8.593h68.045
+              c4.745,0,8.602,3.857,8.636,8.593c0,0.128,0,0.256,0.009,0.393v33.229c-0.009,0.137-0.009,0.265-0.009,0.393
+              c-0.034,4.736-3.891,8.593-8.636,8.593H76.911c-4.745,0-8.602-3.857-8.636-8.593c0-0.128,0-0.256-0.009-0.393V230.852z
+              M469.333,452.267H42.667v-179.2h10.138c2.594,7.202,8.26,12.868,15.462,15.462v27.204H153.6v-27.204
+              c7.202-2.594,12.868-8.26,15.462-15.462h28.809c2.594,7.202,8.26,12.868,15.462,15.462V358.4h85.333v-69.871
+              c7.202-2.594,12.868-8.26,15.462-15.462h28.809c2.594,7.202,8.26,12.868,15.462,15.462v52.804h85.333v-52.804
+              c7.202-2.594,12.868-8.26,15.462-15.462h10.138V452.267z 
+              "
+              fill="currentColor"
+            />
+            <path
+              d="M213.333,392.533c0,23.526,19.14,42.667,42.667,42.667c23.526,0,42.667-19.14,42.667-42.667v-17.067h-85.333V392.533z"
+              fill="currentColor"
+            />
+            <path
+              d="M358.4,392.533c0,23.526,19.14,42.667,42.667,42.667c23.526,0,42.667-19.14,42.667-42.667V358.4H358.4V392.533z"
+              fill="currentColor"
+            />
+            <path
+              d="M68.267,396.125c0,21.547,19.14,39.074,42.667,39.074c23.526,0,42.667-17.527,42.667-39.074v-63.326H68.267V396.125z"
+              fill="currentColor"
+            />
+          </g>
+        </g>
+      </g>
     </svg>
   );
 
@@ -836,16 +879,6 @@ export default function SketchPage() {
             <div className="flex flex-col gap-2 w-full">
               {/* Row 1: Color swatch + shape selector */}
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                    setIsEraser(false);
-                  }}
-                  className="color-swatch shrink-0"
-                  title="Stroke color"
-                />
                 {!isEraser && (
                   <select
                     value={tool}
@@ -918,42 +951,56 @@ export default function SketchPage() {
             </div>
           </ToolbarDropdown>
 
-          {/* Colors history — only shown after first stroke */}
-          {usedColors.length > 0 && (
-            <ToolbarDropdown id="colors" label="Colors" icon={iconColors}>
-              <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Recent
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {usedColors.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => {
-                        setColor(c);
-                        setIsEraser(false);
-                      }}
-                      title={c}
-                      className="rounded transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                      style={{
-                        width: 20,
-                        height: 20,
-                        backgroundColor: c,
-                        border:
-                          c === color && !isEraser
-                            ? '2px solid var(--accent)'
-                            : '1px solid var(--border-strong)',
-                        flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
+          {/* Colors */}
+          <ToolbarDropdown id="colors" label="Colors" icon={iconColors}>
+            <div className="flex flex-col gap-2 w-full">
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Current
+              </span>
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => {
+                  setColor(e.target.value);
+                  setIsEraser(false);
+                }}
+                className="color-swatch shrink-0"
+                title="Stroke color"
+              />
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Recent
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {usedColors.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setColor(c);
+                      setIsEraser(false);
+                    }}
+                    title={c}
+                    className="rounded transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: c,
+                      border:
+                        c === color && !isEraser
+                          ? '2px solid var(--accent)'
+                          : '1px solid var(--border-strong)',
+                      flexShrink: 0,
+                    }}
+                  />
+                ))}
               </div>
-            </ToolbarDropdown>
-          )}
+            </div>
+          </ToolbarDropdown>
         </Toolbar>
 
         {/* ── Canvas area ── */}

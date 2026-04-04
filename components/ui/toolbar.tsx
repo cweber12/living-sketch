@@ -288,63 +288,6 @@ export function Toolbar({
                 mode === 'top' ? '1px solid var(--border-strong)' : undefined,
             }}
           >
-            {/* Panel header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '7px 10px',
-                borderBottom: '1px solid var(--border)',
-                backgroundColor: 'var(--surface-raised)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 1,
-              }}
-            >
-              {activeDropdown.icon && (
-                <span
-                  style={{
-                    color: 'var(--accent)',
-                    lineHeight: 0,
-                    flexShrink: 0,
-                  }}
-                  aria-hidden="true"
-                >
-                  {activeDropdown.icon}
-                </span>
-              )}
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.14em',
-                  color: 'var(--fg-muted)',
-                  flex: 1,
-                }}
-              >
-                {activeDropdown.label}
-              </span>
-              <button
-                onClick={() => applyActiveId(null)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--fg-muted)',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  lineHeight: 1,
-                  fontSize: 14,
-                  borderRadius: 2,
-                  flexShrink: 0,
-                }}
-                aria-label="Close panel"
-              >
-                &times;
-              </button>
-            </div>
-
             {/* Panel content */}
             <div
               style={{
