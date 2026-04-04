@@ -25,7 +25,21 @@ Pose-driven animation app migrated from React Native (Expo) to Next.js 16 + Type
 ## Architecture
 
 - `app/` – Next.js App Router pages and API routes
-- `components/` – React components (ui/, canvas/, controls/)
+- `components/` – React components, grouped by page scope first:
+  - `components/shared/` – Used across multiple pages
+    - `shared/ui/` – Toolbar, NavBar, NavLinks
+    - `shared/icons/` – BrainIcon, BodyRunningIcon, BodyStandingIcon, PersonFrontIcon, PersonBackIcon
+  - `components/sketch/` – Sketch page only
+    - `sketch/canvas/` – SketchCanvas
+    - `sketch/icons/` – LayoutBodyIcon, DrawScalpelIcon, ColorPaletteIcon
+    - `sketch/body-thumbnail.tsx`, `sketch/sketch-constants.ts`
+  - `components/extract/` – Extract page only
+    - `extract/canvas/` – PoseCanvas
+    - `extract/icons/` – JarIcon, FridgeClosedIcon, FridgeOpenIcon, PulseIcon, ScalpelTrimIcon, CircularSawIcon
+  - `components/console/` – Console page only
+    - `console/canvas/` – AnimationCanvas
+    - `console/controls/` – FileList, ScaleControls, ShiftControls
+    - `console/icons/` – PanelIcon, FilesIcon, ShiftIcon, ScaleIcon, PreviewIcon
 - `hooks/` – Custom React hooks (all client-side, 'use client')
 - `lib/` – Pure logic: types, constants, utils, stores, storage
 - `public/` – Static assets (SVG parts, icons)
@@ -65,7 +79,19 @@ After completing each task or set of related changes, always commit AND push:
 git add -A && git commit -m "type(scope): description" && git push
 ```
 
-Use conventional commit types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`.
+Use conventional commit types — pick the most accurate one:
+
+| Type       | When to use                                 |
+| ---------- | ------------------------------------------- |
+| `feat`     | New user-facing feature or capability       |
+| `fix`      | Bug fix or correcting broken behaviour      |
+| `refactor` | Code restructuring with no behaviour change |
+| `style`    | CSS / visual-only changes, no logic         |
+| `test`     | Adding or updating tests only               |
+| `docs`     | Documentation or comments only              |
+| `chore`    | Build config, tooling, dependency updates   |
+
+Examples: `feat(sketch): add front/back toggle with glow animation`, `refactor(components): restructure into page-scoped directories`, `fix(console): resolve missing icon import after icons extraction`.
 
 ## Supabase Integration
 
