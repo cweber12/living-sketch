@@ -1,93 +1,155 @@
 # Living Sketch
 
-Pose-driven animation app that draws SVG body-part sketches onto MediaPipe-detected skeletons. Migrated from React Native (Expo) to Next.js 16 + TypeScript.
+A pose-driven animation studio built with Next.js 16 + TypeScript. Draw hand-crafted SVG body-part sketches, capture human pose data from video using MediaPipe, and play back the sketches animated over detected skeletons.
 
-## Features
+## Feature Areas
 
-- **Sketch** — Draw on a 14-part body grid (head, torso, arms, hands, legs, feet). Supports pen, line, rectangle, circle, and ellipse tools. Arms-up and arms-down layouts with a single-part focus mode.
-- **Capture** — Detect poses from webcam or uploaded video using MediaPipe Pose Landmarker. Records landmark frames for playback and upload.
-- **Console** — Browse and manage saved sketches and landmark captures stored in Supabase.
-- **Responsive Toolbar** — Sidebar (left column) on desktop, top bar on mobile. Users can toggle between modes on larger screens.
+| Feature     | Description                                                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Sketch**  | Draw on a 14-part body grid. Tools: pen, line, rectangle, circle, ellipse, eraser. Front and back sides with session persistence. |
+| **Extract** | Detect poses from webcam or uploaded video via MediaPipe Pose Landmarker. Filters and saves landmark frames to Supabase.          |
+| **Console** | Load saved landmark captures and SVG sketch sets, preview the combined animation, and adjust body-part positioning and scale.     |
 
 ## Tech Stack
 
-| Layer          | Tool                                   |
-| -------------- | -------------------------------------- |
-| Framework      | Next.js 16 (App Router) + React 19     |
-| Language       | TypeScript (strict)                    |
-| Styling        | Tailwind CSS v4                        |
-| State          | Zustand                                |
-| Pose Detection | MediaPipe Pose Landmarker (WASM + GPU) |
-| Drawing        | perfect-freehand + Canvas 2D API       |
-| Storage        | Supabase (Auth + Storage buckets)      |
-| Testing        | Vitest + React Testing Library         |
-| Linting        | ESLint 9 + Prettier                    |
+| Layer          | Tool                                           |
+| -------------- | ---------------------------------------------- |
+| Framework      | Next.js 16 (App Router) + React 19             |
+| Language       | TypeScript (strict mode)                       |
+| Styling        | Tailwind CSS v4 + CSS custom properties        |
+| State          | Zustand                                        |
+| Pose Detection | MediaPipe Pose Landmarker (WASM, GPU delegate) |
+| Drawing        | `perfect-freehand` + Canvas 2D API             |
+| Storage        | Supabase Auth + Storage buckets                |
+| Testing        | Vitest + React Testing Library                 |
+| Linting        | ESLint 9 + Prettier + Husky + lint-staged      |
 
-## Getting Started
+## Setup
+
+### Prerequisites
+
+- Node.js 18+
+- A [Supabase](https://supabase.com) project with three storage buckets created: `svgs`, `landmarks`, `user_data`
+
+### Fork and Install
 
 ```bash
-# Install dependencies
+git clone https://github.com/your-org/living-sketch.git
+cd living-sketch
 npm install
-
-# Copy environment variables
-cp .env.example .env.local
-# Fill in SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SECRET_KEY
-
-# Run development server
-npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+### Environment Variables
 
-## Scripts
+Create `.env.local` in the project root:
 
-| Command                 | Description          |
-| ----------------------- | -------------------- |
-| `npm run dev`           | Development server   |
-| `npm run build`         | Production build     |
-| `npm run lint`          | ESLint check         |
-| `npm run format`        | Prettier format      |
-| `npm test`              | Run Vitest           |
-| `npm run test:coverage` | Vitest with coverage |
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-anon-key
+SUPABASE_SECRET_KEY=your-service-role-key
+```
+
+| Variable                                       | Required | Description                                  |
+| ---------------------------------------------- | -------- | -------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                     | Yes      | Supabase project URL                         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Yes      | Supabase anon/publishable key (browser-safe) |
+| `SUPABASE_SECRET_KEY`                          | Yes      | Service role key — server only, never public |
+
+### Supabase Buckets
+
+Create three storage buckets in your Supabase project:
+
+| Bucket      | Access  | Purpose                          |
+| ----------- | ------- | -------------------------------- |
+| `svgs`      | Public  | SVG sketch sets (WebP data URLs) |
+| `landmarks` | Public  | Landmark frame JSON files        |
+| `user_data` | Private | Reserved for future user data    |
+
+### Run
+
+```bash
+npm run dev       # development server at http://localhost:3000
+npm run build     # production build
+npm run lint      # ESLint check
+npm run format    # Prettier format
+npm test          # Vitest
+npm run test:coverage  # Vitest with coverage report
+```
 
 ## Project Structure
 
 ```
-app/                  Next.js App Router pages & API routes
+app/                  Next.js App Router pages and API routes
   sketch/             Body-part sketch editor
-  capture/            Webcam/video pose detection
-  console/            Saved files browser
-  docs/               Documentation page
-  api/storage/        Upload endpoints (SVGs, landmarks)
+  extract/            Webcam/video pose detection and landmark capture
+  console/            Animation playback and file management
+  docs/               In-app documentation page
+  login/ register/    Authentication forms
+  actions/auth.ts     Server actions for login, register, logout
+  api/storage/        API route handlers for upload, download, list, delete
 components/
-  canvas/             SketchCanvas, PoseCanvas, grid renderers
-  controls/           Brush, color, scale, shift controls
-  ui/                 Toolbar, NavBar, SegmentedControl, buttons
-hooks/                Client-side hooks (pose detection, canvas rig)
+  shared/             Components used across multiple pages
+    ui/               Toolbar, NavBar, NavLinks
+    icons/            BrainIcon, BodyRunningIcon, BodyStandingIcon, PersonFrontIcon, PersonBackIcon
+  sketch/             Sketch-page-only components
+    canvas/           SketchCanvas
+    icons/            LayoutBodyIcon, DrawScalpelIcon, ColorPaletteIcon
+  extract/            Extract-page-only components
+    canvas/           PoseCanvas
+    icons/            JarIcon, FridgeClosedIcon, FridgeOpenIcon, PulseIcon, ScalpelTrimIcon, CircularSawIcon
+  console/            Console-page-only components
+    canvas/           AnimationCanvas
+    controls/         FileList, ScaleControls, ShiftControls
+    icons/            PanelIcon, FilesIcon, ShiftIcon, ScaleIcon, PreviewIcon
+hooks/                Client-side React hooks
 lib/
-  constants/          Anchor/landmark descriptors, colors, sizes
-  stores/             Zustand stores (landmarks, anchors, factors)
-  storage/            Supabase client wrappers
+  3d/                 3D transform pipeline (transforms, hierarchy, smoothing)
+  constants/          Anchor descriptors, landmark descriptors, sizes
+  stores/             Zustand stores (landmarks, scale factors, shift factors)
+  supabase/           Supabase client factories (browser, server, admin)
+  utils/              Pure logic: anchors, drawing, SVG, smoothing, filters
   types.ts            Shared TypeScript types
-  utils/              Pure logic (anchors, drawing, SVG, smoothing)
-public/               Static assets (SVG parts, icons)
+public/               Static assets (SVG body parts, icons)
+docs/                 Technical architecture documents
 ```
 
-## Architecture
+## Architecture Summary
 
-- **Sketch page**: 14-part CSS Grid with `SketchCanvas` components. Each canvas uses `perfect-freehand` for pen strokes and Canvas 2D for shape tools. Undo stack (40 steps per canvas) managed by `useSketchCanvasRig`.
-- **Capture page**: MediaPipe Pose Landmarker loaded as a module-level singleton for instant re-navigation. Detection loop runs via `requestAnimationFrame` at configurable FPS.
-- **Toolbar**: Shared `<Toolbar>` component — renders as a collapsible sidebar on desktop or a top bar on mobile. Large screens can toggle between modes.
-- **Storage**: Supabase buckets (`svgs`, `landmarks`, `user_data`). API routes use the admin client with RLS bypass; falls back to the authenticated client.
+### Sketch
+
+14-part CSS Grid backed by 28 `SketchCanvas` canvases (14 parts × front/back). `perfect-freehand` handles pen pressure → stroke outline. Canvas 2D handles shape tools. `useSketchCanvasRig` manages canvas refs, a 40-step per-canvas undo stack, session storage persistence, and front/back mirroring.
+
+### Extract
+
+MediaPipe Pose Landmarker runs as a module-level singleton (no re-load on navigation). A `requestAnimationFrame` loop at 30 fps feeds video frames through `landmarker.detectForVideo()`. Frames are smoothed via One-Euro filter, validated, interpolated, and saved to Supabase (`landmarks` bucket) as JSON.
+
+### Console
+
+Loads a landmark file and an SVG sketch set, then renders them combined at 30 fps via `AnimationCanvas`. Body-part SVGs are positioned using a pipeline of affine transforms anchored to MediaPipe keypoints. `ShiftControls` and `ScaleControls` let users tune positioning in real time via Zustand stores.
+
+### 3D Pipeline (lib/3d/)
+
+A complete 3D transform pipeline is implemented in `lib/3d/`. It converts MediaPipe landmark frames to 3D scene coordinates, computes per-body-part transform matrices (position, orientation basis, dimensions), and applies temporal EMA smoothing. This pipeline is ready to drive a React Three Fiber scene as a future replacement for the current 2D Canvas rendering. See [docs/3d-pipeline-architecture.md](docs/3d-pipeline-architecture.md).
+
+### Toolbar
+
+`<Toolbar>` renders as a collapsible side column on desktop and a top bar on mobile. `<ToolbarDropdown>` and `<SegmentedControl>` are the main building blocks. Pages can also control which panel is open programmatically.
+
+### Auth and Storage
+
+Supabase Auth with `@supabase/ssr` cookie-based sessions. All storage writes go through API routes using the admin client (bypasses RLS), with an authenticated fallback. Storage paths follow `{userId}/{filename}` convention. The `SUPABASE_SECRET_KEY` is never exposed to the browser.
 
 ## Domain Concepts
 
-| Term                | Meaning                                                                            |
-| ------------------- | ---------------------------------------------------------------------------------- |
-| Landmarks           | MediaPipe Pose Landmarker 33-keypoint arrays                                       |
-| Anchors             | Computed positions from landmarks for placing SVG drawings                         |
-| Shift/Scale Factors | User adjustments to body-part positioning and sizing                               |
-| Body Parts          | 14 drawable segments: head, torso, 4 arm segments, 2 hands, 4 leg segments, 2 feet |
+| Term             | Meaning                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| Landmarks        | MediaPipe Pose Landmarker output — 33 normalized keypoints per frame                 |
+| Anchors          | 2D positions derived from landmarks for placing SVG body parts on canvas             |
+| Body Parts       | 14 drawable segments: head, torso, 4 arm segments, 2 hands, 4 leg segments, 2 feet   |
+| Shift Factors    | Per-joint position adjustments applied during SVG rendering                          |
+| Scale Factors    | Per-group size adjustments applied during SVG rendering                              |
+| Torso Dimensions | EMA-tracked torso width/height used to normalize all body-part sizing                |
+| TemporalSmoother | EMA-based frame smoother for 3D transforms (position, orientation basis, dimensions) |
 
 ## License
 

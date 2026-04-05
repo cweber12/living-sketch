@@ -15,9 +15,11 @@ import {
   type ToolbarMode,
 } from '@/components/shared/ui/toolbar';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
-import { LayoutBodyIcon } from '@/components/sketch/icons/layout-body';
+import { TableIcon } from '@/components/sketch/icons/table';
 import { DrawScalpelIcon } from '@/components/sketch/icons/draw-scalpel';
 import { ColorPaletteIcon } from '@/components/sketch/icons/color-palette';
+import { TestTubeAndFlaskIcon } from '@/components/sketch/icons/test-tube-and-flask';
+import { TestTubeIcon } from '@/components/sketch/icons/test-tube';
 import { BodyStandingIcon } from '@/components/shared/icons/body';
 import {
   GRID_ARMS_UP,
@@ -388,8 +390,20 @@ export default function SketchPage() {
           </button>
         </div>
 
-        {/* Center: Front / Back side toggle (Goal 2) */}
+        {/* Center: Front / Back side toggle */}
         <div className="flex-1 flex justify-center items-center gap-2">
+          <span
+            className="text-[9px] uppercase tracking-widest"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            Side
+          </span>
+          <SegmentedControl
+            options={['front', 'back'] as Side[]}
+            value={side}
+            onChange={handleSideChange}
+            labels={{ front: 'Front', back: 'Back' }}
+          />
           <span
             className={`transition-all duration-300 ${sideAnimating ? 'side-flip' : ''}`}
             style={{
@@ -399,14 +413,8 @@ export default function SketchPage() {
               display: 'inline-flex',
             }}
           >
-            <BodyStandingIcon size="20px" />
+            <BodyStandingIcon size="24px" />
           </span>
-          <SegmentedControl
-            options={['front', 'back'] as Side[]}
-            value={side}
-            onChange={handleSideChange}
-            labels={{ front: 'Front', back: 'Back' }}
-          />
         </div>
 
         {/* Right: Save */}
@@ -429,7 +437,7 @@ export default function SketchPage() {
       >
         <Toolbar onModeChange={setToolbarMode}>
           {/* Layout — two-column in side mode */}
-          <ToolbarDropdown id="layout" label="Layout" icon={<LayoutBodyIcon />}>
+          <ToolbarDropdown id="layout" label="Layout" icon={<TableIcon />}>
             <div
               style={{
                 display: 'flex',
@@ -522,7 +530,13 @@ export default function SketchPage() {
           {/* Draw */}
           <ToolbarDropdown id="tools" label="Tools" icon={<DrawScalpelIcon />}>
             <div className="flex flex-col gap-2 w-full">
-              {/* Row 1: Color swatch + shape selector */}
+              {/* Row 1: shape selector */}
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Current Tool
+              </span>
               <div className="flex items-center gap-2">
                 {!isEraser && (
                   <select
@@ -557,6 +571,12 @@ export default function SketchPage() {
               </div>
               {/* Row 2: Brush size slider + circle preview */}
               <div className="flex items-center gap-2">
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Size
+                </span>
                 <input
                   type="range"
                   min={1}
@@ -598,9 +618,9 @@ export default function SketchPage() {
 
           {/* Colors */}
           <ToolbarDropdown
-            id="colors"
-            label="Colors"
-            icon={<ColorPaletteIcon />}
+            id="color"
+            label="Color"
+            icon={<TestTubeAndFlaskIcon size={20} color={color} />}
           >
             <div className="flex flex-col gap-2 w-full">
               <span
@@ -609,16 +629,32 @@ export default function SketchPage() {
               >
                 Current
               </span>
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => {
-                  setColor(e.target.value);
-                  setIsEraser(false);
+              <label
+                style={{
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
                 }}
-                className="color-swatch shrink-0"
-                title="Stroke color"
-              />
+              >
+                <TestTubeIcon size={20} color={color} />
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => {
+                    setColor(e.target.value);
+                    setIsEraser(false);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: 'none',
+                  }}
+                  tabIndex={-1}
+                  aria-label="Stroke color"
+                />
+              </label>
               <span
                 className="text-[9px] uppercase tracking-widest"
                 style={{ color: 'var(--fg-muted)' }}
@@ -638,14 +674,16 @@ export default function SketchPage() {
                     style={{
                       width: 20,
                       height: 20,
-                      backgroundColor: c,
-                      border:
-                        c === color && !isEraser
-                          ? '2px solid var(--accent)'
-                          : '1px solid var(--border-strong)',
+                      padding: 0,
+                      background: 'none',
                       flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
-                  />
+                  >
+                    <TestTubeIcon size={16} color={c} />
+                  </button>
                 ))}
               </div>
             </div>

@@ -98,10 +98,10 @@ Examples: `feat(sketch): add front/back toggle with glow animation`, `refactor(c
 - **Buckets**: `user_data` (private), `landmarks` (public), `svgs` (public)
 - **Auth**: `@supabase/ssr` with cookie-based sessions via middleware
 - **Server client**: `lib/supabase/server.ts` — per-request, authenticated via cookies
-- **Admin client**: `lib/supabase/admin.ts` — uses `SUPABASE_SECRET_KEY`, bypasses RLS
+- **Admin client**: `lib/supabase/admin.ts` — uses `SUPABASE_SERVICE_ROLE_KEY`, bypasses RLS
 - **Client**: `lib/supabase/client.ts` — browser-side, publishable key only
 - API routes MUST use `supabaseAdmin ?? supabase` for storage writes (admin bypasses RLS; falls back to authenticated client)
-- Never expose `SUPABASE_SECRET_KEY` client-side (no `NEXT_PUBLIC_` prefix)
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` client-side (no `NEXT_PUBLIC_` prefix)
 - Storage paths follow `{user.id}/...` convention
 
 ## Code Review Checklist
@@ -128,6 +128,42 @@ After implementing new features, always review for:
 - Keep `README.md` in sync with the current tech stack, scripts, and project structure
 - Document new domain concepts in the "Key Domain Concepts" section above
 - The `app/docs/page.tsx` file is the in-app documentation page — keep its `sections` array current
+
+### When to update documentation
+
+Update the relevant README(s) and/or `docs/` files when any of these change:
+
+| Changed area                         | Files to update                                                    |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| `app/*/page.tsx` — page features     | `app/README.md` (page section), `app/docs/page.tsx`                |
+| `app/api/` — API route added/changed | `app/README.md` (API Routes section)                               |
+| `components/` — new component        | `components/README.md`                                             |
+| `components/` — directory structure  | `components/README.md`, root `README.md` (Project Structure)       |
+| `hooks/` — new or changed hook       | `hooks/README.md`                                                  |
+| `lib/` — new module or type          | `lib/README.md`                                                    |
+| `lib/3d/` — any 3D pipeline change   | `lib/README.md` (3d section), `docs/3d-pipeline-architecture.md`   |
+| New processing pipeline              | New file in `docs/` (e.g. `docs/{name}-pipeline.md`)               |
+| Supabase auth or storage changes     | `docs/supabase-integration.md`, `app/README.md`                    |
+| New Supabase bucket                  | `AGENTS.md` (Supabase Integration), `docs/supabase-integration.md` |
+
+### Directory README files
+
+Each major directory has a README. Keep these current:
+
+- `app/README.md` — pages, layouts, auth, API routes
+- `components/README.md` — all components by page scope
+- `hooks/README.md` — all custom hooks
+- `lib/README.md` — types, constants, stores, supabase, utils, 3d
+
+### Pipeline architecture docs (`docs/`)
+
+Each major data processing pipeline has a dedicated doc:
+
+- `docs/sketch-svg-pipeline.md` — drawing → canvas → export → Supabase
+- `docs/landmark-extraction-pipeline.md` — video → MediaPipe → pre-processing → Supabase
+- `docs/svg-anchor-rendering-pipeline.md` — landmark JSON → anchors → Canvas 2D rendering
+- `docs/3d-pipeline-architecture.md` — 3D transform pipeline (lib/3d/)
+- `docs/supabase-integration.md` — client factories, auth, storage, API patterns
 
 ## Commit & Push Workflow
 

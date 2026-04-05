@@ -2,7 +2,7 @@
 
 ## 1. Architecture Overview
 
-### Current 2D Pipeline
+### Current 2D Rendering Pipeline (in use)
 
 ```
 LandmarkFrame → scaleLandmarks() → applyShifts() → setAnchors() → draw*Svg() → Canvas 2D
@@ -10,55 +10,76 @@ LandmarkFrame → scaleLandmarks() → applyShifts() → setAnchors() → draw*S
 
 Each body part gets a 2D anchor (quad, segment, or head-ear pair), mapped via an affine transform onto an HTML Canvas 2D context. Depth (z) is ignored entirely. Facing is detected via cross-product and used only for front/back SVG selection and z-ordering.
 
-### Proposed 3D Pipeline
+### Implemented 3D Transform Pipeline (lib/3d/)
+
+The full 3D transform pipeline is implemented and tested in `lib/3d/`. It converts raw landmark frames into spatially-correct per-part transforms ready for 3D rendering.
 
 ```
-LandmarkFrame → frameTo3D() → computeAllTransforms() → TemporalSmoother → BodyTransforms
-                                                                                ↓
-SVG Images → Texture loading → R3F Scene → OrthographicCamera → WebGL Canvas
+LandmarkFrame → frameTo3D() → computeTorsoFrame() → computeAllPartTransforms()
+                                                               ↓
+                                                     TemporalSmoother.smooth()
+                                                               ↓
+                                                       BodyTransforms
 ```
 
-Each SVG body part becomes a **flat transparent plane in 3D space**. Landmark depth (z) drives real spatial separation. A parent-child hierarchy anchored at the torso keeps parts coherent.
+`BodyTransforms` provides each of the 14 body parts with: world-space position (`Vec3`), orientation basis (`Basis3`: right, up, forward), and dimensions (width, height). These are ready to drive a 3D rendering layer.
 
-### What Stays
+### Pending: 3D Rendering Layer (not yet built)
 
-| Module                                    | Status                                     |
-| ----------------------------------------- | ------------------------------------------ |
-| MediaPipe capture (`usePoseDetection`)    | Unchanged                                  |
-| Landmark storage (`useLandmarksStore`)    | Unchanged                                  |
-| Sketch canvases (`useSketchCanvasRig`)    | Unchanged                                  |
-| SVG caching (`useCacheSvgs`)              | Unchanged (images → textures)              |
-| Shift/scale stores                        | Unchanged (applied in 3D coordinate space) |
-| Anchor descriptors (`ANCHOR_MAP`)         | Reused for joint index lookups             |
-| Types (`LandmarkFrame`, `Keypoint`, etc.) | Extended, not replaced                     |
-
-### What Changes
-
-| Module                  | Change                                                  |
-| ----------------------- | ------------------------------------------------------- |
-| `set-anchors.ts`        | Replaced by `lib/3d/part-transforms.ts` (3D transforms) |
-| `drawing-utils.ts`      | Replaced by R3F `<BodyPartMesh>` components             |
-| `render-part-svg.ts`    | Replaced by `lib/3d/scene-orchestrator.ts`              |
-| `svg-utils.ts` (affine) | No longer needed (Three.js handles transforms)          |
-| `AnimationCanvas`       | Replaced by `<AnimationScene>` (R3F Canvas)             |
-| `torso-dimensions.ts`   | Absorbed into `lib/3d/torso-frame.ts`                   |
-| `ear-distance.ts`       | Absorbed into head transform logic                      |
-
-### New Modules
+The React Three Fiber rendering layer that would consume `BodyTransforms` is not yet built. The console page still uses the 2D `AnimationCanvas`.
 
 ```
-lib/3d/
-  types.ts                – Vec3, Basis3, PartTransform3D, BodyTransforms
-  math.ts                 – Vector/matrix utilities
-  coordinate-system.ts    – Landmark normalized coords → scene coords
-  torso-frame.ts          – Torso basis computation
-  part-transforms.ts      – Head, limb, hand, foot transforms
-  body-hierarchy.ts       – Parent-child tree definition
-  temporal-smoother.ts    – Frame-to-frame EMA smoothing
-  svg-plane-mapping.ts    – Per-part anchor and offset conventions
-  scene-orchestrator.ts   – Main entry: frame → smoothed BodyTransforms
-  index.ts                – Barrel export
+BodyTransforms → R3F Scene → <BodyPartMesh> (textured PlaneGeometry) → WebGL Canvas
 ```
+
+### What Is Implemented
+
+| Module                         | Status                                         |
+| ------------------------------ | ---------------------------------------------- |
+| `lib/3d/types.ts`              | ✅ Implemented                                 |
+| `lib/3d/math.ts`               | ✅ Implemented                                 |
+| `lib/3d/coordinate-system.ts`  | ✅ Implemented                                 |
+| `lib/3d/torso-frame.ts`        | ✅ Implemented                                 |
+| `lib/3d/part-transforms.ts`    | ✅ Implemented (all 14 parts incl. hands/feet) |
+| `lib/3d/temporal-smoother.ts`  | ✅ Implemented (EMA + sign-flip protection)    |
+| `lib/3d/body-hierarchy.ts`     | ✅ Implemented                                 |
+| `lib/3d/svg-plane-mapping.ts`  | ✅ Implemented                                 |
+| `lib/3d/scene-orchestrator.ts` | ✅ Implemented                                 |
+| `lib/3d/index.ts`              | ✅ Barrel export                               |
+
+### What Is Not Yet Built
+
+| Module / Component                | Status         |
+| --------------------------------- | -------------- |
+| React Three Fiber rendering       | ⬜ Not started |
+| `<AnimationScene>` (R3F canvas)   | ⬜ Not started |
+| `<BodyPartMesh>` (textured plane) | ⬜ Not started |
+| SVG → Three.js texture loading    | ⬜ Not started |
+| Occlusion/depth rendering tuning  | ⬜ Not started |
+
+### What Stays Unchanged
+
+| Module                                 | Status                                     |
+| -------------------------------------- | ------------------------------------------ |
+| MediaPipe capture (`usePoseDetection`) | Unchanged                                  |
+| Landmark storage (`useLandmarksStore`) | Unchanged                                  |
+| Sketch canvases (`useSketchCanvasRig`) | Unchanged                                  |
+| SVG caching (`useCacheSvgs`)           | Unchanged (images → textures in future)    |
+| Shift/scale stores                     | Unchanged (applied in 3D coordinate space) |
+| Anchor descriptors (`ANCHOR_MAP`)      | Reused for joint index lookups             |
+| Types (`LandmarkFrame`, `Keypoint`)    | Extended, not replaced                     |
+
+### What the 2D Pipeline Modules Will Be Replaced By
+
+| Current 2D module       | 3D replacement                                       |
+| ----------------------- | ---------------------------------------------------- |
+| `set-anchors.ts`        | `lib/3d/part-transforms.ts`                          |
+| `drawing-utils.ts`      | R3F `<BodyPartMesh>` components (not yet built)      |
+| `render-part-svg.ts`    | `lib/3d/scene-orchestrator.ts` + R3F scene           |
+| `svg-utils.ts` (affine) | Three.js handles transforms natively                 |
+| `AnimationCanvas`       | `<AnimationScene>` R3F Canvas (not yet built)        |
+| `torso-dimensions.ts`   | `lib/3d/torso-frame.ts`                              |
+| `ear-distance.ts`       | Absorbed into head transform in `part-transforms.ts` |
 
 ---
 
@@ -446,70 +467,56 @@ This matches the existing 2D pipeline's z-ordering logic.
 
 ---
 
-## 12. Integration Plan
+## 12. Integration Status and Next Steps
 
-### Phase 1 — Core Transform Pipeline + R3F Scene
+### Completed
 
-**Scope**: Torso, head, upper/lower arms, upper/lower legs
+All `lib/3d/` modules are implemented:
 
-**Steps**:
+- ✅ Types (`Vec3`, `Basis3`, `PartTransform3D`, `BodyTransforms`)
+- ✅ Vector math (`lib/3d/math.ts`)
+- ✅ Coordinate conversion (`lib/3d/coordinate-system.ts`)
+- ✅ Torso reference frame (`lib/3d/torso-frame.ts`)
+- ✅ All 14 part transforms including hands and feet (`lib/3d/part-transforms.ts`)
+- ✅ Body hierarchy definition (`lib/3d/body-hierarchy.ts`)
+- ✅ Temporal EMA smoother with sign-flip protection (`lib/3d/temporal-smoother.ts`)
+- ✅ SVG plane mapping metadata (`lib/3d/svg-plane-mapping.ts`)
+- ✅ Scene orchestrator entry point (`lib/3d/scene-orchestrator.ts`)
+- ✅ Unit tests for math, coordinate system, hierarchy, and transforms (`lib/3d/__tests__/`)
+
+### Next: R3F Rendering Layer (Phase 1 remaining)
+
+**Steps to connect the pipeline to 3D rendering:**
 
 1. Install `three`, `@react-three/fiber`, `@react-three/drei`
-2. Create `lib/3d/` modules (types, math, coordinate system, torso frame, part transforms)
-3. Create `TemporalSmoother`
-4. Create `SceneOrchestrator` (landmark frame → smoothed BodyTransforms)
-5. Create `<AnimationScene>` component (R3F Canvas + orthographic camera)
-6. Create `<BodyPartMesh>` (textured plane from transform + SVG image)
-7. Wire into console/playback page as `<AnimationScene>` replacing `<AnimationCanvas>`
-8. Verify all 14 parts render with correct position, size, and orientation
+2. Create `<AnimationScene>` component — R3F `<Canvas>` with `<OrthographicCamera>`
+3. Create `<BodyPartMesh>` — `<PlaneGeometry>` with SVG texture; accepts a `PartTransform3D`
+4. Wire `scene-orchestrator.ts` into `<AnimationScene>` to produce `BodyTransforms` per frame
+5. Replace `<AnimationCanvas>` in `app/console/page.tsx` with `<AnimationScene>`
+6. Load SVGs as `THREE.CanvasTexture` (from existing `HTMLImageElement` cache via `useCacheSvgs`)
+7. Dynamically import `<AnimationScene>` with `ssr: false` (same pattern as MediaPipe)
 
-**Testability**: Unit tests for math, coordinate conversion, torso frame, and part transforms. Visual verification for rendering.
+**Integration approach:**
 
-**Dependencies**: None on other phases.
+`<AnimationScene>` should match the props interface of the current `<AnimationCanvas>` as closely as possible to minimize changes to `app/console/page.tsx`.
 
-### Phase 2 — Hands, Feet, and Hierarchy Refinement
+### Phase 2 — Hierarchy and Fallbacks (after R3F rendering is live)
 
-**Scope**: Hand/foot transforms, hierarchy-based fallbacks
+- Hierarchy-based confidence fallbacks: inherit parent orientation when child landmarks are low-confidence
+- Tune width ratios and offset constants for all parts
 
-**Steps**:
+### Phase 3 — Depth and Occlusion Polish
 
-1. Implement hand transforms (wrist → finger tip)
-2. Implement foot transforms (ankle → foot index)
-3. Wire into `<AnimationScene>`
-4. Add hierarchy-based confidence fallbacks (inherit parent when child unreliable)
-5. Tune width ratios and offset constants
+- Tune z-offsets to eliminate any remaining z-fighting
+- Facing-based render order switching (torso front/back logic)
+- EMA alpha tuning per part
 
-**Dependencies**: Phase 1 complete.
+### Phase 4 — Advanced Features (optional)
 
-### Phase 3 — Smoothing and Depth Polish
-
-**Scope**: Full temporal smoothing, occlusion refinement
-
-**Steps**:
-
-1. Tune EMA alphas for each body part
-2. Add sign-flip protection for basis vectors
-3. Add stale-frame reuse with decay
-4. Tune z-offsets to eliminate remaining z-fighting
-5. Add facing-based render order switching
-6. Performance profiling and optimization
-
-**Dependencies**: Phase 1 complete; Phase 2 recommended.
-
-### Phase 4 — Advanced Features (Optional)
-
-**Scope**: Enhanced visuals and interaction
-
-**Possible features**:
-
-- Local-space transforms (relative to parent)
-- Inverse kinematics for procedural correction
-- Perspective camera option with depth-of-field
+- Local-space transforms relative to parent (prerequisite for inverse kinematics)
+- Perspective camera option
 - Shadow planes
-- Motion trail effects
-- Skeleton debug overlay in 3D
-
-**Dependencies**: Phases 1–3 complete.
+- Motion trails
 
 ---
 
