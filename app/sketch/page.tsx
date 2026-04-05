@@ -17,10 +17,10 @@ import {
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import { TableIcon } from '@/components/sketch/icons/table';
 import { DrawScalpelIcon } from '@/components/sketch/icons/draw-scalpel';
-import { ColorPaletteIcon } from '@/components/sketch/icons/color-palette';
 import { TestTubeAndFlaskIcon } from '@/components/sketch/icons/test-tube-and-flask';
 import { TestTubeIcon } from '@/components/sketch/icons/test-tube';
 import { BodyStandingIcon } from '@/components/shared/icons/body';
+import { FridgeClosedIcon } from '@/components/shared/icons/fridge';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
@@ -424,10 +424,11 @@ export default function SketchPage() {
           className="btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
           title="Save sketches to library"
         >
+          <FridgeClosedIcon />
           {saveStatus === 'saving' && '…'}
-          {saveStatus === 'saved' && '✓ Saved'}
+          {saveStatus === 'saved' && 'Saved'}
           {saveStatus === 'error' && 'Error'}
-          {saveStatus === 'idle' && '↑ Save'}
+          {saveStatus === 'idle' && 'Save'}
         </button>
       </div>
 

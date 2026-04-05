@@ -16,7 +16,7 @@ import { PulseIcon } from '@/components/extract/icons/pulse';
 import {
   FridgeClosedIcon,
   FridgeOpenIcon,
-} from '@/components/extract/icons/fridge';
+} from '@/components/shared/icons/fridge';
 import { ScalpelTrimIcon } from '@/components/extract/icons/scalpel-trim';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
 import { JarIcon } from '@/components/extract/icons/jar';

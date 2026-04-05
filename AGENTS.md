@@ -167,43 +167,30 @@ Each major data processing pipeline has a dedicated doc:
 
 ## CI/CD Pipeline
 
-### GitHub Actions
+## CI/CD Pipeline
 
-Two workflows run automatically on every push:
+**Vercel** is the sole deployment platform. **GitHub Actions** runs CI — it does not deploy.
 
-| Workflow | File                                 | Trigger                          | Jobs                                 |
-| -------- | ------------------------------------ | -------------------------------- | ------------------------------------ |
-| CI       | `.github/workflows/ci.yml`           | Push to any branch, PR to `main` | Lint → type-check → test → SSR build |
-| Deploy   | `.github/workflows/deploy-pages.yml` | Push to `main`                   | Static export → GitHub Pages deploy  |
+### GitHub Actions (CI only)
 
-Pushing to `main` triggers both workflows. Always ensure all CI checks pass before merging to main.
+One workflow runs on every push and pull request to `master`:
 
-### Commit & Push rule
+| Workflow | File                       | Trigger                | Jobs                             |
+| -------- | -------------------------- | ---------------------- | -------------------------------- |
+| CI       | `.github/workflows/ci.yml` | Push or PR to `master` | Lint → type-check → test → build |
 
-`git push` is the trigger for both CI and the GitHub Pages deploy. The standard commit workflow (below) is sufficient — no manual workflow dispatch needed.
+The build step mirrors the Vercel build: no static-export flags, standard SSR mode. CI must pass before merging to `master`.
 
-### GitHub Pages (Static UI Preview)
+Required repo secrets (Settings → Secrets → Actions):
 
-GitHub Pages hosts a **static UI preview** at `https://cweber12.github.io/living-sketch/`.
-
-**Important limitations** — this is NOT a full deployment:
-
-- Authentication does not work (middleware and Server Actions are stripped for the static build)
-- API routes (`/api/storage/*`) are not available
-- Use this only to verify UI layout, styles, and static rendering
-
-Required GitHub repo secrets (Settings → Secrets → Actions):
-
-| Secret name                                    | Value                    |
+| Secret                                         | Value                    |
 | ---------------------------------------------- | ------------------------ |
 | `NEXT_PUBLIC_SUPABASE_URL`                     | Supabase project URL     |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key |
 
-To enable GitHub Pages: repo Settings → Pages → Source → **GitHub Actions**.
+### Vercel (Deployment)
 
-### Vercel (Full SSR Deployment)
-
-`vercel.json` configures the production deployment. All features work on Vercel (auth, API routes, server actions, middleware).
+Vercel auto-deploys on push to `master` (production) and on pull request branches (preview). All features work on Vercel: auth, API routes, server actions, middleware.
 
 Configure these environment variables in the Vercel dashboard:
 
@@ -213,11 +200,9 @@ Configure these environment variables in the Vercel dashboard:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key                    |
 | `SUPABASE_SERVICE_ROLE_KEY`                    | Service role key — never expose client-side |
 
-Vercel auto-deploys on push to `main` once the project is connected.
-
 ### Local Development
 
-`npm run dev` is unaffected by CI/CD. The `NEXT_EXPORT` env var is never set locally, so `next.config.ts` uses standard SSR mode.
+`npm run dev` is unaffected by CI/CD. `next.config.ts` uses standard SSR mode locally.
 
 ## Commit & Push Workflow
 

@@ -1,7 +1,6 @@
 # Living Sketch
 
 [![CI](https://github.com/cweber12/living-sketch/actions/workflows/ci.yml/badge.svg)](https://github.com/cweber12/living-sketch/actions/workflows/ci.yml)
-[![Deploy to GitHub Pages](https://github.com/cweber12/living-sketch/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/cweber12/living-sketch/actions/workflows/deploy-pages.yml)
 
 A pose-driven animation studio built with Next.js 16 + TypeScript. Draw hand-crafted SVG body-part sketches, capture human pose data from video using MediaPipe, and play back the sketches animated over detected skeletons.
 
@@ -56,7 +55,7 @@ SUPABASE_SECRET_KEY=your-service-role-key
 | ---------------------------------------------- | -------- | -------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`                     | Yes      | Supabase project URL                         |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Yes      | Supabase anon/publishable key (browser-safe) |
-| `SUPABASE_SECRET_KEY`                          | Yes      | Service role key — server only, never public |
+| `SUPABASE_SERVICE_ROLE_KEY`                    | Yes      | Service role key — server only, never public |
 
 ### Supabase Buckets
 
@@ -140,7 +139,7 @@ A complete 3D transform pipeline is implemented in `lib/3d/`. It converts MediaP
 
 ### Auth and Storage
 
-Supabase Auth with `@supabase/ssr` cookie-based sessions. All storage writes go through API routes using the admin client (bypasses RLS), with an authenticated fallback. Storage paths follow `{userId}/{filename}` convention. The `SUPABASE_SECRET_KEY` is never exposed to the browser.
+Supabase Auth with `@supabase/ssr` cookie-based sessions. All storage writes go through API routes using the admin client (bypasses RLS), with an authenticated fallback. Storage paths follow `{userId}/{filename}` convention. The `SUPABASE_SERVICE_ROLE_KEY` is never exposed to the browser.
 
 ## Domain Concepts
 
@@ -156,30 +155,30 @@ Supabase Auth with `@supabase/ssr` cookie-based sessions. All storage writes go 
 
 ## CI/CD
 
-### Workflows
+**Vercel** is the sole deployment platform. **GitHub Actions** runs CI on every push and pull request — it does not deploy.
 
-| Workflow               | Trigger                          | Jobs                                 |
-| ---------------------- | -------------------------------- | ------------------------------------ |
-| CI                     | Push to any branch, PR to `main` | Lint → type-check → test → SSR build |
-| Deploy to GitHub Pages | Push to `main`                   | Static export → GitHub Pages         |
+### CI (GitHub Actions)
 
-### GitHub Pages (UI Preview)
+Workflow: `.github/workflows/ci.yml`  
+Trigger: push or PR to `master`  
+Jobs: Lint → Type-check → Test → Build
 
-Static preview at `https://cweber12.github.io/living-sketch/` — deployed automatically on push to `main`.
+Required repo secrets (Settings → Secrets → Actions):
 
-**Limitations**: Auth, API routes, and server actions are not active in the static build. Use this only to verify UI/styles.
+| Secret                                         | Value                    |
+| ---------------------------------------------- | ------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`                     | Supabase project URL     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key |
 
-Required repo secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`.
+### Deployment (Vercel)
 
-Enable in repo Settings → Pages → Source → **GitHub Actions**.
+Vercel auto-deploys on push to `master`. Connect the repo in the Vercel dashboard and add these environment variables:
 
-### Vercel (Full Deployment)
-
-`vercel.json` is configured for full SSR. Connect the repo in the Vercel dashboard and add these environment variables:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+| Variable                                       | Notes                                       |
+| ---------------------------------------------- | ------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                     | Supabase project URL                        |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key                    |
+| `SUPABASE_SERVICE_ROLE_KEY`                    | Service role key — never expose client-side |
 
 ## License
 
