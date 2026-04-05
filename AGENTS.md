@@ -165,6 +165,60 @@ Each major data processing pipeline has a dedicated doc:
 - `docs/3d-pipeline-architecture.md` — 3D transform pipeline (lib/3d/)
 - `docs/supabase-integration.md` — client factories, auth, storage, API patterns
 
+## CI/CD Pipeline
+
+### GitHub Actions
+
+Two workflows run automatically on every push:
+
+| Workflow | File                                 | Trigger                          | Jobs                                 |
+| -------- | ------------------------------------ | -------------------------------- | ------------------------------------ |
+| CI       | `.github/workflows/ci.yml`           | Push to any branch, PR to `main` | Lint → type-check → test → SSR build |
+| Deploy   | `.github/workflows/deploy-pages.yml` | Push to `main`                   | Static export → GitHub Pages deploy  |
+
+Pushing to `main` triggers both workflows. Always ensure all CI checks pass before merging to main.
+
+### Commit & Push rule
+
+`git push` is the trigger for both CI and the GitHub Pages deploy. The standard commit workflow (below) is sufficient — no manual workflow dispatch needed.
+
+### GitHub Pages (Static UI Preview)
+
+GitHub Pages hosts a **static UI preview** at `https://cweber12.github.io/living-sketch/`.
+
+**Important limitations** — this is NOT a full deployment:
+
+- Authentication does not work (middleware and Server Actions are stripped for the static build)
+- API routes (`/api/storage/*`) are not available
+- Use this only to verify UI layout, styles, and static rendering
+
+Required GitHub repo secrets (Settings → Secrets → Actions):
+
+| Secret name                                    | Value                    |
+| ---------------------------------------------- | ------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`                     | Supabase project URL     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key |
+
+To enable GitHub Pages: repo Settings → Pages → Source → **GitHub Actions**.
+
+### Vercel (Full SSR Deployment)
+
+`vercel.json` configures the production deployment. All features work on Vercel (auth, API routes, server actions, middleware).
+
+Configure these environment variables in the Vercel dashboard:
+
+| Variable                                       | Notes                                       |
+| ---------------------------------------------- | ------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                     | Supabase project URL                        |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase publishable key                    |
+| `SUPABASE_SERVICE_ROLE_KEY`                    | Service role key — never expose client-side |
+
+Vercel auto-deploys on push to `main` once the project is connected.
+
+### Local Development
+
+`npm run dev` is unaffected by CI/CD. The `NEXT_EXPORT` env var is never set locally, so `next.config.ts` uses standard SSR mode.
+
 ## Commit & Push Workflow
 
 After ALL files have been updated (code, tests, docs, README):

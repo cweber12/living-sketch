@@ -1,5 +1,8 @@
 # Living Sketch
 
+[![CI](https://github.com/cweber12/living-sketch/actions/workflows/ci.yml/badge.svg)](https://github.com/cweber12/living-sketch/actions/workflows/ci.yml)
+[![Deploy to GitHub Pages](https://github.com/cweber12/living-sketch/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/cweber12/living-sketch/actions/workflows/deploy-pages.yml)
+
 A pose-driven animation studio built with Next.js 16 + TypeScript. Draw hand-crafted SVG body-part sketches, capture human pose data from video using MediaPipe, and play back the sketches animated over detected skeletons.
 
 ## Feature Areas
@@ -150,6 +153,33 @@ Supabase Auth with `@supabase/ssr` cookie-based sessions. All storage writes go 
 | Scale Factors    | Per-group size adjustments applied during SVG rendering                              |
 | Torso Dimensions | EMA-tracked torso width/height used to normalize all body-part sizing                |
 | TemporalSmoother | EMA-based frame smoother for 3D transforms (position, orientation basis, dimensions) |
+
+## CI/CD
+
+### Workflows
+
+| Workflow               | Trigger                          | Jobs                                 |
+| ---------------------- | -------------------------------- | ------------------------------------ |
+| CI                     | Push to any branch, PR to `main` | Lint → type-check → test → SSR build |
+| Deploy to GitHub Pages | Push to `main`                   | Static export → GitHub Pages         |
+
+### GitHub Pages (UI Preview)
+
+Static preview at `https://cweber12.github.io/living-sketch/` — deployed automatically on push to `main`.
+
+**Limitations**: Auth, API routes, and server actions are not active in the static build. Use this only to verify UI/styles.
+
+Required repo secrets: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`.
+
+Enable in repo Settings → Pages → Source → **GitHub Actions**.
+
+### Vercel (Full Deployment)
+
+`vercel.json` is configured for full SSR. Connect the repo in the Vercel dashboard and add these environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 ## License
 
