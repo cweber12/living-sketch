@@ -9,10 +9,11 @@ import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 import {
-  Toolbar,
-  ToolbarDropdown,
+  PageToolbar,
+  ToolbarSection,
+  ToolbarSpacer,
+  useDropdown,
   SegmentedControl,
-  type ToolbarMode,
 } from '@/components/shared/ui/toolbar';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import { TableIcon } from '@/components/sketch/icons/table';
@@ -123,7 +124,7 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
+  const { openId, toggle, close } = useDropdown();
   const [zoom, setZoom] = useState(1);
   const [sideAnimating, setSideAnimating] = useState(false);
   const [usedColors, setUsedColors] = useState<string[]>([]);
@@ -363,175 +364,213 @@ export default function SketchPage() {
 
   return (
     <main className="flex flex-col flex-1 w-full overflow-hidden">
-      {/* ── Action bar ── */}
-      <div
-        className="flex items-center px-3 py-1.5 shrink-0"
-        style={{
-          borderBottom: '1px solid var(--border-strong)',
-          backgroundColor: 'var(--surface)',
-        }}
-      >
-        {/* Left: Undo + Clear */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleUndo}
-            className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
-            title="Undo last stroke"
-          >
-            ↩ Undo
-          </button>
-          <button
-            onClick={clearAll}
-            className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest px-2.5"
-            style={{ color: 'var(--danger)' }}
-            title="Clear all canvases"
-          >
-            ✕ Clear
-          </button>
-        </div>
+      {/* ── Unified toolbar ── */}
+      <PageToolbar>
+        {/* Undo */}
+        <ToolbarSection
+          icon={<span>↩</span>}
+          label="Undo"
+          onClick={handleUndo}
+          title="Undo last stroke"
+        />
 
-        {/* Center: Front / Back side toggle */}
-        <div className="flex-1 flex justify-center items-center gap-2">
-          <span
-            className="text-[9px] uppercase tracking-widest"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Side
-          </span>
-          <SegmentedControl
-            options={['front', 'back'] as Side[]}
-            value={side}
-            onChange={handleSideChange}
-            labels={{ front: 'Front', back: 'Back' }}
-          />
-          <span
-            className={`transition-all duration-300 ${sideAnimating ? 'side-flip' : ''}`}
-            style={{
-              color: side === 'front' ? 'var(--accent)' : 'var(--surface)',
-              filter:
-                side === 'back' ? 'drop-shadow(0 0 6px var(--accent))' : 'none',
-              display: 'inline-flex',
-            }}
-          >
-            <BodyStandingIcon size="24px" />
-          </span>
-        </div>
+        {/* Clear All */}
+        <ToolbarSection
+          icon={<span>✕</span>}
+          label="Clear"
+          danger
+          onClick={() => toggle('clear')}
+          dropdownOpen={openId === 'clear'}
+          onDropdownClose={close}
+          dropdownContent={
+            <div className="flex flex-col gap-2">
+              <span
+                className="text-[10px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Clear all canvases?
+              </span>
+              <button
+                onClick={() => {
+                  clearAll();
+                  close();
+                }}
+                className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
+                style={{
+                  backgroundColor: 'var(--danger)',
+                  color: '#fff',
+                }}
+              >
+                ✕ Clear All
+              </button>
+            </div>
+          }
+        />
 
-        {/* Right: Save */}
-        <button
-          onClick={handleSave}
-          disabled={saveStatus === 'saving'}
-          className="btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50"
-          title="Save sketches to library"
-        >
-          <FridgeClosedIcon />
-          {saveStatus === 'saving' && '…'}
-          {saveStatus === 'saved' && 'Saved'}
-          {saveStatus === 'error' && 'Error'}
-          {saveStatus === 'idle' && 'Save'}
-        </button>
-      </div>
-
-      {/* ── Toolbar + canvas ── */}
-      <div
-        className={`flex flex-1 overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
-      >
-        <Toolbar onModeChange={setToolbarMode}>
-          {/* Layout — two-column in side mode */}
-          <ToolbarDropdown id="layout" label="Layout" icon={<TableIcon />}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: toolbarMode === 'side' ? 'row' : 'column',
-                gap: toolbarMode === 'side' ? '0 16px' : 0,
-                width: '100%',
-              }}
-            >
-              <div className="flex flex-col gap-1.5">
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
+        {/* Layout */}
+        <ToolbarSection
+          icon={<TableIcon />}
+          label="Layout"
+          onClick={() => toggle('layout')}
+          dropdownOpen={openId === 'layout'}
+          onDropdownClose={close}
+          inlineContent={
+            <>
+              <button
+                onClick={() =>
+                  handleSideChange(side === 'front' ? 'back' : 'front')
+                }
+                className="btn-ghost rounded py-1 px-2 text-[10px] uppercase tracking-widest font-semibold"
+                title="Flip between front and back"
+              >
+                ⇄ Flip
+              </button>
+              <span
+                className={`transition-all duration-300 ${sideAnimating ? 'side-flip' : ''}`}
+                style={{
+                  color: side === 'front' ? 'var(--accent)' : 'var(--surface)',
+                  filter:
+                    side === 'back'
+                      ? 'drop-shadow(0 0 6px var(--accent))'
+                      : 'none',
+                  display: 'inline-flex',
+                }}
+              >
+                <BodyStandingIcon size="20px" />
+              </span>
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                {side}
+              </span>
+            </>
+          }
+          dropdownContent={
+            <div className="flex flex-col gap-1.5">
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Side
+              </span>
+              <SegmentedControl
+                options={['front', 'back'] as Side[]}
+                value={side}
+                onChange={handleSideChange}
+                labels={{ front: 'Front', back: 'Back' }}
+              />
+              <span
+                className="text-[9px] uppercase tracking-widest mt-1"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Body
+              </span>
+              <SegmentedControl
+                options={['body', 'single'] as ViewMode[]}
+                value={viewMode}
+                onChange={setViewMode}
+                labels={{ body: 'Full', single: 'Parts' }}
+              />
+              {viewMode === 'single' && (
+                <select
+                  value={focusIdx}
+                  onChange={(e) => setFocusIdx(Number(e.target.value))}
+                  className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+                  style={{
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--fg)',
+                    border: '1px solid var(--border)',
+                  }}
                 >
-                  Body
-                </span>
-                <SegmentedControl
-                  options={['body', 'single'] as ViewMode[]}
-                  value={viewMode}
-                  onChange={setViewMode}
-                  labels={{ body: 'Full', single: 'Parts' }}
-                />
-                {viewMode === 'single' && (
-                  <select
-                    value={focusIdx}
-                    onChange={(e) => setFocusIdx(Number(e.target.value))}
-                    className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-                    style={{
-                      backgroundColor: 'var(--bg)',
-                      color: 'var(--fg)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {PARTS_ORDER.map((p, i) => (
-                      <option key={p} value={i}>
-                        {PART_LABEL[p]}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {!isMobile && (
-                  <>
-                    <span
-                      className="text-[9px] uppercase tracking-widest mt-1"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      Arm Orientation
-                    </span>
-                    <SegmentedControl
-                      options={['up', 'down'] as ArmPose[]}
-                      value={armPose}
-                      onChange={setArmPose}
-                      labels={{ up: 'Up', down: 'Down' }}
-                    />
-                  </>
-                )}
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Zoom
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1 accent-accent"
-                    title="Canvas zoom"
-                  />
+                  {PARTS_ORDER.map((p, i) => (
+                    <option key={p} value={i}>
+                      {PART_LABEL[p]}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!isMobile && (
+                <>
                   <span
-                    className="text-[10px] tabular-nums w-8 shrink-0"
+                    className="text-[9px] uppercase tracking-widest mt-1"
                     style={{ color: 'var(--fg-muted)' }}
                   >
-                    {Math.round(zoom * 100)}%
+                    Arm Orientation
                   </span>
-                </div>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+                  <SegmentedControl
+                    options={['up', 'down'] as ArmPose[]}
+                    value={armPose}
+                    onChange={setArmPose}
+                    labels={{ up: 'Up', down: 'Down' }}
+                  />
+                </>
+              )}
+              <span
+                className="text-[9px] uppercase tracking-widest mt-1"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Zoom
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="flex-1 accent-accent"
+                  title="Canvas zoom"
+                />
+                <span
+                  className="text-[10px] tabular-nums w-8 shrink-0"
+                  style={{ color: 'var(--fg-muted)' }}
                 >
-                  Reset
-                </button>
+                  {Math.round(zoom * 100)}%
+                </span>
               </div>
+              <button
+                onClick={() => setZoom(1)}
+                className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+              >
+                Reset
+              </button>
             </div>
-          </ToolbarDropdown>
+          }
+        />
 
-          {/* Draw */}
-          <ToolbarDropdown id="tools" label="Tools" icon={<DrawScalpelIcon />}>
+        {/* Tools */}
+        <ToolbarSection
+          icon={<DrawScalpelIcon />}
+          label="Tools"
+          onClick={() => toggle('tools')}
+          dropdownOpen={openId === 'tools'}
+          onDropdownClose={close}
+          inlineContent={
+            <SegmentedControl
+              options={['draw', 'erase'] as ('draw' | 'erase')[]}
+              value={isEraser ? 'erase' : 'draw'}
+              onChange={(v) => setIsEraser(v === 'erase')}
+              labels={{ draw: 'Draw', erase: 'Erase' }}
+              dangerValue="erase"
+            />
+          }
+          dropdownContent={
             <div className="flex flex-col gap-2 w-full">
-              {/* Row 1: shape selector */}
+              <span
+                className="text-[9px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Draw / Erase
+              </span>
+              <SegmentedControl
+                options={['draw', 'erase'] as ('draw' | 'erase')[]}
+                value={isEraser ? 'erase' : 'draw'}
+                onChange={(v) => setIsEraser(v === 'erase')}
+                labels={{ draw: 'Draw', erase: 'Erase' }}
+                dangerValue="erase"
+              />
               <span
                 className="text-[9px] uppercase tracking-widest"
                 style={{ color: 'var(--fg-muted)' }}
@@ -570,7 +609,6 @@ export default function SketchPage() {
                   </span>
                 )}
               </div>
-              {/* Row 2: Brush size slider + circle preview */}
               <div className="flex items-center gap-2">
                 <span
                   className="text-[9px] uppercase tracking-widest"
@@ -587,15 +625,14 @@ export default function SketchPage() {
                   className="flex-1 accent-accent"
                   title="Brush size"
                 />
-                {/* Fixed-size circle preview — wrapper always 48px so layout never shifts */}
                 <div
                   className="shrink-0 flex items-center justify-center"
-                  style={{ width: 48, height: 48 }}
+                  style={{ width: 32, height: 32 }}
                 >
                   <div
                     style={{
-                      width: brushSize,
-                      height: brushSize,
+                      width: Math.min(brushSize, 28),
+                      height: Math.min(brushSize, 28),
                       borderRadius: '50%',
                       backgroundColor: isEraser
                         ? 'var(--danger)'
@@ -607,22 +644,47 @@ export default function SketchPage() {
                   />
                 </div>
               </div>
-              <SegmentedControl
-                options={['draw', 'erase'] as ('draw' | 'erase')[]}
-                value={isEraser ? 'erase' : 'draw'}
-                onChange={(v) => setIsEraser(v === 'erase')}
-                labels={{ draw: 'Draw', erase: 'Erase' }}
-                dangerValue="erase"
-              />
             </div>
-          </ToolbarDropdown>
+          }
+        />
 
-          {/* Colors */}
-          <ToolbarDropdown
-            id="color"
-            label="Color"
-            icon={<TestTubeAndFlaskIcon size={20} color={color} />}
-          >
+        {/* Color */}
+        <ToolbarSection
+          icon={<TestTubeAndFlaskIcon size={18} color={color} />}
+          label="Color"
+          onClick={() => toggle('color')}
+          dropdownOpen={openId === 'color'}
+          onDropdownClose={close}
+          inlineContent={
+            <label
+              style={{
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
+              title="Select color"
+            >
+              <TestTubeIcon size={18} color={color} />
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => {
+                  setColor(e.target.value);
+                  setIsEraser(false);
+                }}
+                style={{
+                  position: 'absolute',
+                  opacity: 0,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: 'none',
+                }}
+                tabIndex={-1}
+                aria-label="Stroke color"
+              />
+            </label>
+          }
+          dropdownContent={
             <div className="flex flex-col gap-2 w-full">
               <span
                 className="text-[9px] uppercase tracking-widest"
@@ -688,124 +750,144 @@ export default function SketchPage() {
                 ))}
               </div>
             </div>
-          </ToolbarDropdown>
-        </Toolbar>
+          }
+        />
 
-        {/* ── Canvas area ── */}
-        <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-          {/* ── BODY MODE ── */}
-          <div
-            className={
-              viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
-            }
-          >
-            <div className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3">
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateAreas: gridTemplate,
-                  gridTemplateColumns: gridCols,
-                  gridTemplateRows: gridRows,
-                  gap: isMobile ? '2px' : '4px',
-                  transform: `scale(${zoom})`,
-                  transformOrigin: 'top center',
-                }}
-              >
-                {(['front', 'back'] as Side[]).flatMap((s) =>
-                  BODY_PARTS.map((part) => renderCanvas(s, part)),
-                )}
-              </div>
+        <ToolbarSpacer />
+
+        {/* Save */}
+        <ToolbarSection
+          icon={<FridgeClosedIcon />}
+          label={
+            saveStatus === 'saving'
+              ? '…'
+              : saveStatus === 'saved'
+                ? 'Saved'
+                : saveStatus === 'error'
+                  ? 'Error'
+                  : 'Save'
+          }
+          primary={saveStatus === 'idle'}
+          onClick={handleSave}
+          disabled={saveStatus === 'saving'}
+          title="Save sketches to library"
+        />
+      </PageToolbar>
+
+      {/* ── Canvas area ── */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* ── BODY MODE ── */}
+        <div
+          className={
+            viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
+          }
+        >
+          <div className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateAreas: gridTemplate,
+                gridTemplateColumns: gridCols,
+                gridTemplateRows: gridRows,
+                gap: isMobile ? '2px' : '4px',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+              }}
+            >
+              {(['front', 'back'] as Side[]).flatMap((s) =>
+                BODY_PARTS.map((part) => renderCanvas(s, part)),
+              )}
             </div>
           </div>
+        </div>
 
-          {/* ── SINGLE-PART MODE ── */}
-          {viewMode === 'single' && (
-            <>
-              <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
-                <button
-                  onClick={goPrev}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--fg)',
-                  }}
-                  aria-label="Previous part"
+        {/* ── SINGLE-PART MODE ── */}
+        {viewMode === 'single' && (
+          <>
+            <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
+              <button
+                onClick={goPrev}
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--fg)',
+                }}
+                aria-label="Previous part"
+              >
+                ◀
+              </button>
+
+              <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0">
+                <p
+                  className="text-[10px] font-bold uppercase tracking-widest shrink-0"
+                  style={{ color: 'var(--accent)' }}
                 >
-                  ◀
-                </button>
-
-                <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0">
-                  <p
-                    className="text-[10px] font-bold uppercase tracking-widest shrink-0"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {PART_LABEL[focusPart]} · {side}
-                  </p>
-                  <div
-                    style={{
-                      maxWidth: 'min(75vw, 380px)',
-                      maxHeight: '55vh',
-                      aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
-                      width: '100%',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      border: '1px solid var(--border)',
-                      backgroundColor: 'var(--surface)',
-                      position: 'relative',
-                      transform: `scale(${zoom})`,
-                      transformOrigin: 'top center',
-                    }}
-                  >
-                    {(['front', 'back'] as Side[]).map((s) => (
-                      <div
-                        key={`single-${s}-${focusPart}`}
-                        style={{
-                          display: s === side ? 'block' : 'none',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      >
-                        <SketchCanvas
-                          side={s}
-                          part={focusPart}
-                          brushSize={brushSize}
-                          color={color}
-                          isEraser={isEraser}
-                          tool={activeTool}
-                          onMount={setCanvasRef}
-                          onStrokeStart={handleStrokeStart}
-                          onStrokeEnd={handleStrokeEnd}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p
-                    className="text-[10px] shrink-0"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {focusIdx + 1} / {PARTS_ORDER.length}
-                  </p>
+                  {PART_LABEL[focusPart]} · {side}
+                </p>
+                <div
+                  style={{
+                    maxWidth: 'min(75vw, 380px)',
+                    maxHeight: '55vh',
+                    aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
+                    width: '100%',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    position: 'relative',
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top center',
+                  }}
+                >
+                  {(['front', 'back'] as Side[]).map((s) => (
+                    <div
+                      key={`single-${s}-${focusPart}`}
+                      style={{
+                        display: s === side ? 'block' : 'none',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    >
+                      <SketchCanvas
+                        side={s}
+                        part={focusPart}
+                        brushSize={brushSize}
+                        color={color}
+                        isEraser={isEraser}
+                        tool={activeTool}
+                        onMount={setCanvasRef}
+                        onStrokeStart={handleStrokeStart}
+                        onStrokeEnd={handleStrokeEnd}
+                      />
+                    </div>
+                  ))}
                 </div>
-
-                <button
-                  onClick={goNext}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--fg)',
-                  }}
-                  aria-label="Next part"
+                <p
+                  className="text-[10px] shrink-0"
+                  style={{ color: 'var(--fg-muted)' }}
                 >
-                  ▶
-                </button>
+                  {focusIdx + 1} / {PARTS_ORDER.length}
+                </p>
               </div>
 
-              <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />
-            </>
-          )}
-        </div>
+              <button
+                onClick={goNext}
+                className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--fg)',
+                }}
+                aria-label="Next part"
+              >
+                ▶
+              </button>
+            </div>
+
+            <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />
+          </>
+        )}
       </div>
     </main>
   );

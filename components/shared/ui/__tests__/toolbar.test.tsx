@@ -1,29 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
-  Toolbar,
-  ToolbarDropdown,
+  PageToolbar,
+  ToolbarSection,
+  ToolbarSpacer,
   SegmentedControl,
 } from '@/components/shared/ui/toolbar';
-
-// Mock matchMedia -- default to desktop (no mobile match)
-function mockMatchMedia(matches = false) {
-  const listeners: Array<(e: MediaQueryListEvent) => void> = [];
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation((query: string) => ({
-      matches,
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn((_, cb) => listeners.push(cb)),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  });
-  return listeners;
-}
 
 describe('SegmentedControl', () => {
   it('renders all options', () => {
@@ -84,87 +66,86 @@ describe('SegmentedControl', () => {
   });
 });
 
-describe('ToolbarDropdown', () => {
-  it('renders nothing by itself', () => {
-    const { container } = render(
-      <ToolbarDropdown id="test" label="Test">
-        <span>Panel content</span>
-      </ToolbarDropdown>,
+describe('PageToolbar', () => {
+  it('renders children', () => {
+    render(
+      <PageToolbar>
+        <span>child</span>
+      </PageToolbar>,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByText('child')).toBeInTheDocument();
   });
 });
 
-describe('Toolbar', () => {
-  it('renders dropdown buttons in side mode on desktop', () => {
-    mockMatchMedia(false); // desktop
+describe('ToolbarSection', () => {
+  it('renders icon and label', () => {
     render(
-      <Toolbar>
-        <ToolbarDropdown id="draw" label="Draw">
-          <span>Draw Panel</span>
-        </ToolbarDropdown>
-      </Toolbar>,
+      <ToolbarSection icon={<span>☆</span>} label="Draw" onClick={vi.fn()} />,
     );
-    expect(screen.getByTitle('Draw')).toBeInTheDocument();
-  });
-
-  it('renders dropdown buttons in top mode on mobile', () => {
-    mockMatchMedia(true); // mobile
-    render(
-      <Toolbar>
-        <ToolbarDropdown id="draw" label="Draw">
-          <span>Draw Panel</span>
-        </ToolbarDropdown>
-      </Toolbar>,
-    );
+    expect(screen.getByText('☆')).toBeInTheDocument();
     expect(screen.getByText('Draw')).toBeInTheDocument();
   });
 
-  it('shows panel content when button is clicked', async () => {
-    mockMatchMedia(false); // desktop (side mode)
+  it('calls onClick when clicked', () => {
+    const onClick = vi.fn();
+    render(<ToolbarSection icon={<span>■</span>} onClick={onClick} />);
+    fireEvent.click(screen.getByRole('button'));
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it('opens dropdown panel when dropdownOpen is true', async () => {
+    const onClose = vi.fn();
     render(
-      <Toolbar>
-        <ToolbarDropdown id="draw" label="Draw">
-          <span>Draw Panel Content</span>
-        </ToolbarDropdown>
-      </Toolbar>,
+      <ToolbarSection
+        icon={<span>☆</span>}
+        label="Test"
+        onClick={vi.fn()}
+        dropdownOpen={true}
+        onDropdownClose={onClose}
+        dropdownContent={<span>Panel Content</span>}
+      />,
     );
-    const btn = screen.getByTitle('Draw');
-    fireEvent.click(btn);
     await waitFor(() => {
-      expect(screen.getByText('Draw Panel Content')).toBeInTheDocument();
+      expect(screen.getByText('Panel Content')).toBeInTheDocument();
     });
   });
 
-  it('closes panel when same button is clicked again', async () => {
-    mockMatchMedia(false);
+  it('hides dropdown panel when dropdownOpen is false', () => {
     render(
-      <Toolbar>
-        <ToolbarDropdown id="draw" label="Draw">
-          <span>Draw Panel Content</span>
-        </ToolbarDropdown>
-      </Toolbar>,
+      <ToolbarSection
+        icon={<span>☆</span>}
+        label="Test"
+        onClick={vi.fn()}
+        dropdownOpen={false}
+        onDropdownClose={vi.fn()}
+        dropdownContent={<span>Panel Content</span>}
+      />,
     );
-    const btn = screen.getByTitle('Draw');
-    fireEvent.click(btn);
-    await waitFor(() => {
-      expect(screen.getByText('Draw Panel Content')).toBeInTheDocument();
-    });
-    fireEvent.click(btn);
-    await waitFor(() => {
-      expect(screen.queryByText('Draw Panel Content')).not.toBeInTheDocument();
-    });
+    expect(screen.queryByText('Panel Content')).not.toBeInTheDocument();
   });
 
-  it('has mode switch button on desktop', () => {
-    mockMatchMedia(false);
+  it('applies primary styling', () => {
     render(
-      <Toolbar>
-        <ToolbarDropdown id="draw" label="Draw">
-          <span>Panel</span>
-        </ToolbarDropdown>
-      </Toolbar>,
+      <ToolbarSection
+        icon={<span>✓</span>}
+        label="Save"
+        primary
+        onClick={vi.fn()}
+      />,
     );
-    expect(screen.getByTitle('Switch to top toolbar')).toBeInTheDocument();
+    const btn = screen.getByRole('button');
+    expect(btn.style.backgroundColor).toBe('var(--accent)');
+  });
+
+  it('disables the button', () => {
+    render(<ToolbarSection icon={<span>✓</span>} disabled onClick={vi.fn()} />);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+});
+
+describe('ToolbarSpacer', () => {
+  it('renders a flex-1 spacer', () => {
+    const { container } = render(<ToolbarSpacer />);
+    expect(container.firstChild).toHaveClass('flex-1');
   });
 });

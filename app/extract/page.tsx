@@ -5,10 +5,11 @@ import { PoseCanvas } from '@/components/extract/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
 import {
-  Toolbar,
-  ToolbarDropdown,
+  PageToolbar,
+  ToolbarSection,
+  ToolbarSpacer,
+  useDropdown,
   SegmentedControl,
-  type ToolbarMode,
 } from '@/components/shared/ui/toolbar';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
@@ -47,10 +48,9 @@ export default function ExtractPage() {
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
-  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('side');
+  const { openId, toggle, close } = useDropdown();
   const [jitterInterval, setJitterInterval] = useState(1);
   const [activeJitterInterval, setActiveJitterInterval] = useState(1);
-  const [toolbarOpenId, setToolbarOpenId] = useState<string | null>('source');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -251,10 +251,10 @@ export default function ExtractPage() {
   /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
-  // Auto-open status panel when detection starts
+  // Auto-close dropdowns when detection starts
   useEffect(() => {
-    if (isDetecting) setToolbarOpenId('status');
-  }, [isDetecting]);
+    if (isDetecting) close();
+  }, [isDetecting, close]);
 
   // Smoothed, filtered frames for preview — computed once after capture completes
   const smoothedBaseFrames = useMemo(() => {
@@ -304,128 +304,157 @@ export default function ExtractPage() {
 
   return (
     <main className="flex flex-col flex-1 w-full overflow-hidden">
-      {/* ── Action bar ── */}
-      <div
-        className="flex items-center gap-2 px-3 py-1.5 shrink-0"
-        style={{
-          borderBottom: '1px solid var(--border-strong)',
-          backgroundColor: 'var(--surface)',
-        }}
-      >
+      {/* ── Unified toolbar ── */}
+      <PageToolbar>
+        {/* Extract / Stop / Re-Extract */}
         {isDetecting ? (
-          <button
+          <ToolbarSection
+            icon={<span>■</span>}
+            label="Stop"
+            danger
             onClick={handleStop}
-            className="rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold"
-            style={{ backgroundColor: 'var(--danger)', color: 'var(--bg)' }}
-          >
-            Stop
-          </button>
+            title="Stop extraction"
+          />
         ) : (
-          <div className="flex gap-1.5">
-            <button
-              onClick={async () => {
-                if (captureComplete) handleNewCapture();
-                await handleStart();
-              }}
-              disabled={!canStart}
-              className={`btn-primary rounded py-1.5 px-3 text-xs uppercase tracking-widest font-bold disabled:opacity-50 inline-flex items-center gap-1.5${canStart && !captureComplete ? ' glow-pulse' : ''}`}
-            >
-              <CircularSawIcon />
-              {captureComplete ? 'Re-Extract' : 'Extract'}
-            </button>
-            {captureComplete && (
-              <button
-                onClick={handleNewCapture}
-                className="btn-ghost rounded py-1.5 px-2.5 text-xs uppercase tracking-widest font-bold"
-                title="Clear capture and start fresh"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <ToolbarSection
+            icon={<CircularSawIcon />}
+            label={captureComplete ? 'Re-Extract' : 'Extract'}
+            primary={canStart && !captureComplete}
+            glow={canStart && !captureComplete}
+            disabled={!canStart}
+            onClick={async () => {
+              if (captureComplete) handleNewCapture();
+              await handleStart();
+            }}
+            title={
+              captureComplete ? 'Start new extraction' : 'Start extraction'
+            }
+          />
         )}
-        <div className="ml-auto">
-          <button
-            onClick={handleUpload}
-            disabled={!canUpload}
-            className={`btn-primary rounded py-1.5 px-4 text-xs uppercase tracking-widest font-bold disabled:opacity-50 inline-flex items-center gap-1.5${captureComplete && uploadStatus === 'idle' ? ' glow-pulse' : ''}`}
-            title="Archive captured landmarks"
-          >
-            {uploadStatus === 'uploading' && '…'}
-            {uploadStatus === 'done' && '✓ Saved'}
-            {uploadStatus === 'error' && 'Error'}
-            {uploadStatus === 'idle' && (
-              <>
-                <FridgeClosedIcon /> Save
-              </>
-            )}
-          </button>
-        </div>
-      </div>
 
-      {/* ── Toolbar + main content ── */}
-      <div
-        className={`flex flex-1 overflow-hidden ${toolbarMode === 'side' ? 'flex-row' : 'flex-col'}`}
-      >
-        <Toolbar
-          onModeChange={setToolbarMode}
-          openId={toolbarOpenId}
-          onOpenIdChange={setToolbarOpenId}
-        >
-          {/* Source */}
-          <ToolbarDropdown id="source" label="Source" icon={<BrainIcon />}>
-            <SegmentedControl
-              options={['live', 'browse'] as Source[]}
-              value={source}
-              onChange={(v) => {
-                if (isDetecting) handleStop();
-                if (v === 'live') {
-                  setVideoReady(false);
-                  setVideoFileName('');
-                } else {
-                  setWebcamReady(false);
-                }
-                setSource(v);
-              }}
-              labels={{
-                live: (
-                  <span className="flex items-center gap-1">
-                    <BodyRunningIcon />
-                    Live
-                  </span>
-                ),
-                browse: (
-                  <span className="flex items-center gap-1">
-                    <FridgeOpenIcon />
-                    Browse
-                  </span>
-                ),
-              }}
-            />
-            {source === 'browse' && (
-              <>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isDetecting}
-                  className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
-                  title={videoFileName || 'Select video file'}
-                >
-                  <JarIcon />
-                  {videoFileName || 'Select…'}
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
+        {/* Source */}
+        {!isDetecting && (
+          <ToolbarSection
+            icon={<BrainIcon />}
+            label="Source"
+            onClick={() => toggle('source')}
+            dropdownOpen={openId === 'source'}
+            onDropdownClose={close}
+            inlineContent={
+              <SegmentedControl
+                options={['live', 'browse'] as Source[]}
+                value={source}
+                onChange={(v) => {
+                  if (isDetecting) handleStop();
+                  if (v === 'live') {
+                    setVideoReady(false);
+                    setVideoFileName('');
+                  } else {
+                    setWebcamReady(false);
+                  }
+                  setSource(v);
+                }}
+                labels={{
+                  live: (
+                    <span className="flex items-center gap-1">
+                      <BodyRunningIcon />
+                      Live
+                    </span>
+                  ),
+                  browse: (
+                    <span className="flex items-center gap-1">
+                      <FridgeOpenIcon />
+                      Browse
+                    </span>
+                  ),
+                }}
+              />
+            }
+            dropdownContent={
+              <div className="flex flex-col gap-2 w-full">
+                <SegmentedControl
+                  options={['live', 'browse'] as Source[]}
+                  value={source}
+                  onChange={(v) => {
+                    if (isDetecting) handleStop();
+                    if (v === 'live') {
+                      setVideoReady(false);
+                      setVideoFileName('');
+                    } else {
+                      setWebcamReady(false);
+                    }
+                    setSource(v);
+                  }}
+                  labels={{
+                    live: (
+                      <span className="flex items-center gap-1">
+                        <BodyRunningIcon />
+                        Live
+                      </span>
+                    ),
+                    browse: (
+                      <span className="flex items-center gap-1">
+                        <FridgeOpenIcon />
+                        Browse
+                      </span>
+                    ),
+                  }}
                 />
-              </>
-            )}
-          </ToolbarDropdown>
+                {source === 'browse' && (
+                  <>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isDetecting}
+                      className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
+                      title={videoFileName || 'Select video file'}
+                    >
+                      <JarIcon />
+                      {videoFileName || 'Select…'}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="video/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </>
+                )}
+              </div>
+            }
+          />
+        )}
 
-          {/* Status */}
-          <ToolbarDropdown id="status" label="Status" icon={<PulseIcon />}>
+        {/* Status */}
+        <ToolbarSection
+          icon={<PulseIcon />}
+          label="Status"
+          active={isDetecting}
+          onClick={() => toggle('status')}
+          dropdownOpen={openId === 'status'}
+          onDropdownClose={close}
+          inlineContent={
+            <span
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              {isDetecting && (
+                <span className="flex items-center gap-1">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: 'var(--danger)' }}
+                  />
+                  {frameCount}
+                </span>
+              )}
+              {captureComplete && (
+                <span style={{ color: 'var(--accent)' }}>
+                  ✓ {frames.length}
+                </span>
+              )}
+            </span>
+          }
+          dropdownContent={
             <div
               className="flex flex-col gap-1 text-[10px] uppercase tracking-widest"
               style={{ color: 'var(--fg-muted)' }}
@@ -452,157 +481,187 @@ export default function ExtractPage() {
                 <span style={{ color: 'var(--danger)' }}>{errorMsg}</span>
               )}
             </div>
-          </ToolbarDropdown>
+          }
+        />
 
-          {/* Reduce Jitter (shown only after capture complete) */}
-          {captureComplete && (
-            <ToolbarDropdown id="trim" label="Trim" icon={<ScalpelTrimIcon />}>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                step={1}
-                value={jitterInterval}
-                onChange={(e) => setJitterInterval(Number(e.target.value))}
-                onMouseUp={() => {
-                  setActiveJitterInterval(jitterInterval);
-                  previewIdxRef.current = 0;
-                }}
-                className="w-full accent-accent"
-                title="Frame interval"
-              />
-              <span
-                className="text-[10px]"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Interval: {jitterInterval}
-              </span>
-            </ToolbarDropdown>
-          )}
-        </Toolbar>
-
-        {/* ── Main content ── */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* ── Model loading overlay ── */}
-          {isLoading && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-              <div
-                className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-                style={{
-                  borderColor: 'var(--accent)',
-                  borderTopColor: 'transparent',
-                }}
-              />
-              <p
-                className="font-display text-sm uppercase tracking-widest text-center"
-                style={{ color: 'var(--accent)' }}
-              >
-                Reanimating neural pathways…
-              </p>
-              <p
-                className="text-[10px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Charging the locomotion automaton
-              </p>
-            </div>
-          )}
-
-          {/* ── Video + pose overlay ── */}
-          {!isLoading && !captureComplete && (
-            <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
-              <div
-                className="relative rounded-lg overflow-hidden"
-                style={{
-                  aspectRatio: `${videoW} / ${videoH}`,
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--surface)',
-                }}
-              >
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  controls={source === 'browse' && !isDetecting}
-                  className="w-full h-full object-fill"
-                  style={{ display: 'block' }}
+        {/* Trim (shown only after capture) */}
+        {captureComplete && (
+          <ToolbarSection
+            icon={<ScalpelTrimIcon />}
+            label="Trim"
+            onClick={() => toggle('trim')}
+            dropdownOpen={openId === 'trim'}
+            onDropdownClose={close}
+            dropdownContent={
+              <div className="flex flex-col gap-1.5 w-full">
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={jitterInterval}
+                  onChange={(e) => setJitterInterval(Number(e.target.value))}
+                  onMouseUp={() => {
+                    setActiveJitterInterval(jitterInterval);
+                    previewIdxRef.current = 0;
+                  }}
+                  className="w-full accent-accent"
+                  title="Frame interval"
                 />
-                {currentFrame && (
-                  <PoseCanvas
-                    width={videoW}
-                    height={videoH}
-                    landmarks={currentFrame}
-                  />
-                )}
+                <span
+                  className="text-[10px]"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Interval: {jitterInterval}
+                </span>
+              </div>
+            }
+          />
+        )}
 
-                {/* Empty state */}
-                {!webcamReady && source === 'live' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
-                    {cameraPermission === 'denied' ? (
-                      <>
-                        <p
-                          className="text-sm uppercase tracking-widest text-center"
-                          style={{ color: 'var(--danger)' }}
-                        >
-                          Camera access blocked
-                        </p>
-                        <p
-                          className="text-xs tracking-wider text-center max-w-xs"
-                          style={{ color: 'var(--fg-muted)' }}
-                        >
-                          Allow camera access in your browser settings, then
-                          reload the page.
-                        </p>
-                      </>
-                    ) : (
+        <ToolbarSpacer />
+
+        {/* Save */}
+        <ToolbarSection
+          icon={<FridgeClosedIcon />}
+          label={
+            uploadStatus === 'uploading'
+              ? '…'
+              : uploadStatus === 'done'
+                ? 'Saved'
+                : uploadStatus === 'error'
+                  ? 'Error'
+                  : 'Save'
+          }
+          primary={captureComplete && uploadStatus === 'idle'}
+          glow={captureComplete && uploadStatus === 'idle'}
+          disabled={!canUpload}
+          onClick={handleUpload}
+          title="Archive captured landmarks"
+        />
+      </PageToolbar>
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* ── Model loading overlay ── */}
+        {isLoading && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+            <div
+              className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+              style={{
+                borderColor: 'var(--accent)',
+                borderTopColor: 'transparent',
+              }}
+            />
+            <p
+              className="font-display text-sm uppercase tracking-widest text-center"
+              style={{ color: 'var(--accent)' }}
+            >
+              Reanimating neural pathways…
+            </p>
+            <p
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              Charging the locomotion automaton
+            </p>
+          </div>
+        )}
+
+        {/* ── Video + pose overlay ── */}
+        {!isLoading && !captureComplete && (
+          <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
+            <div
+              className="relative rounded-lg overflow-hidden"
+              style={{
+                aspectRatio: `${videoW} / ${videoH}`,
+                maxWidth: '100%',
+                maxHeight: '100%',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+              }}
+            >
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                controls={source === 'browse' && !isDetecting}
+                className="w-full h-full object-fill"
+                style={{ display: 'block' }}
+              />
+              {currentFrame && (
+                <PoseCanvas
+                  width={videoW}
+                  height={videoH}
+                  landmarks={currentFrame}
+                />
+              )}
+
+              {/* Empty state */}
+              {!webcamReady && source === 'live' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
+                  {cameraPermission === 'denied' ? (
+                    <>
                       <p
-                        className="text-sm uppercase tracking-widest"
+                        className="text-sm uppercase tracking-widest text-center"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        Camera access blocked
+                      </p>
+                      <p
+                        className="text-xs tracking-wider text-center max-w-xs"
                         style={{ color: 'var(--fg-muted)' }}
                       >
-                        {cameraPermission === 'prompt'
-                          ? 'Allow camera access to continue…'
-                          : 'Starting camera…'}
+                        Allow camera access in your browser settings, then
+                        reload the page.
                       </p>
-                    )}
-                  </div>
-                )}
-                {source === 'browse' && !videoReady && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                    </>
+                  ) : (
                     <p
                       className="text-sm uppercase tracking-widest"
                       style={{ color: 'var(--fg-muted)' }}
                     >
-                      Browse to select a video
+                      {cameraPermission === 'prompt'
+                        ? 'Allow camera access to continue…'
+                        : 'Starting camera…'}
                     </p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+              {source === 'browse' && !videoReady && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p
+                    className="text-sm uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Browse to select a video
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ── Skeleton preview (capture complete) ── */}
-          {captureComplete && (
-            <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-4 min-h-0 overflow-hidden">
-              <div
-                className="relative"
-                style={{
-                  aspectRatio: `${videoW} / ${videoH}`,
-                  height: '100%',
-                  maxWidth: '100%',
-                }}
-              >
-                <PoseCanvas
-                  width={videoW}
-                  height={videoH}
-                  landmarks={previewLandmarks}
-                  className="w-full h-full"
-                />
-              </div>
+        {/* ── Skeleton preview (capture complete) ── */}
+        {captureComplete && (
+          <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-4 min-h-0 overflow-hidden">
+            <div
+              className="relative"
+              style={{
+                aspectRatio: `${videoW} / ${videoH}`,
+                height: '100%',
+                maxWidth: '100%',
+              }}
+            >
+              <PoseCanvas
+                width={videoW}
+                height={videoH}
+                landmarks={previewLandmarks}
+                className="w-full h-full"
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { logout } from '@/app/actions/auth';
-import { NavLinks } from './nav-links';
+import { NavDropdown } from './nav-links';
 
 export async function NavBar() {
   const supabase = await createClient();
@@ -17,16 +17,20 @@ export async function NavBar() {
         borderBottom: '2px solid var(--border-strong)',
       }}
     >
-      {/* Top row: logo + sign-out */}
       <div className="flex items-center justify-between px-3 sm:px-5 py-2">
-        <Link
-          href="/"
-          className="font-display font-bold tracking-wide uppercase text-sm sm:text-base shrink-0"
-          style={{ color: 'var(--fg)' }}
-        >
-          Living Sketch
-        </Link>
+        {/* Left: nav dropdown + title */}
+        <div className="flex items-center gap-2">
+          {user && <NavDropdown />}
+          <Link
+            href="/"
+            className="font-display font-bold tracking-wide uppercase text-sm sm:text-base shrink-0"
+            style={{ color: 'var(--fg)' }}
+          >
+            Living Sketch
+          </Link>
+        </div>
 
+        {/* Right: user + sign-out */}
         {user && (
           <div className="flex items-center gap-2 shrink-0">
             <span
@@ -46,13 +50,6 @@ export async function NavBar() {
           </div>
         )}
       </div>
-
-      {/* Bottom row: nav tabs */}
-      {user && (
-        <div className="px-3 sm:px-5 pb-2">
-          <NavLinks />
-        </div>
-      )}
     </header>
   );
 }
