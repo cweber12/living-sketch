@@ -2,7 +2,7 @@ export const BrainIcon = ({
   size,
   color,
 }: {
-  size?: string;
+  size?: number | string;
   color?: string;
 }) => (
   <svg

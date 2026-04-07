@@ -662,6 +662,18 @@ export function ToolbarSection({
       >
         {/* Row 1: chevron + icon side by side */}
         <div className="flex items-center justify-center gap-1">
+          {icon && (
+            <span
+              className="leading-none shrink-0 transition-colors duration-150"
+              aria-hidden="true"
+              style={{ color: !primary && !danger ? accentLabel : undefined }}
+            >
+              {icon}
+            </span>
+          )}
+        </div>
+        {/* Row 2: label below */}
+        <div className="flex flex-row items-center gap-1">
           {hasDropdown && (
             <span
               className="leading-none shrink-0 transition-colors duration-150"
@@ -674,28 +686,18 @@ export function ToolbarSection({
               {isOpen ? '▲' : '▼'}
             </span>
           )}
-          {icon && (
+          {label && (
             <span
-              className="leading-none shrink-0 transition-colors duration-150"
-              aria-hidden="true"
-              style={{ color: !primary && !danger ? accentLabel : undefined }}
+              className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
+              style={{
+                fontSize: isMobile ? 9 : 8,
+                color: accentLabel,
+              }}
             >
-              {icon}
+              {label}
             </span>
           )}
         </div>
-        {/* Row 2: label below */}
-        {label && (
-          <span
-            className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
-            style={{
-              fontSize: isMobile ? 9 : 8,
-              color: accentLabel,
-            }}
-          >
-            {label}
-          </span>
-        )}
       </button>
 
       {/* Inline content: visible on large screens when toolbar is not minimised */}

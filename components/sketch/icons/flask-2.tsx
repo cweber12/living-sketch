@@ -1,33 +1,32 @@
 import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
-// Table icon – stylised cadaver figure for toolbar Layout panel
-export const TableIcon = ({
-  size = 20,
+
+export const Flask2Icon = ({
+  size = 18,
   color = 'currentColor',
+  secondaryColor = 'none',
 }: {
   size?: number;
   color?: string;
+  secondaryColor?: string;
 }) => (
   <svg
     fill={color}
-    width={`${size}px`}
-    height={`${size}px`}
+    width={size}
+    height={size}
     viewBox="0 0 24 24"
-    id="desk-8"
+    id="flask-3"
     data-name="Flat Line"
     xmlns="http://www.w3.org/2000/svg"
     className="icon flat-line"
   >
-    <rect
+    <path
       id="secondary"
-      x="4"
-      y="6"
-      width="16"
-      height="4"
-      style={{ fill: 'none', strokeWidth: SVG_LINE_WIDTH.line }}
-    ></rect>
+      d="M18,21H6a1,1,0,0,1-.88-1.47L10,10.46V3h4v7.46l4.88,9.07A1,1,0,0,1,18,21Z"
+      style={{ fill: secondaryColor, strokeWidth: SVG_LINE_WIDTH.line }}
+    ></path>
     <path
       id="primary"
-      d="M4,6V18M20,6V18M4,6v4H20V6ZM3,6H21"
+      d="M18,21H6a1,1,0,0,1-.88-1.47L10,10.46V3h4v7.46l4.88,9.07A1,1,0,0,1,18,21ZM9,3h6"
       style={{
         fill: 'none',
         stroke: color,

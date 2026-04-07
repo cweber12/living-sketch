@@ -6,7 +6,7 @@ export const BodyRunningIcon = ({
   size,
   color,
 }: {
-  size?: string;
+  size?: number | string;
   color?: string;
 }) => (
   <svg
@@ -53,7 +53,7 @@ export const BodyIcon = ({
   size,
   color,
 }: {
-  size?: string;
+  size?: number | string;
   color?: string;
 }) => (
   <svg

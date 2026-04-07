@@ -118,17 +118,21 @@ export function SketchCanvas({
 
   /**
    * Map a pointer event to canvas-buffer coordinates and update the scale ref.
-   * brushSize is in CSS pixels; multiplying by scale gives canvas units.
+   * Uses offsetX/offsetY (relative to the element's own CSS box) so that
+   * ancestor CSS zoom or transform: scale do not cause coordinate misalignment.
    */
   function getPos(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const sx = CANVAS_SIZE / rect.width;
-    const sy = CANVAS_SIZE / rect.height;
+    // offsetWidth/Height give the CSS layout size before any ancestor transforms
+    const cssW = canvas.offsetWidth || CANVAS_SIZE;
+    const cssH = canvas.offsetHeight || CANVAS_SIZE;
+    const sx = CANVAS_SIZE / cssW;
+    const sy = CANVAS_SIZE / cssH;
     scaleRef.current = (sx + sy) / 2;
+    const nativeE = e.nativeEvent as PointerEvent;
     return {
-      x: (e.clientX - rect.left) * sx,
-      y: (e.clientY - rect.top) * sy,
+      x: nativeE.offsetX * sx,
+      y: nativeE.offsetY * sy,
       pressure: e.pressure > 0 ? e.pressure : 0.5,
     };
   }

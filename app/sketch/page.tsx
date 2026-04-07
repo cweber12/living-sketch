@@ -11,18 +11,17 @@ import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 import {
   ToolbarLayout,
   PageToolbar,
-  ToolbarSection,
-  useDropdown,
-  SegmentedControl,
-} from '@/components/shared/ui/toolbar';
+} from '@/components/shared/ui/toolbar/toolbar';
+import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
+import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
-import { FlaskIcon } from '@/components/sketch/icons/flask';
-import { TestTubeIcon } from '@/components/sketch/icons/test-tube';
-import { FridgeIcon } from '@/components/shared/icons/fridge';
-import { CleaverIcon } from '@/components/shared/icons/cleaver';
-import { BodyIcon } from '@/components/shared/icons/body';
-import { BarrelIcon } from '@/components/shared/icons/barrel';
+import { Flask2Icon } from '@/components/sketch/icons/flask-2';
+import { TrashIcon } from '@/components/shared/icons/trash';
 import { UndoIcon } from '@/components/shared/icons/undo';
+import { TagIcon } from '@/components/sketch/icons/tag';
+import { TableIcon } from '@/components/sketch/icons/table';
+import { DrillIcon } from '@/components/shared/icons/drill';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
@@ -39,6 +38,8 @@ const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
   { value: 'circle', label: '○ Circle' },
   { value: 'ellipse', label: '⬭ Ellipse' },
 ];
+
+const SESSION_STATE_KEY = 'sketch-page-state';
 
 const DEFAULT_COLOR_LIGHT = '#000000';
 const DEFAULT_COLOR_DARK = '#ffffff';
@@ -162,6 +163,84 @@ export default function SketchPage() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  // On mount: detect browser reload and clear session, otherwise restore persisted state
+  useEffect(() => {
+    const navType = (
+      performance.getEntriesByType('navigation')[0] as
+        | PerformanceNavigationTiming
+        | undefined
+    )?.type;
+    if (navType === 'reload') {
+      try {
+        sessionStorage.removeItem('sketch-canvases');
+        sessionStorage.removeItem(SESSION_STATE_KEY);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem(SESSION_STATE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw) as Partial<{
+        side: Side;
+        viewMode: ViewMode;
+        focusIdx: number;
+        armPose: ArmPose;
+        zoom: number;
+        brushSize: number;
+        color: string;
+        isEraser: boolean;
+        usedColors: string[];
+      }>;
+      if (s.side === 'front' || s.side === 'back') setSide(s.side);
+      if (s.viewMode === 'body' || s.viewMode === 'single')
+        setViewMode(s.viewMode);
+      if (typeof s.focusIdx === 'number') setFocusIdx(s.focusIdx);
+      if (s.armPose === 'up' || s.armPose === 'down') setArmPose(s.armPose);
+      if (typeof s.zoom === 'number' && s.zoom > 0) setZoom(s.zoom);
+      if (typeof s.brushSize === 'number' && s.brushSize > 0)
+        setBrushSize(s.brushSize);
+      if (typeof s.color === 'string' && s.color) setColor(s.color);
+      if (typeof s.isEraser === 'boolean') setIsEraser(s.isEraser);
+      if (Array.isArray(s.usedColors)) setUsedColors(s.usedColors);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Persist page state to sessionStorage whenever relevant values change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SESSION_STATE_KEY,
+        JSON.stringify({
+          side,
+          viewMode,
+          focusIdx,
+          armPose,
+          zoom,
+          brushSize,
+          color,
+          isEraser,
+          usedColors,
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [
+    side,
+    viewMode,
+    focusIdx,
+    armPose,
+    zoom,
+    brushSize,
+    color,
+    isEraser,
+    usedColors,
+  ]);
 
   const effectiveArms: ArmPose = armPose; // orientation-managed via state
   const focusPart = PARTS_ORDER[focusIdx];
@@ -459,7 +538,7 @@ export default function SketchPage() {
 
           {/* Clear All */}
           <ToolbarSection
-            icon={<BarrelIcon />}
+            icon={<TrashIcon />}
             label="Clear"
             danger
             onClick={() => toggle('clear')}
@@ -492,7 +571,7 @@ export default function SketchPage() {
 
           {/* Layout */}
           <ToolbarSection
-            icon={<BodyIcon />}
+            icon={<TableIcon />}
             label="Layout"
             onClick={() => toggle('layout')}
             dropdownOpen={openId === 'layout'}
@@ -572,82 +651,20 @@ export default function SketchPage() {
             }
           />
 
-          {/* Tools */}
+          {/* Tools — shape picker */}
           <ToolbarSection
-            icon={<CleaverIcon size="20" />}
+            icon={<DrillIcon />}
             label="Tools"
             onClick={() => toggle('tools')}
             dropdownOpen={openId === 'tools'}
             onDropdownClose={close}
-            inlineContent={
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="range"
-                    min={1}
-                    max={40}
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                    className="w-20 accent-accent"
-                    title="Brush size"
-                  />
-                  {/* Fixed-size box so line width preview doesn't shift layout */}
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: Math.min(brushSize, 22),
-                        height: Math.min(brushSize, 22),
-                        borderRadius: '50%',
-                        backgroundColor: isEraser
-                          ? 'var(--danger)'
-                          : 'var(--accent)',
-                        opacity: isEraser ? 0.5 : 0.85,
-                        border: '1px solid var(--border-strong)',
-                      }}
-                    />
-                  </div>
-                </div>
-                <SegmentedControl
-                  options={['draw', 'erase'] as ('draw' | 'erase')[]}
-                  value={isEraser ? 'erase' : 'draw'}
-                  onChange={(v) => setIsEraser(v === 'erase')}
-                  labels={{ draw: 'Draw', erase: 'Erase' }}
-                  dangerValue="erase"
-                />
-              </div>
-            }
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
-                {/* draw/erase only shown in dropdown on small screens — deduped with inline control */}
-                <div className="block md:hidden">
-                  <span
-                    className="text-[9px] uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Draw / Erase
-                  </span>
-                  <SegmentedControl
-                    options={['draw', 'erase'] as ('draw' | 'erase')[]}
-                    value={isEraser ? 'erase' : 'draw'}
-                    onChange={(v) => setIsEraser(v === 'erase')}
-                    labels={{ draw: 'Draw', erase: 'Erase' }}
-                    dangerValue="erase"
-                  />
-                </div>
                 <span
                   className="text-[9px] uppercase tracking-widest"
                   style={{ color: 'var(--fg-muted)' }}
                 >
-                  Current Tool
+                  Shape Tool
                 </span>
                 <div className="flex items-center gap-2">
                   {!isEraser && (
@@ -681,13 +698,146 @@ export default function SketchPage() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-[9px] uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
+              </div>
+            }
+          />
+
+          {/* Options — sketch/erase, stroke width, zoom */}
+          <ToolbarSection
+            icon={
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <line
+                  x1="2"
+                  y1="4"
+                  x2="14"
+                  y2="4"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx="5"
+                  cy="4"
+                  r="1.9"
+                  fill="var(--surface)"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                />
+                <line
+                  x1="2"
+                  y1="9"
+                  x2="14"
+                  y2="9"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx="10"
+                  cy="9"
+                  r="1.9"
+                  fill="var(--surface)"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                />
+                <line
+                  x1="2"
+                  y1="13"
+                  x2="14"
+                  y2="13"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx="7"
+                  cy="13"
+                  r="1.9"
+                  fill="var(--surface)"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                />
+              </svg>
+            }
+            label="Options"
+            active={zoom !== 1 || isEraser}
+            onClick={() => toggle('options')}
+            dropdownOpen={openId === 'options'}
+            onDropdownClose={close}
+            inlineContent={
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="range"
+                    min={1}
+                    max={40}
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className="w-20 accent-accent"
+                    title="Brush size"
+                  />
+                  {/* Fixed-size box so brush preview doesn't shift layout */}
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
-                    Size
-                  </span>
+                    <div
+                      style={{
+                        width: Math.min(brushSize, 22),
+                        height: Math.min(brushSize, 22),
+                        borderRadius: '50%',
+                        backgroundColor: isEraser
+                          ? 'var(--danger)'
+                          : 'var(--accent)',
+                        opacity: isEraser ? 0.5 : 0.85,
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    />
+                  </div>
+                </div>
+                <SegmentedControl
+                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
+                  value={isEraser ? 'erase' : 'sketch'}
+                  onChange={(v) => setIsEraser(v === 'erase')}
+                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
+                  dangerValue="erase"
+                />
+              </div>
+            }
+            dropdownContent={
+              <div className="flex flex-col gap-2 w-full">
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Sketch / Erase
+                </span>
+                <SegmentedControl
+                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
+                  value={isEraser ? 'erase' : 'sketch'}
+                  onChange={(v) => setIsEraser(v === 'erase')}
+                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
+                  dangerValue="erase"
+                />
+                <span
+                  className="text-[9px] uppercase tracking-widest mt-1"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Stroke Width
+                </span>
+                <div className="flex items-center gap-2">
                   <input
                     type="range"
                     min={1}
@@ -716,13 +866,43 @@ export default function SketchPage() {
                     />
                   </div>
                 </div>
+                <span
+                  className="text-[9px] uppercase tracking-widest mt-1"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Zoom
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="flex-1 accent-accent"
+                    title="Canvas zoom"
+                  />
+                  <span
+                    className="text-[10px] tabular-nums shrink-0 w-8"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    {Math.round(zoom * 100)}%
+                  </span>
+                </div>
+                <button
+                  onClick={() => setZoom(1)}
+                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+                >
+                  Reset Zoom
+                </button>
               </div>
             }
           />
 
           {/* Color */}
           <ToolbarSection
-            icon={<FlaskIcon color={color} />}
+            icon={<Flask2Icon />}
             label="Color"
             onClick={() => toggle('color')}
             dropdownOpen={openId === 'color'}
@@ -768,38 +948,42 @@ export default function SketchPage() {
             }
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Color
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => {
-                      setColor(e.target.value);
-                      setIsEraser(false);
-                    }}
-                    style={{
-                      width: 48,
-                      height: 28,
-                      cursor: 'pointer',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      backgroundColor: 'transparent',
-                      padding: 0,
-                    }}
-                    aria-label="Stroke color"
-                  />
-                  <span
-                    className="text-[10px] font-mono"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {color}
-                  </span>
-                </div>
+                {isMobile && (
+                  <>
+                    <span
+                      className="text-[9px] uppercase tracking-widest"
+                      style={{ color: 'var(--fg-muted)' }}
+                    >
+                      Color
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => {
+                          setColor(e.target.value);
+                          setIsEraser(false);
+                        }}
+                        style={{
+                          width: 48,
+                          height: 28,
+                          cursor: 'pointer',
+                          border: '1px solid var(--border)',
+                          borderRadius: 4,
+                          backgroundColor: 'transparent',
+                          padding: 0,
+                        }}
+                        aria-label="Stroke color"
+                      />
+                      <span
+                        className="text-[10px] font-mono"
+                        style={{ color: 'var(--fg-muted)' }}
+                      >
+                        {color}
+                      </span>
+                    </div>
+                  </>
+                )}
                 {usedColors.length > 0 && (
                   <>
                     <span
@@ -827,9 +1011,10 @@ export default function SketchPage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            color: 'var(--fg-muted)',
                           }}
                         >
-                          <TestTubeIcon size={16} color={c} />
+                          <Flask2Icon size={18} secondaryColor={c} />
                         </button>
                       ))}
                     </div>
@@ -839,95 +1024,9 @@ export default function SketchPage() {
             }
           />
 
-          {/* Zoom */}
-          <ToolbarSection
-            icon={
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="6.5"
-                  cy="6.5"
-                  r="4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M11 11l2.5 2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M5 6.5h3M6.5 5v3"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
-            label="Zoom"
-            active={zoom !== 1}
-            onClick={() => toggle('zoom')}
-            dropdownOpen={openId === 'zoom'}
-            onDropdownClose={close}
-            inlineContent={
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={0.5}
-                  max={3}
-                  step={0.1}
-                  value={zoom}
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  className="w-20 accent-accent"
-                  title="Canvas zoom"
-                />
-                <span
-                  className="text-[10px] tabular-nums shrink-0 w-8"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  {Math.round(zoom * 100)}%
-                </span>
-              </div>
-            }
-            dropdownContent={
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1 accent-accent"
-                    title="Canvas zoom"
-                  />
-                  <span
-                    className="text-[10px] tabular-nums shrink-0 w-8"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {Math.round(zoom * 100)}%
-                  </span>
-                </div>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
-                >
-                  Reset
-                </button>
-              </div>
-            }
-          />
-
           {/* Save */}
           <ToolbarSection
-            icon={<FridgeIcon />}
+            icon={<TagIcon />}
             label={
               saveStatus === 'saving'
                 ? '…'

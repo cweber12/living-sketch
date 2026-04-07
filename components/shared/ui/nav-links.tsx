@@ -43,7 +43,7 @@ export function NavDropdown() {
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={`Navigation: ${currentLabel}`}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 transition-colors"
+        className="flex items-center gap-1.5 rounded px-3 py-2 transition-colors sm:px-2 sm:py-1.5"
         style={{
           color: 'var(--fg-muted)',
           backgroundColor: open ? 'var(--surface-raised)' : 'transparent',
@@ -61,8 +61,8 @@ export function NavDropdown() {
       >
         {/* Hamburger icon */}
         <svg
-          width="16"
-          height="16"
+          width="20"
+          height="20"
           viewBox="0 0 16 16"
           fill="none"
           aria-hidden="true"

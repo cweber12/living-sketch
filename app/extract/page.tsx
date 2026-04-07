@@ -525,19 +525,18 @@ export default function ExtractPage() {
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
               <div className="flex flex-col items-center gap-8 max-w-2xl w-full">
                 {/* Header */}
-                <div className="text-center">
-                  <p
-                    className="text-xs font-bold tracking-[0.35em] uppercase mb-2"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    The Extraction Chamber
-                  </p>
+                <div className="text-center" style={{ color: 'var(--accent)' }}>
+                  <div className="flex flex-row items-center justify-center mb-2 gap-2">
+                    <BrainIcon size={24} />
+                    <p className="text-xs font-bold tracking-[0.35em] uppercase">
+                      The Extraction Chamber
+                    </p>
+                  </div>
                   <p
                     className="text-sm leading-relaxed max-w-sm"
                     style={{ color: 'var(--fg-muted)' }}
                   >
-                    Isolate the kinetic signal. Choose a source to begin
-                    capture.
+                    Select a source to extract motor functions.
                   </p>
                 </div>
 
@@ -551,19 +550,16 @@ export default function ExtractPage() {
                     }}
                     className="card-themed rounded-xl p-6 flex flex-col gap-4 group text-left transition-all hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
-                    <div
-                      className="w-12 h-12 flex items-center justify-center rounded-lg shrink-0"
-                      style={{ backgroundColor: 'var(--accent-faint)' }}
-                    >
-                      <BodyRunningIcon />
-                    </div>
                     <div>
-                      <p
-                        className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
+                      <div
+                        className="flex flex-row items-center gap-2"
                         style={{ color: 'var(--accent)' }}
                       >
-                        I — Live
-                      </p>
+                        <BodyRunningIcon size={24} />
+                        <p className="text-xs font-bold tracking-[0.3em] uppercase mb-1">
+                          Live
+                        </p>
+                      </div>
                       <h3
                         className="font-display font-bold uppercase text-lg mb-2"
                         style={{ color: 'var(--fg)' }}
@@ -606,7 +602,7 @@ export default function ExtractPage() {
                         className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
                         style={{ color: 'var(--accent)' }}
                       >
-                        II — Archive
+                        Browse
                       </p>
                       <h3
                         className="font-display font-bold uppercase text-lg mb-2"

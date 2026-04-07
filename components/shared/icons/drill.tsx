@@ -1,18 +1,25 @@
+import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
+
 export const DrillIcon = ({
-  size,
-  color,
+  size = 18,
+  color = 'currentColor',
 }: {
-  size?: string;
+  size?: number | string;
   color?: string;
 }) => (
   <svg
-    fill={color || 'currentColor'}
-    width={size || '18px'}
-    height={size || '18px'}
+    width={size}
+    height={size}
     viewBox="0 0 24 24"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    data-name="Layer 1"
   >
-    <path d="M19,4H9A1,1,0,0,0,8,5V7H3A1,1,0,0,0,3,9H8v4a1,1,0,0,0,2,0V12h4v7a1,1,0,0,0,1,1h2a3,3,0,0,0,3-3V11.82A3,3,0,0,0,22,9V7A3,3,0,0,0,19,4ZM18,17a1,1,0,0,1-1,1H16V12h2Zm2-8a1,1,0,0,1-1,1H10V6h6V7a1,1,0,0,0,2,0V6h1a1,1,0,0,1,1,1Z" />
+    <path
+      d="M6 13H5C3.89543 13 3 12.1046 3 11V7C3 5.89543 3.89543 5 5 5H13C13.5523 5 14 5.44772 14 6V12C14 12.5523 13.5523 13 13 13H11M6 13L5.32612 17.7172C5.154 18.922 6.08892 20 7.30602 20H8.26541C9.26071 20 10.1046 19.2681 10.2453 18.2828L11 13M6 13H11M18 9C18 10.6569 16.6569 12 15 12H14M18 9C18 7.34315 16.6569 6 15 6H14M18 9H23"
+      stroke={color}
+      stroke-width={SVG_LINE_WIDTH.line}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
   </svg>
 );

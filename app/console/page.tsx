@@ -305,7 +305,7 @@ export default function ConsolePage() {
           {/* Tools */}
           <ToolbarSection
             icon={<PanelIcon />}
-            label="Tools"
+            label="Modify"
             onClick={() => toggle('tools')}
             dropdownOpen={openId === 'tools'}
             onDropdownClose={close}
