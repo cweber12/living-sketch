@@ -26,7 +26,6 @@ import {
   ToolbarLayout,
   PageToolbar,
   ToolbarSection,
-  ToolbarSpacer,
   useDropdown,
   SegmentedControl,
 } from '@/components/shared/ui/toolbar';
@@ -423,8 +422,6 @@ export default function ConsolePage() {
               </div>
             }
           />
-
-          <ToolbarSpacer />
 
           {/* Save */}
           <ToolbarSection

@@ -8,7 +8,6 @@ import {
   ToolbarLayout,
   PageToolbar,
   ToolbarSection,
-  ToolbarSpacer,
   useDropdown,
   SegmentedControl,
 } from '@/components/shared/ui/toolbar';
@@ -36,6 +35,7 @@ type Source = 'live' | 'browse';
 export default function ExtractPage() {
   /* ── State ──────────────────────────────────────────────── */
   const [source, setSource] = useState<Source>('browse');
+  const [sourceSelected, setSourceSelected] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<
     'idle' | 'uploading' | 'done' | 'error'
   >('idle');
@@ -96,11 +96,7 @@ export default function ExtractPage() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        },
+        video: { facingMode: 'user' },
         audio: false,
       });
       setCameraPermission('granted');
@@ -121,13 +117,13 @@ export default function ExtractPage() {
   }, [stopWebcam]);
 
   useEffect(() => {
-    if (source === 'live') {
+    if (source === 'live' && sourceSelected) {
       startWebcam();
     } else {
       stopWebcam();
     }
     return () => stopWebcam();
-  }, [source, startWebcam, stopWebcam]);
+  }, [source, sourceSelected, startWebcam, stopWebcam]);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -160,6 +156,11 @@ export default function ExtractPage() {
       const file = e.target.files?.[0];
       if (!file) return;
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      // Clear any previous capture when a new file is chosen
+      cancelAnimationFrame(previewRafRef.current);
+      useLandmarksStore.getState().reset();
+      setUploadStatus('idle');
+      setErrorMsg('');
       setVideoFileName(file.name);
       const url = URL.createObjectURL(file);
       blobUrlRef.current = url;
@@ -181,8 +182,15 @@ export default function ExtractPage() {
 
     setErrorMsg('');
 
-    // For uploaded video, play from current position
-    if (source === 'browse') video.play();
+    // For uploaded video: seek to start before playing so re-extraction works
+    if (source === 'browse') {
+      video.currentTime = 0;
+      try {
+        await video.play();
+      } catch {
+        // play() rejection (e.g. AbortError on rapid clicks) is handled below
+      }
+    }
 
     // Wait for video to be playing (with timeout)
     try {
@@ -207,13 +215,6 @@ export default function ExtractPage() {
     stop();
     if (source === 'browse') videoRef.current?.pause();
   }, [stop, source]);
-
-  const handleNewCapture = useCallback(() => {
-    cancelAnimationFrame(previewRafRef.current);
-    useLandmarksStore.getState().reset();
-    setUploadStatus('idle');
-    setErrorMsg('');
-  }, []);
 
   /* ── Upload landmarks to Supabase ───────────────────────────────── */
   const handleUpload = useCallback(async () => {
@@ -325,7 +326,13 @@ export default function ExtractPage() {
               glow={canStart && !captureComplete}
               disabled={!canStart}
               onClick={async () => {
-                if (captureComplete) handleNewCapture();
+                // Clear previous capture data before restarting
+                if (captureComplete) {
+                  cancelAnimationFrame(previewRafRef.current);
+                  useLandmarksStore.getState().reset();
+                  setUploadStatus('idle');
+                  setErrorMsg('');
+                }
                 await handleStart();
               }}
               title={
@@ -342,88 +349,47 @@ export default function ExtractPage() {
               onClick={() => toggle('source')}
               dropdownOpen={openId === 'source'}
               onDropdownClose={close}
-              inlineContent={
-                <SegmentedControl
-                  options={['live', 'browse'] as Source[]}
-                  value={source}
-                  onChange={(v) => {
-                    if (isDetecting) handleStop();
-                    if (v === 'live') {
-                      setVideoReady(false);
-                      setVideoFileName('');
-                    } else {
-                      setWebcamReady(false);
-                    }
-                    setSource(v);
-                  }}
-                  labels={{
-                    live: (
-                      <span className="flex items-center gap-1">
-                        <BodyRunningIcon />
-                        Live
-                      </span>
-                    ),
-                    browse: (
-                      <span className="flex items-center gap-1">
-                        <FridgeOpenIcon />
-                        Browse
-                      </span>
-                    ),
-                  }}
-                />
-              }
               dropdownContent={
                 <div className="flex flex-col gap-2 w-full">
-                  {/* live/browse only shown in dropdown on small screens — deduped with inline control */}
-                  <div className="block md:hidden">
-                    <SegmentedControl
-                      options={['live', 'browse'] as Source[]}
-                      value={source}
-                      onChange={(v) => {
-                        if (isDetecting) handleStop();
-                        if (v === 'live') {
-                          setVideoReady(false);
-                          setVideoFileName('');
-                        } else {
-                          setWebcamReady(false);
-                        }
-                        setSource(v);
-                      }}
-                      labels={{
-                        live: (
-                          <span className="flex items-center gap-1">
-                            <BodyRunningIcon />
-                            Live
-                          </span>
-                        ),
-                        browse: (
-                          <span className="flex items-center gap-1">
-                            <FridgeOpenIcon />
-                            Browse
-                          </span>
-                        ),
-                      }}
-                    />
-                  </div>
+                  <SegmentedControl
+                    options={['live', 'browse'] as Source[]}
+                    value={source}
+                    onChange={(v) => {
+                      if (isDetecting) handleStop();
+                      if (v === 'live') {
+                        setVideoReady(false);
+                        setVideoFileName('');
+                      } else {
+                        setWebcamReady(false);
+                      }
+                      setSource(v);
+                      setSourceSelected(true);
+                    }}
+                    labels={{
+                      live: (
+                        <span className="flex items-center gap-1">
+                          <BodyRunningIcon />
+                          Live
+                        </span>
+                      ),
+                      browse: (
+                        <span className="flex items-center gap-1">
+                          <FridgeOpenIcon />
+                          Browse
+                        </span>
+                      ),
+                    }}
+                  />
                   {source === 'browse' && (
-                    <>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isDetecting}
-                        className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
-                        title={videoFileName || 'Select video file'}
-                      >
-                        <JarIcon />
-                        {videoFileName || 'Select…'}
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="video/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isDetecting}
+                      className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
+                      title={videoFileName || 'Select video file'}
+                    >
+                      <JarIcon />
+                      {videoFileName || 'Select…'}
+                    </button>
                   )}
                 </div>
               }
@@ -498,8 +464,6 @@ export default function ExtractPage() {
             />
           )}
 
-          <ToolbarSpacer />
-
           {/* Save */}
           <ToolbarSection
             icon={<FridgeClosedIcon />}
@@ -556,8 +520,68 @@ export default function ExtractPage() {
             </div>
           )}
 
+          {/* ── Source cards (initial state) ── */}
+          {!isLoading && !sourceSelected && !captureComplete && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-8">
+              <p
+                className="text-[11px] uppercase tracking-widest"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Select a source
+              </p>
+              <div className="flex gap-6">
+                <button
+                  onClick={() => {
+                    setSource('live');
+                    setSourceSelected(true);
+                  }}
+                  className="flex flex-col items-center gap-4 p-8 rounded-xl transition-all"
+                  style={{
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface-raised)',
+                    color: 'var(--fg-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <BodyRunningIcon />
+                  <span className="text-xs uppercase tracking-widest font-semibold">
+                    Live
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSource('browse');
+                    setSourceSelected(true);
+                    fileInputRef.current?.click();
+                  }}
+                  className="flex flex-col items-center gap-4 p-8 rounded-xl transition-all"
+                  style={{
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface-raised)',
+                    color: 'var(--fg-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <FridgeOpenIcon />
+                  <span className="text-xs uppercase tracking-widest font-semibold">
+                    Browse
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden file input — available at all times for source cards + dropdown */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
           {/* ── Video + pose overlay ── */}
-          {!isLoading && !captureComplete && (
+          {!isLoading && sourceSelected && !captureComplete && (
             <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
               <div
                 className="relative rounded-lg overflow-hidden"
@@ -574,7 +598,7 @@ export default function ExtractPage() {
                   playsInline
                   muted
                   controls={source === 'browse' && !isDetecting}
-                  className="w-full h-full object-fill"
+                  className="w-full h-full object-contain"
                   style={{ display: 'block' }}
                 />
                 {currentFrame && (

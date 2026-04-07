@@ -12,7 +12,6 @@ import {
   ToolbarLayout,
   PageToolbar,
   ToolbarSection,
-  ToolbarSpacer,
   useDropdown,
   SegmentedControl,
 } from '@/components/shared/ui/toolbar';
@@ -159,13 +158,36 @@ export default function SketchPage() {
 
   const {
     setCanvasRef,
+    setZoomCanvasRef,
     pushUndoSnapshot,
     undo,
     clearAll,
     exportAll,
     mirrorCopyCanvas,
+    rotatePartCanvas,
     saveToSession,
   } = useSketchCanvasRig();
+
+  /**
+   * Change arm pose: rotate arm/hand canvases to match new orientation.
+   * Front: L-arms CCW (-90°), R-arms CW (+90°) going to arms-down.
+   * Reverse for going back to arms-up.
+   */
+  const handleArmPoseChange = useCallback(
+    (newPose: ArmPose) => {
+      if (newPose === armPose) return;
+      const sides: Side[] = ['front', 'back'];
+      const leftDeg: 90 | -90 = newPose === 'down' ? -90 : 90;
+      const rightDeg: 90 | -90 = newPose === 'down' ? 90 : -90;
+      for (const s of sides) {
+        for (const part of LEFT_ARM_PARTS) rotatePartCanvas(s, part, leftDeg);
+        for (const part of RIGHT_ARM_PARTS) rotatePartCanvas(s, part, rightDeg);
+      }
+      setArmPose(newPose);
+      saveToSession();
+    },
+    [armPose, rotatePartCanvas, saveToSession],
+  );
 
   /**
    * First time switching to back: auto-mirror all front canvases.
@@ -345,20 +367,22 @@ export default function SketchPage() {
           onStrokeStart={handleStrokeStart}
           onStrokeEnd={handleStrokeEnd}
         />
-        {/* L / R shoulder indicators */}
-        {(part === 'rightUpperArm' || part === 'leftUpperArm') && (
-          <span
-            className="absolute top-0.5 left-1 text-[9px] font-bold tracking-widest pointer-events-none select-none"
-            style={{ color: 'var(--accent)', opacity: 0.8 }}
-          >
-            {part === 'rightUpperArm'
-              ? s === 'front'
-                ? 'R'
-                : 'L'
-              : s === 'front'
-                ? 'L'
-                : 'R'}
-          </span>
+        {/* L / R shoulder → torso-edge indicators */}
+        {part === 'torso' && (
+          <>
+            <span
+              className="absolute top-1/3 left-1 text-[11px] font-bold tracking-widest pointer-events-none select-none"
+              style={{ color: 'var(--fg-muted)', opacity: 0.45 }}
+            >
+              {s === 'front' ? 'R' : 'L'}
+            </span>
+            <span
+              className="absolute top-1/3 right-1 text-[11px] font-bold tracking-widest pointer-events-none select-none"
+              style={{ color: 'var(--fg-muted)', opacity: 0.45 }}
+            >
+              {s === 'front' ? 'L' : 'R'}
+            </span>
+          </>
         )}
       </div>
     );
@@ -503,7 +527,7 @@ export default function SketchPage() {
                     <SegmentedControl
                       options={['up', 'down'] as ArmPose[]}
                       value={armPose}
-                      onChange={setArmPose}
+                      onChange={handleArmPoseChange}
                       labels={{ up: 'Up', down: 'Down' }}
                     />
                   </>
@@ -561,19 +585,30 @@ export default function SketchPage() {
                     className="w-20 accent-accent"
                     title="Brush size"
                   />
+                  {/* Fixed-size box so line width preview doesn't shift layout */}
                   <div
                     style={{
-                      width: Math.min(brushSize, 20),
-                      height: Math.min(brushSize, 20),
-                      borderRadius: '50%',
-                      backgroundColor: isEraser
-                        ? 'var(--danger)'
-                        : 'var(--accent)',
-                      opacity: isEraser ? 0.5 : 0.85,
-                      border: '1px solid var(--border-strong)',
+                      width: 24,
+                      height: 24,
                       flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
-                  />
+                  >
+                    <div
+                      style={{
+                        width: Math.min(brushSize, 22),
+                        height: Math.min(brushSize, 22),
+                        borderRadius: '50%',
+                        backgroundColor: isEraser
+                          ? 'var(--danger)'
+                          : 'var(--accent)',
+                        opacity: isEraser ? 0.5 : 0.85,
+                        border: '1px solid var(--border-strong)',
+                      }}
+                    />
+                  </div>
                 </div>
                 <SegmentedControl
                   options={['draw', 'erase'] as ('draw' | 'erase')[]}
@@ -798,8 +833,6 @@ export default function SketchPage() {
             }
           />
 
-          <ToolbarSpacer />
-
           {/* Save */}
           <ToolbarSection
             icon={<FridgeIcon />}
@@ -907,7 +940,7 @@ export default function SketchPage() {
                             color={color}
                             isEraser={isEraser}
                             tool={activeTool}
-                            onMount={setCanvasRef}
+                            onMount={setZoomCanvasRef}
                             onStrokeStart={handleStrokeStart}
                             onStrokeEnd={handleStrokeEnd}
                           />

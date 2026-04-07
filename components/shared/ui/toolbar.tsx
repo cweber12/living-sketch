@@ -81,12 +81,20 @@ export function useDropdown() {
   return { openId, toggle, close, setOpenId };
 }
 
+/* ── Constants ─────────────────────────────────────────────────────── */
+/** Height of the top toolbar in desktop mode (px) */
+const TOOLBAR_H = 48;
+/** Width of the side toolbar (px) */
+const TOOLBAR_W = 56;
+/** Height of the mobile bottom toolbar (px) */
+const TOOLBAR_H_MOBILE = 56;
+
 /* ── ToolbarLayout ─────────────────────────────────────────────────── */
 /**
  * Wrap your PageToolbar + page content inside ToolbarLayout.
- * It manages top vs. side mode and provides context to PageToolbar/ToolbarSection.
- * On mobile (< 1024 px) the toolbar is always top-mode and renders at the bottom
- * via CSS order.
+ * PageToolbar is position:fixed; ToolbarLayout pads the content area to
+ * account for the toolbar's occupied space.
+ * On mobile (< 1024 px) the toolbar is always bottom-anchored.
  */
 export function ToolbarLayout({
   children,
@@ -112,17 +120,26 @@ export function ToolbarLayout({
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // On mobile, always stay in top mode regardless of user preference
   const mode: ToolbarMode =
     !mounted || isMobile ? 'top' : preferSide ? 'side' : 'top';
+
+  // Padding applied to the content area to offset the fixed toolbar
+  const contentStyle: React.CSSProperties = isMobile
+    ? { paddingBottom: TOOLBAR_H_MOBILE }
+    : mode === 'side'
+      ? { paddingLeft: collapsed ? 0 : TOOLBAR_W }
+      : { paddingTop: collapsed ? 0 : TOOLBAR_H };
 
   return (
     <ToolbarCtx.Provider
       value={{ mode, collapsed, isMobile, setPreferSide, setCollapsed }}
     >
+      {/* Content area — padded to avoid being covered by fixed toolbar */}
       <div
-        className={`flex ${mode === 'side' ? 'flex-row' : 'flex-col'} flex-1 w-full overflow-hidden ${className}`}
+        className={`flex flex-col flex-1 w-full overflow-hidden transition-all duration-200 ${className}`}
+        style={contentStyle}
       >
+        {/* Filter out PageToolbar children so they can be portalled */}
         {children}
       </div>
     </ToolbarCtx.Provider>
@@ -138,85 +155,226 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   if (mode === 'side') {
     return (
       <div
-        className="shrink-0 flex flex-col self-stretch"
         style={{
-          width: 52,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: collapsed ? 0 : TOOLBAR_W,
+          zIndex: 40,
+          overflow: 'hidden',
+          transition: 'width 200ms ease',
           backgroundColor: 'var(--surface)',
           borderRight: '2px solid var(--border-strong)',
         }}
       >
-        <div className="flex flex-col flex-1 overflow-y-auto">{children}</div>
-        {/* Switch to top bar */}
-        <button
-          onClick={() => setPreferSide(false)}
-          title="Switch to top toolbar"
-          aria-label="Switch to top toolbar"
-          style={{
-            height: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--fg-muted)',
-            background: 'transparent',
-            border: 'none',
-            borderTop: '1px solid var(--border)',
-            cursor: 'pointer',
-          }}
-        >
-          {/* top-bar icon */}
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            aria-hidden="true"
-          >
-            <rect
-              x="1"
-              y="1"
-              width="10"
-              height="10"
-              rx="1.5"
-              stroke="currentColor"
-              strokeWidth="1"
-            />
-            <rect
-              x="1"
-              y="1"
-              width="10"
-              height="4"
-              rx="1.5"
-              fill="currentColor"
-              opacity="0.5"
-            />
-          </svg>
-        </button>
+        <div className="flex flex-col h-full">
+          {/* Expand button shown when collapsed (side mode) */}
+          {collapsed && (
+            <button
+              onClick={() => setCollapsed(false)}
+              title="Expand toolbar"
+              aria-label="Expand toolbar"
+              style={{
+                width: TOOLBAR_W,
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--accent)',
+                background: 'var(--surface-raised)',
+                border: 'none',
+                borderBottom: '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
+            >
+              {/* Right arrow — expand sidebar */}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 2l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+          {!collapsed && (
+            <>
+              <div className="flex flex-col flex-1 overflow-y-auto">
+                {children}
+              </div>
+              {/* Bottom controls */}
+              <button
+                onClick={() => setCollapsed(true)}
+                title="Collapse toolbar"
+                aria-label="Collapse toolbar"
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--fg-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                {/* Left arrow — collapse sidebar */}
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M8 2L4 6l4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setPreferSide(false)}
+                title="Switch to top toolbar"
+                aria-label="Switch to top toolbar"
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--fg-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  width: '100%',
+                }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="1"
+                    y="1"
+                    width="10"
+                    height="10"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                  />
+                  <rect
+                    x="1"
+                    y="1"
+                    width="10"
+                    height="4"
+                    rx="1.5"
+                    fill="currentColor"
+                    opacity="0.5"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   }
 
-  /* ── Top mode ── */
+  /* ── Top / bottom mode (mobile = fixed bottom, desktop = fixed top) ── */
+  const isBottom = isMobile;
+  const toolbarH = isBottom ? TOOLBAR_H_MOBILE : TOOLBAR_H;
+
   return (
     <div
-      className={`w-full shrink-0 flex flex-row items-stretch ${isMobile ? 'overflow-x-auto order-last' : 'overflow-x-hidden order-first'}`}
       style={{
-        position: 'sticky',
-        top: isMobile ? undefined : 0,
-        bottom: isMobile ? 0 : undefined,
+        position: 'fixed',
+        ...(isBottom ? { bottom: 0 } : { top: 0 }),
+        left: 0,
+        right: 0,
+        height: collapsed && !isBottom ? 0 : toolbarH,
         zIndex: 40,
+        overflow: 'hidden',
+        transition: isBottom ? 'none' : 'height 200ms ease',
         backgroundColor: 'var(--surface)',
-        borderBottom: isMobile ? undefined : '2px solid var(--border-strong)',
-        borderTop: isMobile ? '2px solid var(--border-strong)' : undefined,
-        minHeight: isMobile ? 52 : 44,
+        borderBottom: isBottom ? undefined : '2px solid var(--border-strong)',
+        borderTop: isBottom ? '2px solid var(--border-strong)' : undefined,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        overflowX: isBottom ? 'auto' : 'hidden',
+        // Safe area for phones with home bar
+        paddingBottom: isBottom
+          ? 'env(safe-area-inset-bottom, 0px)'
+          : undefined,
       }}
     >
-      {/* All toolbar sections — hidden when desktop-collapsed */}
-      {(!collapsed || isMobile) && children}
-      {!isMobile && (
-        <>
-          {/* Push collapse controls to right when collapsed */}
-          {!collapsed && <ToolbarSpacer />}
-          {/* Collapse toggle */}
+      {children}
+
+      {/* Desktop-only: collapse + sidebar controls */}
+      {!isBottom && (
+        <div className="flex items-stretch ml-auto shrink-0">
+          {/* Sidebar toggle */}
+          <button
+            onClick={() => setPreferSide(true)}
+            title="Switch to sidebar"
+            aria-label="Switch to sidebar"
+            style={{
+              padding: '0 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--fg-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderLeft: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="1"
+                y="1"
+                width="10"
+                height="10"
+                rx="1.5"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <rect
+                x="1"
+                y="1"
+                width="4"
+                height="10"
+                rx="1.5"
+                fill="currentColor"
+                opacity="0.5"
+              />
+            </svg>
+          </button>
+          {/* Collapse toggle — up arrow when expanded, down arrow when collapsed */}
           <button
             onClick={() => setCollapsed(!collapsed)}
             title={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
@@ -233,101 +391,22 @@ export function PageToolbar({ children }: { children: ReactNode }) {
               cursor: 'pointer',
             }}
           >
-            {/* collapse / expand icon */}
+            {/* ↑ when expanded (collapse up), ↓ when collapsed (expand down) */}
             <svg
-              width="14"
+              width="10"
               height="10"
-              viewBox="0 0 14 10"
+              viewBox="0 0 10 10"
               fill="none"
               aria-hidden="true"
             >
               {collapsed ? (
-                /* expand: arrows pointing outward */
-                <>
-                  <path
-                    d="M1 5h5M4 3L2 5l2 2"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M13 5H8m3-2l2 2-2 2"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </>
+                <path d="M5 8L1 3h8L5 8z" fill="currentColor" />
               ) : (
-                /* collapse: arrows pointing inward */
-                <>
-                  <path
-                    d="M1 5h5M3 3l2 2-2 2"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M13 5H8m2-2L8 5l2 2"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </>
+                <path d="M5 2l4 5H1l4-5z" fill="currentColor" />
               )}
             </svg>
           </button>
-          {/* Switch to sidebar — only when toolbar is expanded */}
-          {!collapsed && (
-            <button
-              onClick={() => setPreferSide(true)}
-              title="Switch to sidebar"
-              aria-label="Switch to sidebar"
-              style={{
-                padding: '0 10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--fg-muted)',
-                background: 'transparent',
-                border: 'none',
-                borderLeft: '1px solid var(--border)',
-                cursor: 'pointer',
-              }}
-            >
-              {/* side-bar icon */}
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <rect
-                  x="1"
-                  y="1"
-                  width="10"
-                  height="10"
-                  rx="1.5"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-                <rect
-                  x="1"
-                  y="1"
-                  width="4"
-                  height="10"
-                  rx="1.5"
-                  fill="currentColor"
-                  opacity="0.5"
-                />
-              </svg>
-            </button>
-          )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -446,7 +525,7 @@ export function ToolbarSection({
 }: ToolbarSectionProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
-  const { mode, collapsed, isMobile } = useContext(ToolbarCtx);
+  const { mode, isMobile } = useContext(ToolbarCtx);
   const isSide = mode === 'side';
   const isOpen = dropdownOpen ?? false;
   const hasDropdown = !!dropdownContent;
@@ -539,11 +618,12 @@ export function ToolbarSection({
         aria-expanded={hasDropdown ? isOpen : undefined}
         onMouseEnter={() => !disabled && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`flex flex-row items-center justify-center gap-1.5 transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
+        className={`flex flex-col items-center justify-center transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
         style={{
           padding: isMobile ? '4px 12px' : '4px 10px',
           minWidth: isMobile ? 52 : 44,
           minHeight: isMobile ? 52 : 44,
+          gap: label ? 2 : 0,
           border: 'none',
           borderLeft: '1px solid var(--border)',
           borderTop:
@@ -576,28 +656,31 @@ export function ToolbarSection({
                   }),
         }}
       >
-        {/* Chevron: only in top mode when section has a dropdown */}
-        {hasDropdown && (
-          <span
-            className="leading-none shrink-0 transition-colors duration-150"
-            aria-hidden="true"
-            style={{
-              fontSize: 7,
-              color: accentLabel,
-            }}
-          >
-            {isOpen ? '▲' : '▼'}
-          </span>
-        )}
-        {icon && (
-          <span
-            className="leading-none shrink-0 transition-colors duration-150"
-            aria-hidden="true"
-            style={{ color: !primary && !danger ? accentLabel : undefined }}
-          >
-            {icon}
-          </span>
-        )}
+        {/* Row 1: chevron + icon side by side */}
+        <div className="flex items-center justify-center gap-1">
+          {hasDropdown && (
+            <span
+              className="leading-none shrink-0 transition-colors duration-150"
+              aria-hidden="true"
+              style={{
+                fontSize: 7,
+                color: accentLabel,
+              }}
+            >
+              {isOpen ? '▲' : '▼'}
+            </span>
+          )}
+          {icon && (
+            <span
+              className="leading-none shrink-0 transition-colors duration-150"
+              aria-hidden="true"
+              style={{ color: !primary && !danger ? accentLabel : undefined }}
+            >
+              {icon}
+            </span>
+          )}
+        </div>
+        {/* Row 2: label below */}
         {label && (
           <span
             className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
