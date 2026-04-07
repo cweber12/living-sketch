@@ -234,6 +234,22 @@ input[type='range']:hover::-webkit-slider-thumb {
   }
 }
 
+/* Segmented-control click ripple-glow */
+.seg-click-glow {
+  animation: segClickGlow 0.52s ease-out;
+}
+@keyframes segClickGlow {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  35% {
+    box-shadow: 0 0 0 5px var(--accent-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Cards
    ═══════════════════════════════════════════════════════════════════════════ */

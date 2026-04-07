@@ -10,21 +10,39 @@ export const BodyRunningIcon = ({
   color?: string;
 }) => (
   <svg
-    fill={color || 'currentColor'}
-    height={size || '18px'}
     width={size || '18px'}
-    version="1.2"
-    baseProfile="tiny"
-    id="_x31_"
+    height={size || '18px'}
+    viewBox="0 0 24 24"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="-191 65 256 256"
   >
     <path
-      d="M0.4,95.8c-5.1,10.8-17.9,15.5-28.8,10.5s-15.5-17.9-10.5-28.8S-20.9,62-10,67S5.5,85,0.4,95.8z M47.1,167.2
-                c0,5.1-4.3,9.5-9.5,9.5H-6.8c-4.1,0-7.6-2.7-8.9-6.2l-8.1-21.9l-27.1,57.9l35.2,96.6c2.4,7-1.1,14.9-8.1,17.3
-                c-7,2.4-14.9-1.1-17.3-8.1l-33.8-92.8l-17.3,36.8c-2.2,4.6-6.8,7.8-12.2,7.8h-54.1c-7.6,0-13.5-6-13.5-13.5s6-13.5,13.5-13.5h45.4
-                l49.2-105.5l-21.1,7.6l-17.3,36.8c-2.4,4.9-7.8,6.8-12.7,4.6c-4.9-2.4-6.8-7.8-4.6-12.7l18.9-40.3c1.1-2.4,3.2-4.3,5.7-5.1l36-13
-                c7.8-3.2,17.3-3.5,25.7,0.5l3.8,1.9c9.2,3.2,16,10.6,19.2,18.9l9.7,26.8h37.9C42.5,157.5,46.8,161.8,47.1,167.2z"
+      d="M15 7C16.1046 7 17 6.10457 17 5C17 3.89543 16.1046 3 15 3C13.8954 3 13 3.89543 13 5C13 6.10457 13.8954 7 15 7Z"
+      stroke={color || 'currentColor'}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12.6133 8.26691L9.30505 12.4021L13.4403 16.5374L11.3727 21.0861"
+      stroke={color || 'currentColor'}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.4104 9.5075L9.79728 6.19931L12.6132 8.26692L15.508 11.5752H19.2297"
+      stroke={color || 'currentColor'}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.89152 15.7103L7.65095 16.5374H4.34277"
+      stroke={color || 'currentColor'}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );

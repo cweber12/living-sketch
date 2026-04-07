@@ -132,7 +132,9 @@ export default function SketchPage() {
   const backInitialised = useRef(false);
   const [showCopyFront, setShowCopyFront] = useState(false);
 
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < MOBILE_BP,
+  );
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -286,8 +288,8 @@ export default function SketchPage() {
 
   const armCol = effectiveU;
   const legCol = Math.round(effectiveU * 1.15);
-  const handColUp = Math.round(effectiveU * 1.75);
-  const armColUp = Math.round(effectiveU * 1.3);
+  const handColUp = Math.round(effectiveU * 1.8); // slightly wider hand (was 1.75)
+  const armColUp = Math.round(effectiveU * 1.4); // slightly wider arm (was 1.3)
 
   const gridCols = armsUp
     ? `${handColUp}px ${armColUp}px ${armColUp}px ${legCol}px ${legCol}px ${armColUp}px ${armColUp}px ${handColUp}px`
@@ -295,22 +297,22 @@ export default function SketchPage() {
 
   const gridRows = armsUp
     ? [
-        effectiveU * 2.3,
-        effectiveU,
-        effectiveU * 1.5,
-        effectiveU * 1.75,
-        effectiveU * 1.6,
-        effectiveU * 1.6,
+        effectiveU * 2.3, // head
+        effectiveU * 1.1, // arm row (T-pose)
+        effectiveU * 1.5, // torso lower
+        effectiveU * 1.6, // upper legs (was 1.75)
+        effectiveU * 1.4, // lower legs (was 1.6)
+        effectiveU * 1.4, // feet (was 1.6)
       ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ')
     : [
-        effectiveU * 2.3,
-        effectiveU * 1.3,
-        effectiveU * 1.3,
-        effectiveU * 1.75,
-        effectiveU * 1.6,
-        effectiveU * 1.6,
+        effectiveU * 2.3, // head
+        effectiveU * 1.5, // upper arm / torso top (was 1.3)
+        effectiveU * 1.5, // lower arm / torso bottom (was 1.3)
+        effectiveU * 1.6, // hand / upper legs (was 1.75)
+        effectiveU * 1.4, // lower legs (was 1.6)
+        effectiveU * 1.4, // feet (was 1.6)
       ]
         .map((v) => `${Math.round(v)}px`)
         .join(' ');
@@ -343,12 +345,21 @@ export default function SketchPage() {
           onStrokeStart={handleStrokeStart}
           onStrokeEnd={handleStrokeEnd}
         />
-        <span
-          className="absolute bottom-0.5 left-0 right-0 text-center text-[8px] font-bold uppercase tracking-widest pointer-events-none select-none"
-          style={{ color: 'var(--fg-muted)', opacity: 0.5 }}
-        >
-          {PART_LABEL[part]}
-        </span>
+        {/* L / R shoulder indicators */}
+        {(part === 'rightUpperArm' || part === 'leftUpperArm') && (
+          <span
+            className="absolute top-0.5 left-1 text-[9px] font-bold tracking-widest pointer-events-none select-none"
+            style={{ color: 'var(--accent)', opacity: 0.8 }}
+          >
+            {part === 'rightUpperArm'
+              ? s === 'front'
+                ? 'R'
+                : 'L'
+              : s === 'front'
+                ? 'L'
+                : 'R'}
+          </span>
+        )}
       </div>
     );
   }
@@ -364,8 +375,10 @@ export default function SketchPage() {
     'rightLowerArm',
     'rightHand',
   ]);
+  // When arms are in T-pose (up), arm canvases are landscape; flip the aspect ratio.
+  // When arms are down (mobile), canvases are portrait — use PART_PROPORTIONS directly.
   const effectiveFocusProps =
-    ARM_PART_SET.has(focusPart) && effectiveArms === 'down'
+    ARM_PART_SET.has(focusPart) && effectiveArms === 'up'
       ? { w: focusProps.h, h: focusProps.w }
       : focusProps;
 
@@ -537,13 +550,39 @@ export default function SketchPage() {
             dropdownOpen={openId === 'tools'}
             onDropdownClose={close}
             inlineContent={
-              <SegmentedControl
-                options={['draw', 'erase'] as ('draw' | 'erase')[]}
-                value={isEraser ? 'erase' : 'draw'}
-                onChange={(v) => setIsEraser(v === 'erase')}
-                labels={{ draw: 'Draw', erase: 'Erase' }}
-                dangerValue="erase"
-              />
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="range"
+                    min={1}
+                    max={40}
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className="w-20 accent-accent"
+                    title="Brush size"
+                  />
+                  <div
+                    style={{
+                      width: Math.min(brushSize, 20),
+                      height: Math.min(brushSize, 20),
+                      borderRadius: '50%',
+                      backgroundColor: isEraser
+                        ? 'var(--danger)'
+                        : 'var(--accent)',
+                      opacity: isEraser ? 0.5 : 0.85,
+                      border: '1px solid var(--border-strong)',
+                      flexShrink: 0,
+                    }}
+                  />
+                </div>
+                <SegmentedControl
+                  options={['draw', 'erase'] as ('draw' | 'erase')[]}
+                  value={isEraser ? 'erase' : 'draw'}
+                  onChange={(v) => setIsEraser(v === 'erase')}
+                  labels={{ draw: 'Draw', erase: 'Erase' }}
+                  dangerValue="erase"
+                />
+              </div>
             }
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
@@ -810,85 +849,127 @@ export default function SketchPage() {
           {/* ── SINGLE-PART MODE ── */}
           {viewMode === 'single' && (
             <>
-              <div className="flex-1 flex items-center justify-center gap-2 px-2 py-3 min-h-0">
-                <button
-                  onClick={goPrev}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--fg)',
-                  }}
-                  aria-label="Previous part"
-                >
-                  ◀
-                </button>
-
-                <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0">
-                  <p
-                    className="text-[10px] font-bold uppercase tracking-widest shrink-0"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {PART_LABEL[focusPart]} · {side}
-                  </p>
-                  <div
+              {/* Responsive single-part layout:
+                  mobile (< md) – full-width canvas, nav buttons below
+                  desktop (md+) – ◀ canvas ▶ side-by-side               */}
+              <div className="flex-1 flex flex-col items-stretch min-h-0 py-3">
+                {/* Canvas row */}
+                <div className="flex-1 flex items-center justify-center gap-2 px-0 md:px-2 min-h-0">
+                  {/* Prev – large screens only */}
+                  <button
+                    onClick={goPrev}
+                    className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     style={{
-                      maxWidth: 'min(75vw, 380px)',
-                      maxHeight: '55vh',
-                      aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
-                      width: '100%',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                      border: '1px solid var(--border)',
                       backgroundColor: 'var(--surface)',
-                      position: 'relative',
-                      transform: `scale(${zoom})`,
-                      transformOrigin: 'top center',
+                      border: '1px solid var(--border)',
+                      color: 'var(--fg)',
                     }}
+                    aria-label="Previous part"
                   >
-                    {(['front', 'back'] as Side[]).map((s) => (
-                      <div
-                        key={`single-${s}-${focusPart}`}
-                        style={{
-                          display: s === side ? 'block' : 'none',
-                          width: '100%',
-                          height: '100%',
-                        }}
-                      >
-                        <SketchCanvas
-                          side={s}
-                          part={focusPart}
-                          brushSize={brushSize}
-                          color={color}
-                          isEraser={isEraser}
-                          tool={activeTool}
-                          onMount={setCanvasRef}
-                          onStrokeStart={handleStrokeStart}
-                          onStrokeEnd={handleStrokeEnd}
-                        />
-                      </div>
-                    ))}
+                    ◀
+                  </button>
+
+                  <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0 w-full">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-widest shrink-0"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      {PART_LABEL[focusPart]} · {side}
+                    </p>
+                    <div
+                      style={{
+                        maxWidth: 'min(96vw, 380px)',
+                        maxHeight: '55vh',
+                        aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
+                        width: '100%',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        backgroundColor: 'var(--surface)',
+                        position: 'relative',
+                        transform: `scale(${zoom})`,
+                        transformOrigin: 'top center',
+                      }}
+                    >
+                      {(['front', 'back'] as Side[]).map((s) => (
+                        <div
+                          key={`single-${s}-${focusPart}`}
+                          style={{
+                            display: s === side ? 'block' : 'none',
+                            width: '100%',
+                            height: '100%',
+                          }}
+                        >
+                          <SketchCanvas
+                            side={s}
+                            part={focusPart}
+                            brushSize={brushSize}
+                            color={color}
+                            isEraser={isEraser}
+                            tool={activeTool}
+                            onMount={setCanvasRef}
+                            onStrokeStart={handleStrokeStart}
+                            onStrokeEnd={handleStrokeEnd}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p
+                      className="text-[10px] shrink-0"
+                      style={{ color: 'var(--fg-muted)' }}
+                    >
+                      {focusIdx + 1} / {PARTS_ORDER.length}
+                    </p>
                   </div>
-                  <p
-                    className="text-[10px] shrink-0"
-                    style={{ color: 'var(--fg-muted)' }}
+
+                  {/* Next – large screens only */}
+                  <button
+                    onClick={goNext}
+                    className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--fg)',
+                    }}
+                    aria-label="Next part"
                   >
-                    {focusIdx + 1} / {PARTS_ORDER.length}
-                  </p>
+                    ▶
+                  </button>
                 </div>
 
-                <button
-                  onClick={goNext}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--fg)',
-                  }}
-                  aria-label="Next part"
-                >
-                  ▶
-                </button>
+                {/* Mobile nav buttons – below canvas */}
+                <div className="flex md:hidden justify-between items-center px-6 pb-1 shrink-0 gap-4">
+                  <button
+                    onClick={goPrev}
+                    className="flex-1 h-11 flex items-center justify-center rounded-lg text-sm gap-1.5 transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--fg)',
+                    }}
+                    aria-label="Previous part"
+                  >
+                    ◀{' '}
+                    <span className="text-[11px] font-semibold uppercase tracking-widest">
+                      Prev
+                    </span>
+                  </button>
+                  <button
+                    onClick={goNext}
+                    className="flex-1 h-11 flex items-center justify-center rounded-lg text-sm gap-1.5 transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--fg)',
+                    }}
+                    aria-label="Next part"
+                  >
+                    <span className="text-[11px] font-semibold uppercase tracking-widest">
+                      Next
+                    </span>{' '}
+                    ▶
+                  </button>
+                </div>
               </div>
 
               <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />

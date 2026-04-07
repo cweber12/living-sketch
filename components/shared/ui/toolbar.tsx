@@ -198,18 +198,24 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   /* ── Top mode ── */
   return (
     <div
-      className={`w-full shrink-0 flex flex-row items-stretch overflow-x-auto ${isMobile ? 'order-last' : 'order-first'}`}
+      className={`w-full shrink-0 flex flex-row items-stretch ${isMobile ? 'overflow-x-auto order-last' : 'overflow-x-hidden order-first'}`}
       style={{
+        position: 'sticky',
+        top: isMobile ? undefined : 0,
+        bottom: isMobile ? 0 : undefined,
+        zIndex: 40,
         backgroundColor: 'var(--surface)',
         borderBottom: isMobile ? undefined : '2px solid var(--border-strong)',
         borderTop: isMobile ? '2px solid var(--border-strong)' : undefined,
         minHeight: isMobile ? 52 : 44,
       }}
     >
-      {children}
+      {/* All toolbar sections — hidden when desktop-collapsed */}
+      {(!collapsed || isMobile) && children}
       {!isMobile && (
         <>
-          <ToolbarSpacer />
+          {/* Push collapse controls to right when collapsed */}
+          {!collapsed && <ToolbarSpacer />}
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -274,51 +280,53 @@ export function PageToolbar({ children }: { children: ReactNode }) {
               )}
             </svg>
           </button>
-          {/* Switch to sidebar */}
-          <button
-            onClick={() => setPreferSide(true)}
-            title="Switch to sidebar"
-            aria-label="Switch to sidebar"
-            style={{
-              padding: '0 10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--fg-muted)',
-              background: 'transparent',
-              border: 'none',
-              borderLeft: '1px solid var(--border)',
-              cursor: 'pointer',
-            }}
-          >
-            {/* side-bar icon */}
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              aria-hidden="true"
+          {/* Switch to sidebar — only when toolbar is expanded */}
+          {!collapsed && (
+            <button
+              onClick={() => setPreferSide(true)}
+              title="Switch to sidebar"
+              aria-label="Switch to sidebar"
+              style={{
+                padding: '0 10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--fg-muted)',
+                background: 'transparent',
+                border: 'none',
+                borderLeft: '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
             >
-              <rect
-                x="1"
-                y="1"
-                width="10"
-                height="10"
-                rx="1.5"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-              <rect
-                x="1"
-                y="1"
-                width="4"
-                height="10"
-                rx="1.5"
-                fill="currentColor"
-                opacity="0.5"
-              />
-            </svg>
-          </button>
+              {/* side-bar icon */}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="1"
+                  y="1"
+                  width="10"
+                  height="10"
+                  rx="1.5"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
+                <rect
+                  x="1"
+                  y="1"
+                  width="4"
+                  height="10"
+                  rx="1.5"
+                  fill="currentColor"
+                  opacity="0.5"
+                />
+              </svg>
+            </button>
+          )}
         </>
       )}
     </div>
@@ -582,7 +590,11 @@ export function ToolbarSection({
           </span>
         )}
         {icon && (
-          <span className="leading-none shrink-0" aria-hidden="true">
+          <span
+            className="leading-none shrink-0 transition-colors duration-150"
+            aria-hidden="true"
+            style={{ color: !primary && !danger ? accentLabel : undefined }}
+          >
             {icon}
           </span>
         )}
@@ -599,8 +611,8 @@ export function ToolbarSection({
         )}
       </button>
 
-      {/* Inline content: hidden in collapsed mode or on small screens */}
-      {inlineContent && !collapsed && (
+      {/* Inline content: visible on large screens when toolbar is not minimised */}
+      {inlineContent && (
         <div
           className="hidden md:flex items-center gap-1.5 px-2 shrink-0"
           style={{ borderRight: '1px solid var(--border)' }}
@@ -646,6 +658,15 @@ export function SegmentedControl<T extends string>({
   labels?: Partial<Record<T, ReactNode>>;
   dangerValue?: T;
 }) {
+  const [hoveredOption, setHoveredOption] = useState<T | null>(null);
+  const [flashOption, setFlashOption] = useState<T | null>(null);
+
+  function handleClick(o: T) {
+    onChange(o);
+    setFlashOption(o);
+    setTimeout(() => setFlashOption(null), 520);
+  }
+
   return (
     <div
       className="flex rounded overflow-hidden"
@@ -658,12 +679,17 @@ export function SegmentedControl<T extends string>({
         const active = o === value;
         const isDanger = dangerValue === o && active;
         const isLast = i === options.length - 1;
+        const isHovered = hoveredOption === o && !active && !isDanger;
+        const isFlash = flashOption === o;
         return (
           <button
             key={o}
-            onClick={() => onChange(o)}
-            className="flex-1 py-1.5 px-3 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none"
+            onClick={() => handleClick(o)}
+            onMouseEnter={() => setHoveredOption(o)}
+            onMouseLeave={() => setHoveredOption(null)}
+            className={`flex-1 py-1.5 px-3 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none${isFlash ? ' seg-click-glow' : ''}`}
             style={{
+              cursor: 'pointer',
               ...(isDanger
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }
                 : active
@@ -672,10 +698,15 @@ export function SegmentedControl<T extends string>({
                       color: 'var(--bg)',
                       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
                     }
-                  : {
-                      color: 'var(--fg-muted)',
-                      backgroundColor: 'transparent',
-                    }),
+                  : isHovered
+                    ? {
+                        backgroundColor: 'var(--surface-hover)',
+                        color: 'var(--fg)',
+                      }
+                    : {
+                        color: 'var(--fg-muted)',
+                        backgroundColor: 'transparent',
+                      }),
               borderRight: !isLast ? '1px solid var(--border)' : 'none',
             }}
           >
