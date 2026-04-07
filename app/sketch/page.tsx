@@ -119,14 +119,7 @@ export default function SketchPage() {
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH);
   const [isEraser, setIsEraser] = useState(false);
 
-  const [armPose, setArmPose] = useState<ArmPose>(() => {
-    if (typeof window === 'undefined') return 'up';
-    // Mobile portrait defaults to arms-down; landscape and desktop default to arms-up
-    return window.innerWidth >= MOBILE_BP ||
-      window.matchMedia('(orientation: landscape)').matches
-      ? 'up'
-      : 'down';
-  });
+  const [armPose, setArmPose] = useState<ArmPose>('up'); // 'up' matches SSR; corrected post-hydration
   const [viewMode, setViewMode] = useState<ViewMode>('body');
   const [focusIdx, setFocusIdx] = useState(0);
   const [tool, setTool] = useState<ShapeTool>('pen');
@@ -187,7 +180,6 @@ export default function SketchPage() {
         side: Side;
         viewMode: ViewMode;
         focusIdx: number;
-        armPose: ArmPose;
         zoom: number;
         brushSize: number;
         color: string;
@@ -198,7 +190,6 @@ export default function SketchPage() {
       if (s.viewMode === 'body' || s.viewMode === 'single')
         setViewMode(s.viewMode);
       if (typeof s.focusIdx === 'number') setFocusIdx(s.focusIdx);
-      if (s.armPose === 'up' || s.armPose === 'down') setArmPose(s.armPose);
       if (typeof s.zoom === 'number' && s.zoom > 0) setZoom(s.zoom);
       if (typeof s.brushSize === 'number' && s.brushSize > 0)
         setBrushSize(s.brushSize);
@@ -210,7 +201,9 @@ export default function SketchPage() {
     }
   }, []);
 
-  // Persist page state to sessionStorage whenever relevant values change
+  // Persist page state to sessionStorage whenever relevant values change.
+  // armPose is intentionally excluded — it must always reflect the actual device
+  // orientation on load, not a stale persisted value.
   useEffect(() => {
     try {
       sessionStorage.setItem(
@@ -219,7 +212,6 @@ export default function SketchPage() {
           side,
           viewMode,
           focusIdx,
-          armPose,
           zoom,
           brushSize,
           color,
@@ -230,17 +222,20 @@ export default function SketchPage() {
     } catch {
       /* ignore */
     }
-  }, [
-    side,
-    viewMode,
-    focusIdx,
-    armPose,
-    zoom,
-    brushSize,
-    color,
-    isEraser,
-    usedColors,
-  ]);
+  }, [side, viewMode, focusIdx, zoom, brushSize, color, isEraser, usedColors]);
+
+  // After hydration: correct arm pose to match the actual device orientation.
+  // armPose initialises as 'up' (SSR-safe); this effect fixes it on the client.
+  // We intentionally don't canvas-rotate here — canvases are still loading from
+  // session at this point. The existing orientation-change listener handles
+  // subsequent rotations.
+
+  useEffect(() => {
+    const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+    const targetPose: ArmPose =
+      window.innerWidth >= MOBILE_BP || isLandscape ? 'up' : 'down';
+    setArmPose(targetPose);
+  }, []); // run once after mount
 
   const effectiveArms: ArmPose = armPose; // orientation-managed via state
   const focusPart = PARTS_ORDER[focusIdx];
@@ -414,14 +409,22 @@ export default function SketchPage() {
   const armsUp = effectiveArms === 'up';
   const gridTemplate = armsUp ? GRID_ARMS_UP : GRID_ARMS_DOWN;
 
+  // mobileU: unit size (px) that fits the body grid in the viewport at zoom=1.
+  // The zoom factor is then baked directly into the effectiveU so that we avoid
+  // using CSS `zoom:` on the grid (which causes browser layout quirks with grid
+  // track sizing and coordinate-mapping issues on webkit).
   const mobileU =
     typeof window !== 'undefined'
-      ? Math.min(
-          Math.floor((window.innerWidth - 20) / 4.3),
-          Math.floor((window.innerHeight - 140) / 9.85),
+      ? Math.max(
+          20,
+          Math.min(
+            Math.floor((window.innerWidth - 20) / 4.3),
+            Math.floor((window.innerHeight - 140) / 9.85),
+          ),
         )
       : 80;
-  const effectiveU = isMobile && viewMode === 'body' ? mobileU : u;
+  // effectiveU incorporates the user's zoom so grid tracks are real px values.
+  const effectiveU = (isMobile && viewMode === 'body' ? mobileU : u) * zoom;
 
   const armCol = effectiveU;
   const legCol = Math.round(effectiveU * 1.15);
@@ -463,7 +466,13 @@ export default function SketchPage() {
         key={`${s}-${part}`}
         style={{
           gridArea: GRID_AREA[part],
-          display: s === side ? 'block' : 'none',
+          // Use visibility instead of display:none so the grid cell holds its
+          // size even when the canvas is hidden. Both front+back cells occupy
+          // the same grid area; the active one is visible, the other invisible.
+          visibility: s === side ? 'visible' : 'hidden',
+          // Explicit 100% so the canvas fills the grid track area correctly.
+          width: '100%',
+          height: '100%',
           position: 'relative',
           borderRadius: '6px',
           overflow: 'hidden',
@@ -1061,7 +1070,6 @@ export default function SketchPage() {
                     gridTemplateColumns: gridCols,
                     gridTemplateRows: gridRows,
                     gap: isMobile ? '2px' : '4px',
-                    zoom: zoom,
                   }}
                 >
                   {(['front', 'back'] as Side[]).flatMap((s) =>

@@ -118,21 +118,19 @@ export function SketchCanvas({
 
   /**
    * Map a pointer event to canvas-buffer coordinates and update the scale ref.
-   * Uses offsetX/offsetY (relative to the element's own CSS box) so that
-   * ancestor CSS zoom or transform: scale do not cause coordinate misalignment.
+   * Uses getBoundingClientRect() + clientX/Y: the rect includes all ancestor
+   * CSS zoom and transform:scale effects, and clientX/Y is in viewport space.
+   * This is the most reliable approach on all browsers including iOS Safari.
    */
   function getPos(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current!;
-    // offsetWidth/Height give the CSS layout size before any ancestor transforms
-    const cssW = canvas.offsetWidth || CANVAS_SIZE;
-    const cssH = canvas.offsetHeight || CANVAS_SIZE;
-    const sx = CANVAS_SIZE / cssW;
-    const sy = CANVAS_SIZE / cssH;
+    const rect = canvas.getBoundingClientRect();
+    const sx = CANVAS_SIZE / rect.width;
+    const sy = CANVAS_SIZE / rect.height;
     scaleRef.current = (sx + sy) / 2;
-    const nativeE = e.nativeEvent as PointerEvent;
     return {
-      x: nativeE.offsetX * sx,
-      y: nativeE.offsetY * sy,
+      x: (e.clientX - rect.left) * sx,
+      y: (e.clientY - rect.top) * sy,
       pressure: e.pressure > 0 ? e.pressure : 0.5,
     };
   }

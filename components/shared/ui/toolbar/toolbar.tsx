@@ -72,12 +72,12 @@ export function ToolbarLayout({
     const onTouchMove = (e: TouchEvent) => {
       const dy = e.touches[0].clientY - touchStartY.current;
       if (dy > THRESHOLD) {
-        // Finger moving down → expand toolbar
-        setCollapsed(false);
+        // Finger moving DOWN (content scrolling toward top) → collapse toolbar
+        setCollapsed(true);
         touchStartY.current = e.touches[0].clientY;
       } else if (dy < -THRESHOLD) {
-        // Finger moving up → collapse toolbar
-        setCollapsed(true);
+        // Finger moving UP (content scrolling toward bottom) → expand toolbar
+        setCollapsed(false);
         touchStartY.current = e.touches[0].clientY;
       }
     };
