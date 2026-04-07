@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 
 const TABS = [
   { href: '/sketch', label: 'Sketch' },
-  { href: '/extract', label: 'Extraction' },
-  { href: '/console', label: 'Re-Animation' },
+  { href: '/extract', label: 'Extract' },
+  { href: '/console', label: 'Re-Animate' },
 ] as const;
 
 export function NavDropdown() {

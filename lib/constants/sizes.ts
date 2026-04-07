@@ -29,8 +29,10 @@ export const BODY_PROPORTIONS = {
 export const SMALL_SCREEN_BREAKPOINT = 600;
 
 export const ICON_SIZES = {
-  toolbarIcon: 16,
+  toolbarIcon: 18,
   buttonIconLarge: 20,
   buttonIconMedium: 16,
   buttonIconSmall: 14,
 } as const;
+
+export const SVG_LINE_WIDTH = { line: 1.5 } as const;

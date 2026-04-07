@@ -5,6 +5,8 @@ import {
   useEffect,
   useCallback,
   useRef,
+  createContext,
+  useContext,
   type ReactNode,
   type CSSProperties,
 } from 'react';
@@ -12,19 +14,23 @@ import { createPortal } from 'react-dom';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
-/* ── useDropdown hook ──────────────────────────────────────────────── */
+type ToolbarMode = 'top' | 'side';
 
-export function useDropdown() {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const toggle = useCallback(
-    (id: string) => setOpenId((prev) => (prev === id ? null : id)),
-    [],
-  );
-  const close = useCallback(() => setOpenId(null), []);
-  return { openId, toggle, close, setOpenId };
+interface ToolbarCtxValue {
+  mode: ToolbarMode;
+  collapsed: boolean;
+  isMobile: boolean;
+  setPreferSide: (v: boolean) => void;
+  setCollapsed: (v: boolean) => void;
 }
 
-/* ── DropdownPanel ─────────────────────────────────────────────────── */
+const ToolbarCtx = createContext<ToolbarCtxValue>({
+  mode: 'top',
+  collapsed: false,
+  isMobile: false,
+  setPreferSide: () => {},
+  setCollapsed: () => {},
+});
 
 interface DropdownPanelProps {
   anchorRef: React.RefObject<HTMLElement | null>;
@@ -35,6 +41,291 @@ interface DropdownPanelProps {
   width?: number | string;
 }
 
+interface ToolbarSectionProps {
+  icon?: ReactNode;
+  label?: string;
+  active?: boolean;
+  onClick?: () => void;
+  /** Inline content shown on large screens beside the section trigger */
+  inlineContent?: ReactNode;
+  /** Dropdown content */
+  dropdownContent?: ReactNode;
+  dropdownOpen?: boolean;
+  dropdownAlign?: 'left' | 'right';
+  dropdownWidth?: number | string;
+  onDropdownClose?: () => void;
+  /** Additional style for the section wrapper */
+  className?: string;
+  /** Tooltip/title */
+  title?: string;
+  /** Danger styling */
+  danger?: boolean;
+  /** Primary styling (green bg) */
+  primary?: boolean;
+  /** Disable the button */
+  disabled?: boolean;
+  /** ARIA label */
+  ariaLabel?: string;
+  /** Glow animation class */
+  glow?: boolean;
+}
+
+/* ── useDropdown hook ──────────────────────────────────────────────── */
+export function useDropdown() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggle = useCallback(
+    (id: string) => setOpenId((prev) => (prev === id ? null : id)),
+    [],
+  );
+  const close = useCallback(() => setOpenId(null), []);
+  return { openId, toggle, close, setOpenId };
+}
+
+/* ── ToolbarLayout ─────────────────────────────────────────────────── */
+/**
+ * Wrap your PageToolbar + page content inside ToolbarLayout.
+ * It manages top vs. side mode and provides context to PageToolbar/ToolbarSection.
+ * On mobile (< 1024 px) the toolbar is always top-mode and renders at the bottom
+ * via CSS order.
+ */
+export function ToolbarLayout({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const [preferSide, setPreferSide] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) =>
+      setIsMobile(e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // On mobile, always stay in top mode regardless of user preference
+  const mode: ToolbarMode =
+    !mounted || isMobile ? 'top' : preferSide ? 'side' : 'top';
+
+  return (
+    <ToolbarCtx.Provider
+      value={{ mode, collapsed, isMobile, setPreferSide, setCollapsed }}
+    >
+      <div
+        className={`flex ${mode === 'side' ? 'flex-row' : 'flex-col'} flex-1 w-full overflow-hidden ${className}`}
+      >
+        {children}
+      </div>
+    </ToolbarCtx.Provider>
+  );
+}
+
+/* ── PageToolbar ───────────────────────────────────────────────────── */
+export function PageToolbar({ children }: { children: ReactNode }) {
+  const { mode, collapsed, isMobile, setPreferSide, setCollapsed } =
+    useContext(ToolbarCtx);
+
+  /* ── Side mode ── */
+  if (mode === 'side') {
+    return (
+      <div
+        className="shrink-0 flex flex-col self-stretch"
+        style={{
+          width: 52,
+          backgroundColor: 'var(--surface)',
+          borderRight: '2px solid var(--border-strong)',
+        }}
+      >
+        <div className="flex flex-col flex-1 overflow-y-auto">{children}</div>
+        {/* Switch to top bar */}
+        <button
+          onClick={() => setPreferSide(false)}
+          title="Switch to top toolbar"
+          aria-label="Switch to top toolbar"
+          style={{
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--fg-muted)',
+            background: 'transparent',
+            border: 'none',
+            borderTop: '1px solid var(--border)',
+            cursor: 'pointer',
+          }}
+        >
+          {/* top-bar icon */}
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="1"
+              y="1"
+              width="10"
+              height="10"
+              rx="1.5"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+            <rect
+              x="1"
+              y="1"
+              width="10"
+              height="4"
+              rx="1.5"
+              fill="currentColor"
+              opacity="0.5"
+            />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  /* ── Top mode ── */
+  return (
+    <div
+      className={`w-full shrink-0 flex flex-row items-stretch overflow-x-auto ${isMobile ? 'order-last' : 'order-first'}`}
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderBottom: isMobile ? undefined : '2px solid var(--border-strong)',
+        borderTop: isMobile ? '2px solid var(--border-strong)' : undefined,
+        minHeight: isMobile ? 52 : 44,
+      }}
+    >
+      {children}
+      {!isMobile && (
+        <>
+          <ToolbarSpacer />
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            title={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+            aria-label={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+            style={{
+              padding: '0 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: collapsed ? 'var(--accent)' : 'var(--fg-muted)',
+              background: collapsed ? 'var(--surface-raised)' : 'transparent',
+              border: 'none',
+              borderLeft: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}
+          >
+            {/* collapse / expand icon */}
+            <svg
+              width="14"
+              height="10"
+              viewBox="0 0 14 10"
+              fill="none"
+              aria-hidden="true"
+            >
+              {collapsed ? (
+                /* expand: arrows pointing outward */
+                <>
+                  <path
+                    d="M1 5h5M4 3L2 5l2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13 5H8m3-2l2 2-2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              ) : (
+                /* collapse: arrows pointing inward */
+                <>
+                  <path
+                    d="M1 5h5M3 3l2 2-2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13 5H8m2-2L8 5l2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              )}
+            </svg>
+          </button>
+          {/* Switch to sidebar */}
+          <button
+            onClick={() => setPreferSide(true)}
+            title="Switch to sidebar"
+            aria-label="Switch to sidebar"
+            style={{
+              padding: '0 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--fg-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderLeft: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}
+          >
+            {/* side-bar icon */}
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="1"
+                y="1"
+                width="10"
+                height="10"
+                rx="1.5"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <rect
+                x="1"
+                y="1"
+                width="4"
+                height="10"
+                rx="1.5"
+                fill="currentColor"
+                opacity="0.5"
+              />
+            </svg>
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── DropdownPanel ─────────────────────────────────────────────────── */
 export function DropdownPanel({
   anchorRef,
   open,
@@ -53,13 +344,18 @@ export function DropdownPanel({
   const measure = useCallback(() => {
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
+    const panelWidth = typeof width === 'number' ? width : 280;
     const left =
       align === 'right'
-        ? Math.max(0, rect.right - (typeof width === 'number' ? width : 280))
-        : Math.min(rect.left, window.innerWidth - 280);
+        ? Math.max(0, rect.right - panelWidth)
+        : Math.min(rect.left, window.innerWidth - panelWidth);
+    // Open upward when anchor is in the bottom half (e.g. mobile bottom bar)
+    const openUpward = rect.top > window.innerHeight / 2;
     setStyle({
       position: 'fixed',
-      top: rect.bottom + 4,
+      ...(openUpward
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }),
       left: Math.max(4, left),
       minWidth: 220,
       maxWidth: typeof width === 'number' ? width : 360,
@@ -72,6 +368,7 @@ export function DropdownPanel({
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     measure();
     const onResize = () => measure();
     window.addEventListener('resize', onResize);
@@ -119,54 +416,7 @@ export function DropdownPanel({
   );
 }
 
-/* ── PageToolbar ───────────────────────────────────────────────────── */
-
-export function PageToolbar({ children }: { children: ReactNode }) {
-  return (
-    <div
-      className="w-full shrink-0 flex flex-row items-stretch overflow-x-auto"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderBottom: '2px solid var(--border-strong)',
-        minHeight: 44,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 /* ── ToolbarSection ────────────────────────────────────────────────── */
-
-interface ToolbarSectionProps {
-  icon?: ReactNode;
-  label?: string;
-  active?: boolean;
-  onClick?: () => void;
-  /** Inline content shown on large screens beside the section trigger */
-  inlineContent?: ReactNode;
-  /** Dropdown content */
-  dropdownContent?: ReactNode;
-  dropdownOpen?: boolean;
-  dropdownAlign?: 'left' | 'right';
-  dropdownWidth?: number | string;
-  onDropdownClose?: () => void;
-  /** Additional style for the section wrapper */
-  className?: string;
-  /** Tooltip/title */
-  title?: string;
-  /** Danger styling */
-  danger?: boolean;
-  /** Primary styling (green bg) */
-  primary?: boolean;
-  /** Disable the button */
-  disabled?: boolean;
-  /** ARIA label */
-  ariaLabel?: string;
-  /** Glow animation class */
-  glow?: boolean;
-}
-
 export function ToolbarSection({
   icon,
   label,
@@ -187,7 +437,88 @@ export function ToolbarSection({
   glow,
 }: ToolbarSectionProps) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const [hovered, setHovered] = useState(false);
+  const { mode, collapsed, isMobile } = useContext(ToolbarCtx);
+  const isSide = mode === 'side';
+  const isOpen = dropdownOpen ?? false;
+  const hasDropdown = !!dropdownContent;
 
+  // Accent color for chevron + label on hover or when open
+  const accentLabel =
+    !primary && !danger && (isOpen || active || hovered)
+      ? 'var(--accent)'
+      : !primary && !danger
+        ? 'var(--fg-muted)'
+        : undefined;
+
+  /* ── Side-mode button ── */
+  if (isSide) {
+    return (
+      <div className={`flex items-stretch w-full ${className}`}>
+        <button
+          ref={btnRef}
+          onClick={onClick}
+          disabled={disabled}
+          title={title ?? label}
+          aria-label={ariaLabel ?? label}
+          aria-pressed={hasDropdown ? isOpen : undefined}
+          aria-expanded={hasDropdown ? isOpen : undefined}
+          className={`flex flex-col items-center justify-center gap-1 w-full transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
+          style={{
+            padding: '10px 4px 8px',
+            border: 'none',
+            borderLeft: `2px solid ${isOpen || active ? 'var(--accent)' : 'transparent'}`,
+            borderBottom: '1px solid var(--border)',
+            borderRadius: 0,
+            cursor: disabled ? 'default' : 'pointer',
+            opacity: disabled ? 0.4 : 1,
+            backgroundColor:
+              isOpen || active ? 'var(--surface-raised)' : 'transparent',
+            color: primary
+              ? 'var(--bg)'
+              : isOpen || active
+                ? 'var(--accent)'
+                : 'var(--fg-muted)',
+            ...(primary ? { backgroundColor: 'var(--accent)' } : {}),
+            ...(danger ? { color: 'var(--danger)' } : {}),
+          }}
+        >
+          {icon && (
+            <span className="leading-none shrink-0" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+          {label && (
+            <span
+              className="font-bold uppercase leading-tight whitespace-nowrap"
+              style={{
+                writingMode: 'vertical-lr',
+                textOrientation: 'mixed',
+                fontSize: 8,
+                letterSpacing: '0.1em',
+              }}
+            >
+              {label}
+            </span>
+          )}
+        </button>
+        {/* No inline content in side mode */}
+        {dropdownContent && onDropdownClose && (
+          <DropdownPanel
+            anchorRef={btnRef}
+            open={isOpen}
+            onClose={onDropdownClose}
+            align="left"
+            width={dropdownWidth}
+          >
+            {dropdownContent}
+          </DropdownPanel>
+        )}
+      </div>
+    );
+  }
+
+  /* ── Top mode button ── */
   return (
     <div className={`flex items-stretch ${className}`}>
       <button
@@ -196,15 +527,23 @@ export function ToolbarSection({
         disabled={disabled}
         title={title ?? label}
         aria-label={ariaLabel ?? label}
-        aria-pressed={dropdownContent ? (dropdownOpen ?? false) : undefined}
-        aria-expanded={dropdownContent ? (dropdownOpen ?? false) : undefined}
-        className={`flex flex-col items-center justify-center gap-0.5 transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
+        aria-pressed={hasDropdown ? isOpen : undefined}
+        aria-expanded={hasDropdown ? isOpen : undefined}
+        onMouseEnter={() => !disabled && setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={`flex flex-row items-center justify-center gap-1.5 transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
         style={{
-          padding: '4px 10px',
-          minWidth: 44,
-          minHeight: 44,
+          padding: isMobile ? '4px 12px' : '4px 10px',
+          minWidth: isMobile ? 52 : 44,
+          minHeight: isMobile ? 52 : 44,
           border: 'none',
-          borderRight: '1px solid var(--border)',
+          borderLeft: '1px solid var(--border)',
+          borderTop:
+            primary || danger
+              ? '2px solid transparent'
+              : isOpen || active
+                ? '2px solid var(--accent)'
+                : '2px solid transparent',
           borderRadius: 0,
           cursor: disabled ? 'default' : 'pointer',
           opacity: disabled ? 0.4 : 1,
@@ -218,11 +557,10 @@ export function ToolbarSection({
                   backgroundColor: 'transparent',
                   color: 'var(--danger)',
                 }
-              : active || dropdownOpen
+              : isOpen || active
                 ? {
                     backgroundColor: 'var(--surface-raised)',
-                    color: 'var(--accent)',
-                    borderTop: '2px solid var(--accent)',
+                    color: 'var(--fg)',
                   }
                 : {
                     backgroundColor: 'transparent',
@@ -230,20 +568,39 @@ export function ToolbarSection({
                   }),
         }}
       >
+        {/* Chevron: only in top mode when section has a dropdown */}
+        {hasDropdown && (
+          <span
+            className="leading-none shrink-0 transition-colors duration-150"
+            aria-hidden="true"
+            style={{
+              fontSize: 7,
+              color: accentLabel,
+            }}
+          >
+            {isOpen ? '▲' : '▼'}
+          </span>
+        )}
         {icon && (
           <span className="leading-none shrink-0" aria-hidden="true">
             {icon}
           </span>
         )}
         {label && (
-          <span className="text-[8px] font-bold uppercase tracking-widest leading-tight hidden sm:block whitespace-nowrap">
+          <span
+            className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
+            style={{
+              fontSize: isMobile ? 9 : 8,
+              color: accentLabel,
+            }}
+          >
             {label}
           </span>
         )}
       </button>
 
-      {/* Inline content (large screen only) */}
-      {inlineContent && (
+      {/* Inline content: hidden in collapsed mode or on small screens */}
+      {inlineContent && !collapsed && (
         <div
           className="hidden md:flex items-center gap-1.5 px-2 shrink-0"
           style={{ borderRight: '1px solid var(--border)' }}
@@ -256,7 +613,7 @@ export function ToolbarSection({
       {dropdownContent && onDropdownClose && (
         <DropdownPanel
           anchorRef={btnRef}
-          open={dropdownOpen ?? false}
+          open={isOpen}
           onClose={onDropdownClose}
           align={dropdownAlign}
           width={dropdownWidth}

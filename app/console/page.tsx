@@ -23,6 +23,7 @@ import ShiftControls from '@/components/console/controls/shift-controls';
 import ScaleControls from '@/components/console/controls/scale-controls';
 import FileList from '@/components/console/controls/file-list';
 import {
+  ToolbarLayout,
   PageToolbar,
   ToolbarSection,
   ToolbarSpacer,
@@ -242,220 +243,224 @@ export default function ConsolePage() {
 
   /* ── UI ─────────────────────────────────────────────────────────── */
   return (
-    <main className="flex flex-col flex-1 overflow-hidden">
-      {/* ── Unified toolbar ── */}
-      <PageToolbar>
-        {/* Collection */}
-        <ToolbarSection
-          icon={<FilesIcon />}
-          label="Collection"
-          onClick={() => toggle('files')}
-          dropdownOpen={openId === 'files'}
-          onDropdownClose={close}
-          dropdownWidth={300}
-          dropdownContent={
-            <div className="flex flex-col gap-2 w-full">
-              <SegmentedControl
-                options={['activity', 'creations'] as const}
-                value={fileView}
-                onChange={setFileView}
-                labels={{
-                  activity: (
-                    <span className="flex items-center justify-center gap-1">
-                      <BrainIcon />
-                      Extractions
-                    </span>
-                  ),
-                  creations: (
-                    <span className="flex items-center justify-center gap-1">
-                      <PersonFrontIcon size={10} />
-                      Creations
-                    </span>
-                  ),
-                }}
-              />
-              <div className="overflow-y-auto max-h-[40vh]">
-                {fileView === 'activity' ? (
-                  <FileList
-                    bucket="landmarks"
-                    selected={landmarkFile}
-                    onSelect={loadLandmarks}
-                    formatLabel={(name) => formatFileTimestamp(name)}
-                    onDelete={(f) => {
-                      if (landmarkFile === f.key) setLandmarkFile(null);
-                    }}
-                  />
-                ) : (
-                  <FileList
-                    bucket="svgs"
-                    selected={svgFile}
-                    onSelect={loadSvgs}
-                    formatLabel={(name) => formatFileTimestamp(name)}
-                    onDelete={(f) => {
-                      if (svgFile === f.key) setSvgFile(null);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          }
-        />
-
-        {/* Tools */}
-        <ToolbarSection
-          icon={<PanelIcon />}
-          label="Tools"
-          onClick={() => toggle('tools')}
-          dropdownOpen={openId === 'tools'}
-          onDropdownClose={close}
-          dropdownContent={
-            <div className="flex flex-col gap-0.5 w-full">
-              <button
-                onClick={() =>
-                  setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
-                }
-                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
-                style={
-                  toolsPanel === 'shift'
-                    ? { color: 'var(--accent)' }
-                    : undefined
-                }
-              >
-                <span style={{ color: 'var(--accent)' }}>
-                  <ShiftIcon />
-                </span>
-                Shift Joints
-              </button>
-              <div
-                className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
-              >
-                <div className="pt-1.5">
-                  <ShiftControls />
-                </div>
-              </div>
-
-              <button
-                onClick={() =>
-                  setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
-                }
-                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
-                style={
-                  toolsPanel === 'scale'
-                    ? { color: 'var(--accent)' }
-                    : undefined
-                }
-              >
-                <span style={{ color: 'var(--accent)' }}>
-                  <ScaleIcon />
-                </span>
-                Scale Parts
-              </button>
-              <div
-                className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
-              >
-                <div className="pt-1.5">
-                  <ScaleControls />
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowAnchors((v) => !v)}
-                className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
-                style={showAnchors ? { color: 'var(--accent)' } : undefined}
-              >
-                {showAnchors ? '⊙ Hide Joints' : '⊙ Show Joints'}
-              </button>
-            </div>
-          }
-        />
-
-        {/* Preview */}
-        <ToolbarSection
-          icon={<PreviewIcon />}
-          label="Preview"
-          onClick={() => toggle('preview')}
-          dropdownOpen={openId === 'preview'}
-          onDropdownClose={close}
-          inlineContent={
-            <input
-              type="color"
-              value={previewBgColor}
-              onChange={(e) => setPreviewBgColor(e.target.value)}
-              className="h-5 w-6 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-              title="Canvas background colour"
-            />
-          }
-          dropdownContent={
-            <div className="flex flex-col gap-2 w-full">
-              <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
-                <span>Background</span>
-                <input
-                  type="color"
-                  value={previewBgColor}
-                  onChange={(e) => setPreviewBgColor(e.target.value)}
-                  className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-                  title="Canvas background colour"
+    <main className="flex flex-1 overflow-hidden">
+      <ToolbarLayout>
+        {/* ── Unified toolbar ── */}
+        <PageToolbar>
+          {/* Collection */}
+          <ToolbarSection
+            icon={<FilesIcon />}
+            label="Collection"
+            onClick={() => toggle('files')}
+            dropdownOpen={openId === 'files'}
+            onDropdownClose={close}
+            dropdownWidth={300}
+            dropdownContent={
+              <div className="flex flex-col gap-2 w-full">
+                <SegmentedControl
+                  options={['activity', 'creations'] as const}
+                  value={fileView}
+                  onChange={setFileView}
+                  labels={{
+                    activity: (
+                      <span className="flex items-center justify-center gap-1">
+                        <BrainIcon />
+                        Extractions
+                      </span>
+                    ),
+                    creations: (
+                      <span className="flex items-center justify-center gap-1">
+                        <PersonFrontIcon size={10} />
+                        Creations
+                      </span>
+                    ),
+                  }}
                 />
-              </label>
-              <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
-                <div className="flex items-center justify-between">
-                  <span>Size</span>
-                  <span className="font-mono text-[10px]">
-                    {Math.round(previewScale * 100)}%
+                <div className="overflow-y-auto max-h-[40vh]">
+                  {fileView === 'activity' ? (
+                    <FileList
+                      bucket="landmarks"
+                      selected={landmarkFile}
+                      onSelect={loadLandmarks}
+                      formatLabel={(name) => formatFileTimestamp(name)}
+                      onDelete={(f) => {
+                        if (landmarkFile === f.key) setLandmarkFile(null);
+                      }}
+                    />
+                  ) : (
+                    <FileList
+                      bucket="svgs"
+                      selected={svgFile}
+                      onSelect={loadSvgs}
+                      formatLabel={(name) => formatFileTimestamp(name)}
+                      onDelete={(f) => {
+                        if (svgFile === f.key) setSvgFile(null);
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            }
+          />
+
+          {/* Tools */}
+          <ToolbarSection
+            icon={<PanelIcon />}
+            label="Tools"
+            onClick={() => toggle('tools')}
+            dropdownOpen={openId === 'tools'}
+            onDropdownClose={close}
+            dropdownContent={
+              <div className="flex flex-col gap-0.5 w-full">
+                <button
+                  onClick={() =>
+                    setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
+                  }
+                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
+                  style={
+                    toolsPanel === 'shift'
+                      ? { color: 'var(--accent)' }
+                      : undefined
+                  }
+                >
+                  <span style={{ color: 'var(--accent)' }}>
+                    <ShiftIcon />
                   </span>
+                  Shift Joints
+                </button>
+                <div
+                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                  style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
+                >
+                  <div className="pt-1.5">
+                    <ShiftControls />
+                  </div>
                 </div>
-                <input
-                  type="range"
-                  min="0.25"
-                  max="2"
-                  step="0.05"
-                  value={previewScale}
-                  onChange={(e) => setPreviewScale(parseFloat(e.target.value))}
-                  className="w-full accent-[var(--accent)]"
-                />
-              </label>
-            </div>
-          }
-        />
 
-        <ToolbarSpacer />
+                <button
+                  onClick={() =>
+                    setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
+                  }
+                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
+                  style={
+                    toolsPanel === 'scale'
+                      ? { color: 'var(--accent)' }
+                      : undefined
+                  }
+                >
+                  <span style={{ color: 'var(--accent)' }}>
+                    <ScaleIcon />
+                  </span>
+                  Scale Parts
+                </button>
+                <div
+                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
+                  style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
+                >
+                  <div className="pt-1.5">
+                    <ScaleControls />
+                  </div>
+                </div>
 
-        {/* Save */}
-        <ToolbarSection
-          icon={<span>↑</span>}
-          label={
-            saveStatus === 'saving'
-              ? '…'
-              : saveStatus === 'saved'
-                ? 'Saved'
-                : saveStatus === 'error'
-                  ? 'Error'
-                  : 'Save'
-          }
-          primary={saveStatus === 'idle'}
-          disabled={saveStatus === 'saving' || frames.length === 0}
-          onClick={save}
-          title="Save animation"
-        />
-      </PageToolbar>
+                <button
+                  onClick={() => setShowAnchors((v) => !v)}
+                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
+                  style={showAnchors ? { color: 'var(--accent)' } : undefined}
+                >
+                  {showAnchors ? '⊙ Hide Joints' : '⊙ Show Joints'}
+                </button>
+              </div>
+            }
+          />
 
-      {/* Canvas area */}
-      <div className="flex flex-1 items-center justify-center p-4">
-        <AnimationCanvas
-          frames={scaledFrames}
-          svgImages={svgImages}
-          shifts={shifts}
-          scales={scales}
-          playing={playing}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          showAnchors={showAnchors}
-          bgColor={previewBgColor}
-          previewScale={previewScale}
-        />
-      </div>
+          {/* Preview */}
+          <ToolbarSection
+            icon={<PreviewIcon />}
+            label="Preview"
+            onClick={() => toggle('preview')}
+            dropdownOpen={openId === 'preview'}
+            onDropdownClose={close}
+            inlineContent={
+              <input
+                type="color"
+                value={previewBgColor}
+                onChange={(e) => setPreviewBgColor(e.target.value)}
+                className="h-5 w-6 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+                title="Canvas background colour"
+              />
+            }
+            dropdownContent={
+              <div className="flex flex-col gap-2 w-full">
+                <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
+                  <span>Background</span>
+                  <input
+                    type="color"
+                    value={previewBgColor}
+                    onChange={(e) => setPreviewBgColor(e.target.value)}
+                    className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+                    title="Canvas background colour"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
+                  <div className="flex items-center justify-between">
+                    <span>Size</span>
+                    <span className="font-mono text-[10px]">
+                      {Math.round(previewScale * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.25"
+                    max="2"
+                    step="0.05"
+                    value={previewScale}
+                    onChange={(e) =>
+                      setPreviewScale(parseFloat(e.target.value))
+                    }
+                    className="w-full accent-accent"
+                  />
+                </label>
+              </div>
+            }
+          />
+
+          <ToolbarSpacer />
+
+          {/* Save */}
+          <ToolbarSection
+            icon={<span>↑</span>}
+            label={
+              saveStatus === 'saving'
+                ? '…'
+                : saveStatus === 'saved'
+                  ? 'Saved'
+                  : saveStatus === 'error'
+                    ? 'Error'
+                    : 'Save'
+            }
+            primary={saveStatus === 'idle'}
+            disabled={saveStatus === 'saving' || frames.length === 0}
+            onClick={save}
+            title="Save animation"
+          />
+        </PageToolbar>
+
+        {/* Canvas area */}
+        <div className="flex flex-1 items-center justify-center p-4">
+          <AnimationCanvas
+            frames={scaledFrames}
+            svgImages={svgImages}
+            shifts={shifts}
+            scales={scales}
+            playing={playing}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            showAnchors={showAnchors}
+            bgColor={previewBgColor}
+            previewScale={previewScale}
+          />
+        </div>
+      </ToolbarLayout>
     </main>
   );
 }

@@ -13,14 +13,13 @@ export async function NavBar() {
     <header
       className="sticky top-0 z-50"
       style={{
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'var(--surface-raised)',
         borderBottom: '2px solid var(--border-strong)',
       }}
     >
       <div className="flex items-center justify-between px-3 sm:px-5 py-2">
         {/* Left: nav dropdown + title */}
         <div className="flex items-center gap-2">
-          {user && <NavDropdown />}
           <Link
             href="/"
             className="font-display font-bold tracking-wide uppercase text-sm sm:text-base shrink-0"
@@ -28,6 +27,7 @@ export async function NavBar() {
           >
             Living Sketch
           </Link>
+          {user && <NavDropdown />}
         </div>
 
         {/* Right: user + sign-out */}

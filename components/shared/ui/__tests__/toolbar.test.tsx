@@ -1,11 +1,27 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
+  ToolbarLayout,
   PageToolbar,
   ToolbarSection,
   ToolbarSpacer,
   SegmentedControl,
 } from '@/components/shared/ui/toolbar';
+
+// matchMedia is required by ToolbarLayout
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 describe('SegmentedControl', () => {
   it('renders all options', () => {
@@ -63,6 +79,30 @@ describe('SegmentedControl', () => {
     );
     const btn = screen.getByText('eraser');
     expect(btn.style.backgroundColor).toBe('var(--danger)');
+  });
+});
+
+describe('ToolbarLayout', () => {
+  it('renders children', () => {
+    render(
+      <ToolbarLayout>
+        <span>layout child</span>
+      </ToolbarLayout>,
+    );
+    expect(screen.getByText('layout child')).toBeInTheDocument();
+  });
+
+  it('renders PageToolbar and content inside layout', () => {
+    render(
+      <ToolbarLayout>
+        <PageToolbar>
+          <span>toolbar</span>
+        </PageToolbar>
+        <div>content</div>
+      </ToolbarLayout>,
+    );
+    expect(screen.getByText('toolbar')).toBeInTheDocument();
+    expect(screen.getByText('content')).toBeInTheDocument();
   });
 });
 
@@ -140,6 +180,41 @@ describe('ToolbarSection', () => {
   it('disables the button', () => {
     render(<ToolbarSection icon={<span>✓</span>} disabled onClick={vi.fn()} />);
     expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('shows chevron when dropdownContent is provided', () => {
+    render(
+      <ToolbarSection
+        icon={<span>☆</span>}
+        label="Filter"
+        onClick={vi.fn()}
+        dropdownOpen={false}
+        onDropdownClose={vi.fn()}
+        dropdownContent={<span>Options</span>}
+      />,
+    );
+    // Chevron text should be present (▼ when closed)
+    expect(screen.getByRole('button').textContent).toContain('▼');
+  });
+
+  it('does not show chevron when there is no dropdownContent', () => {
+    render(
+      <ToolbarSection icon={<span>☆</span>} label="Action" onClick={vi.fn()} />,
+    );
+    expect(screen.getByRole('button').textContent).not.toContain('▼');
+    expect(screen.getByRole('button').textContent).not.toContain('▲');
+  });
+
+  it('renders inline content', () => {
+    render(
+      <ToolbarSection
+        icon={<span>☆</span>}
+        label="Layout"
+        onClick={vi.fn()}
+        inlineContent={<span>Inline</span>}
+      />,
+    );
+    expect(screen.getByText('Inline')).toBeInTheDocument();
   });
 });
 
