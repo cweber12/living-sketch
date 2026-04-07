@@ -82,6 +82,8 @@ export function useDropdown() {
 }
 
 /* ── Constants ─────────────────────────────────────────────────────── */
+/** Approximate height of the sticky NavBar (px) — toolbar must sit below it */
+const NAVBAR_H = 44;
 /** Height of the top toolbar in desktop mode (px) */
 const TOOLBAR_H = 48;
 /** Width of the side toolbar (px) */
@@ -305,7 +307,7 @@ export function PageToolbar({ children }: { children: ReactNode }) {
     <div
       style={{
         position: 'fixed',
-        ...(isBottom ? { bottom: 0 } : { top: 0 }),
+        ...(isBottom ? { bottom: 0 } : { top: NAVBAR_H }),
         left: 0,
         right: 0,
         height: collapsed && !isBottom ? 0 : toolbarH,
@@ -607,7 +609,9 @@ export function ToolbarSection({
 
   /* ── Top mode button ── */
   return (
-    <div className={`flex items-stretch ${className}`}>
+    <div
+      className={`flex items-stretch ${!isMobile ? 'flex-1' : ''} ${className}`}
+    >
       <button
         ref={btnRef}
         onClick={onClick}

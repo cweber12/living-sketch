@@ -63,9 +63,9 @@ export const BodyIcon = ({
     xmlns="http://www.w3.org/2000/svg"
     aria-labelledby="accessibilityHumanIconTitle"
     stroke={color || 'currentColor'}
-    stroke-width={SVG_LINE_WIDTH.line}
-    stroke-linecap="round"
-    stroke-linejoin="round"
+    strokeWidth={SVG_LINE_WIDTH.line}
+    strokeLinecap="round"
+    strokeLinejoin="round"
     fill="none"
     color={color || 'currentColor'}
   >

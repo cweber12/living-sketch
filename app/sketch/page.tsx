@@ -118,7 +118,14 @@ export default function SketchPage() {
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH);
   const [isEraser, setIsEraser] = useState(false);
 
-  const [armPose, setArmPose] = useState<ArmPose>('up');
+  const [armPose, setArmPose] = useState<ArmPose>(() => {
+    if (typeof window === 'undefined') return 'up';
+    // Mobile portrait defaults to arms-down; landscape and desktop default to arms-up
+    return window.innerWidth >= MOBILE_BP ||
+      window.matchMedia('(orientation: landscape)').matches
+      ? 'up'
+      : 'down';
+  });
   const [viewMode, setViewMode] = useState<ViewMode>('body');
   const [focusIdx, setFocusIdx] = useState(0);
   const [tool, setTool] = useState<ShapeTool>('pen');
@@ -126,7 +133,10 @@ export default function SketchPage() {
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
   const { openId, toggle, close } = useDropdown();
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(() =>
+    // On mobile, start zoomed in so head+torso fill the initial viewport
+    typeof window !== 'undefined' && window.innerWidth < MOBILE_BP ? 1.5 : 1,
+  );
   const [usedColors, setUsedColors] = useState<string[]>([]);
   const backInitialised = useRef(false);
   const [showCopyFront, setShowCopyFront] = useState(false);
@@ -153,7 +163,7 @@ export default function SketchPage() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const effectiveArms: ArmPose = isMobile ? 'down' : armPose;
+  const effectiveArms: ArmPose = armPose; // orientation-managed via state
   const focusPart = PARTS_ORDER[focusIdx];
 
   const {
@@ -167,6 +177,32 @@ export default function SketchPage() {
     rotatePartCanvas,
     saveToSession,
   } = useSketchCanvasRig();
+
+  // Stable ref to current armPose so the orientation effect below can read it
+  // without re-subscribing every time armPose changes.
+  const armPoseRef = useRef<ArmPose>(armPose);
+  armPoseRef.current = armPose;
+
+  // Auto-rotate arm canvases when mobile orientation changes
+  useEffect(() => {
+    if (!isMobile) return;
+    const mq = window.matchMedia('(orientation: landscape)');
+    const update = () => {
+      const targetPose: ArmPose = mq.matches ? 'up' : 'down';
+      if (targetPose === armPoseRef.current) return;
+      const sides: Side[] = ['front', 'back'];
+      const leftDeg: 90 | -90 = targetPose === 'down' ? -90 : 90;
+      const rightDeg: 90 | -90 = targetPose === 'down' ? 90 : -90;
+      for (const s of sides) {
+        for (const part of LEFT_ARM_PARTS) rotatePartCanvas(s, part, leftDeg);
+        for (const part of RIGHT_ARM_PARTS) rotatePartCanvas(s, part, rightDeg);
+      }
+      setArmPose(targetPose);
+      saveToSession();
+    };
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, [isMobile, rotatePartCanvas, saveToSession]);
 
   /**
    * Change arm pose: rotate arm/hand canvases to match new orientation.
@@ -532,36 +568,6 @@ export default function SketchPage() {
                     />
                   </>
                 )}
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Zoom
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1 accent-accent"
-                    title="Canvas zoom"
-                  />
-                  <span
-                    className="text-[10px] tabular-nums w-8 shrink-0"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {Math.round(zoom * 100)}%
-                  </span>
-                </div>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
-                >
-                  Reset
-                </button>
               </div>
             }
           />
@@ -833,6 +839,92 @@ export default function SketchPage() {
             }
           />
 
+          {/* Zoom */}
+          <ToolbarSection
+            icon={
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="6.5"
+                  cy="6.5"
+                  r="4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M11 11l2.5 2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M5 6.5h3M6.5 5v3"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            }
+            label="Zoom"
+            active={zoom !== 1}
+            onClick={() => toggle('zoom')}
+            dropdownOpen={openId === 'zoom'}
+            onDropdownClose={close}
+            inlineContent={
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0.5}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-20 accent-accent"
+                  title="Canvas zoom"
+                />
+                <span
+                  className="text-[10px] tabular-nums shrink-0 w-8"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  {Math.round(zoom * 100)}%
+                </span>
+              </div>
+            }
+            dropdownContent={
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="flex-1 accent-accent"
+                    title="Canvas zoom"
+                  />
+                  <span
+                    className="text-[10px] tabular-nums shrink-0 w-8"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    {Math.round(zoom * 100)}%
+                  </span>
+                </div>
+                <button
+                  onClick={() => setZoom(1)}
+                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+                >
+                  Reset
+                </button>
+              </div>
+            }
+          />
+
           {/* Save */}
           <ToolbarSection
             icon={<FridgeIcon />}
@@ -860,21 +952,23 @@ export default function SketchPage() {
               viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
             }
           >
-            <div className="flex-1 overflow-auto flex justify-center px-2 sm:px-4 py-3">
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateAreas: gridTemplate,
-                  gridTemplateColumns: gridCols,
-                  gridTemplateRows: gridRows,
-                  gap: isMobile ? '2px' : '4px',
-                  transform: `scale(${zoom})`,
-                  transformOrigin: 'top center',
-                }}
-              >
-                {(['front', 'back'] as Side[]).flatMap((s) =>
-                  BODY_PARTS.map((part) => renderCanvas(s, part)),
-                )}
+            <div className="flex-1 overflow-auto">
+              {/* min-w-max + flex justify-center: centers grid when it fits; allows scroll in both axes when zoomed */}
+              <div className="min-w-max flex justify-center px-2 sm:px-4 py-3">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateAreas: gridTemplate,
+                    gridTemplateColumns: gridCols,
+                    gridTemplateRows: gridRows,
+                    gap: isMobile ? '2px' : '4px',
+                    zoom: zoom,
+                  }}
+                >
+                  {(['front', 'back'] as Side[]).flatMap((s) =>
+                    BODY_PARTS.map((part) => renderCanvas(s, part)),
+                  )}
+                </div>
               </div>
             </div>
           </div>

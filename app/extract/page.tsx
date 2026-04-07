@@ -522,51 +522,114 @@ export default function ExtractPage() {
 
           {/* ── Source cards (initial state) ── */}
           {!isLoading && !sourceSelected && !captureComplete && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-8">
-              <p
-                className="text-[11px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                Select a source
-              </p>
-              <div className="flex gap-6">
-                <button
-                  onClick={() => {
-                    setSource('live');
-                    setSourceSelected(true);
-                  }}
-                  className="flex flex-col items-center gap-4 p-8 rounded-xl transition-all"
-                  style={{
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-raised)',
-                    color: 'var(--fg-muted)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <BodyRunningIcon />
-                  <span className="text-xs uppercase tracking-widest font-semibold">
-                    Live
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setSource('browse');
-                    setSourceSelected(true);
-                    fileInputRef.current?.click();
-                  }}
-                  className="flex flex-col items-center gap-4 p-8 rounded-xl transition-all"
-                  style={{
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-raised)',
-                    color: 'var(--fg-muted)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <FridgeOpenIcon />
-                  <span className="text-xs uppercase tracking-widest font-semibold">
-                    Browse
-                  </span>
-                </button>
+            <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+              <div className="flex flex-col items-center gap-8 max-w-2xl w-full">
+                {/* Header */}
+                <div className="text-center">
+                  <p
+                    className="text-xs font-bold tracking-[0.35em] uppercase mb-2"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    The Extraction Chamber
+                  </p>
+                  <p
+                    className="text-sm leading-relaxed max-w-sm"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Isolate the kinetic signal. Choose a source to begin
+                    capture.
+                  </p>
+                </div>
+
+                {/* Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                  {/* Live card */}
+                  <button
+                    onClick={() => {
+                      setSource('live');
+                      setSourceSelected(true);
+                    }}
+                    className="card-themed rounded-xl p-6 flex flex-col gap-4 group text-left transition-all hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <div
+                      className="w-12 h-12 flex items-center justify-center rounded-lg shrink-0"
+                      style={{ backgroundColor: 'var(--accent-faint)' }}
+                    >
+                      <BodyRunningIcon />
+                    </div>
+                    <div>
+                      <p
+                        className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        I — Live
+                      </p>
+                      <h3
+                        className="font-display font-bold uppercase text-lg mb-2"
+                        style={{ color: 'var(--fg)' }}
+                      >
+                        Living Subject
+                      </h3>
+                      <p
+                        className="text-sm leading-relaxed"
+                        style={{ color: 'var(--fg-muted)' }}
+                      >
+                        Transmit motion directly from a living subject via
+                        camera feed in real time.
+                      </p>
+                    </div>
+                    <span
+                      className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Begin Capture →
+                    </span>
+                  </button>
+
+                  {/* Browse card */}
+                  <button
+                    onClick={() => {
+                      setSource('browse');
+                      setSourceSelected(true);
+                      fileInputRef.current?.click();
+                    }}
+                    className="card-themed rounded-xl p-6 flex flex-col gap-4 group text-left transition-all hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <div
+                      className="w-12 h-12 flex items-center justify-center rounded-lg shrink-0"
+                      style={{ backgroundColor: 'var(--accent-faint)' }}
+                    >
+                      <FridgeOpenIcon />
+                    </div>
+                    <div>
+                      <p
+                        className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        II — Archive
+                      </p>
+                      <h3
+                        className="font-display font-bold uppercase text-lg mb-2"
+                        style={{ color: 'var(--fg)' }}
+                      >
+                        Motion Recording
+                      </h3>
+                      <p
+                        className="text-sm leading-relaxed"
+                        style={{ color: 'var(--fg-muted)' }}
+                      >
+                        Recover a kinetic sequence from a preserved video
+                        recording.
+                      </p>
+                    </div>
+                    <span
+                      className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Select Recording →
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
