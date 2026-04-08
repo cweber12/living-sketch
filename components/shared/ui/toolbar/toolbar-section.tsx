@@ -113,7 +113,7 @@ export function ToolbarSection({
           onMouseLeave={() => setHovered(false)}
           className={`flex flex-col items-center justify-center gap-1 w-full transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
           style={{
-            padding: '10px 8px 8px',
+            padding: '6px 4px 4px',
             border: 'none',
             borderBottom: '1px solid var(--border)',
             borderRadius: 0,
@@ -159,7 +159,7 @@ export function ToolbarSection({
   /* ── Top / mobile mode button ── */
   return (
     <div
-      className={`flex items-stretch ${!isMobile ? 'flex-1' : ''} ${className}`}
+      className={`flex items-stretch ${!isMobile ? 'flex-1' : 'flex-1'} ${className}`}
     >
       <button
         ref={btnRef}
@@ -174,8 +174,8 @@ export function ToolbarSection({
         className={`flex items-center justify-center transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
         style={{
           padding: isMobile ? '4px 12px' : '4px 10px',
-          minWidth: isMobile ? 52 : 44,
-          minHeight: isMobile ? 52 : 44,
+          minWidth: isMobile ? 52 : 'auto',
+          minHeight: isMobile ? 52 : 'auto',
           gap: 4,
           border: 'none',
           borderLeft: '1px solid var(--border)',

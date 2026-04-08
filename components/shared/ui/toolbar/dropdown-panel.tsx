@@ -132,7 +132,7 @@ export function DropdownPanel({
       style={{
         ...style,
         backgroundColor: 'var(--overlay-faint)',
-        border: '1px solid var(--border-strong)',
+        //border: '1px solid var(--border-strong)',
         borderRadius: isMobilePanel
           ? 0
           : isSidePanel

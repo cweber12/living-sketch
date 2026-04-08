@@ -10,8 +10,8 @@ export const FridgeClosedIcon = ({
   color?: string;
 }) => (
   <svg
-    width={size || '20px'}
-    height={size || '20px'}
+    width={size || '18px'}
+    height={size || '18px'}
     viewBox="0 0 64 64"
     enableBackground="new 0 0 64 64"
     id="Layer_1"

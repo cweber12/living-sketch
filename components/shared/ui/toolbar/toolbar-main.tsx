@@ -26,7 +26,7 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
 /** Height of the sticky NavBar (px) */
 export const NAVBAR_H = 48;
 /** Height of the top toolbar in desktop mode (px) */
-export const TOOLBAR_H = 48;
+export const TOOLBAR_H = 38;
 /** Width of the side toolbar (px) */
 export const TOOLBAR_W = 56;
 /** Height of the mobile bottom toolbar (px) */
@@ -357,12 +357,13 @@ export function PageToolbar({
           zIndex: 40,
           overflow: 'hidden',
           transition: 'height 200ms ease',
-          backgroundColor: 'var(--surface)',
+          backgroundColor: 'var(--surface-inset)',
           borderBottom: isBottom ? undefined : '2px solid var(--border-strong)',
           borderTop: isBottom ? '2px solid var(--border-strong)' : undefined,
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'stretch',
+          justifyContent: 'center',
           overflowX: isBottom ? 'auto' : 'hidden',
           // Safe area for phones with home bar
           paddingBottom: isBottom

@@ -19,48 +19,18 @@ import {
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/console/canvas/animation-canvas';
-import ShiftControls from '@/components/console/controls/shift-controls';
-import ScaleControls from '@/components/console/controls/scale-controls';
-import FileList from '@/components/console/controls/file-list';
 /* Toolbar components */
 import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
 import {
   PageToolbar,
   ToolbarLayout,
 } from '@/components/shared/ui/toolbar/toolbar-main';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
-import { BrainIcon } from '@/components/shared/icons/brain';
-import { PersonFrontIcon } from '@/components/shared/icons/person-view';
-import { PanelIcon } from '@/components/console/icons/panel';
-import { FilesIcon } from '@/components/console/icons/files-icon';
-import { ShiftIcon } from '@/components/console/icons/shift-icon';
-import { ScaleIcon } from '@/components/console/icons/scale-icon';
-import { PreviewIcon } from '@/components/console/icons/preview-icon';
+import { CollectionSection } from '@/components/console/toolbar/collection';
+import { ModifySection } from '@/components/console/toolbar/modify';
+import { PreviewSection } from '@/components/console/toolbar/preview';
 
 const CANVAS_W = 640;
 const CANVAS_H = 480;
-
-function formatFileTimestamp(name: string): string {
-  // ISO-like: "2026-03-31T13-16-35-194Z" or "capture-2026-03-31T05-36-51-828Z.json"
-  const isoFixed = name
-    .replace(/^capture-/, '')
-    .replace(/\.json$/, '')
-    .replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, 'T$1:$2:$3.$4Z');
-  const d = new Date(isoFixed);
-  if (!isNaN(d.getTime())) {
-    return d.toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  }
-  return name;
-}
-
-// formatCreationLabel removed — FileList now shows plain timestamps for all files
 
 export default function ConsolePage() {
   /* ── State ──────────────────────────────────────────────────────── */
@@ -76,14 +46,10 @@ export default function ConsolePage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale'>('shift');
   const [showAnchors, setShowAnchors] = useState(false);
   const { isOpen, toggle, close } = useDropdown();
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
-  const [fileView, setFileView] = useState<'activity' | 'creations'>(
-    'activity',
-  );
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -251,157 +217,32 @@ export default function ConsolePage() {
           saveStatus={saveStatus}
           saveDisabled={saveStatus === 'saving' || frames.length === 0}
         >
-          {/* Collection */}
-          <ToolbarSection
-            icon={<FilesIcon />}
-            label="Collection"
-            onClick={() => toggle('files')}
-            dropdownOpen={isOpen('files')}
-            onDropdownClose={() => close('files')}
-            dropdownWidth={300}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <SegmentedControl
-                  options={['activity', 'creations'] as const}
-                  value={fileView}
-                  onChange={setFileView}
-                  labels={{
-                    activity: (
-                      <span className="flex items-center justify-center gap-1">
-                        <BrainIcon />
-                        Extractions
-                      </span>
-                    ),
-                    creations: (
-                      <span className="flex items-center justify-center gap-1">
-                        <PersonFrontIcon size={10} />
-                        Creations
-                      </span>
-                    ),
-                  }}
-                />
-                <div className="overflow-y-auto max-h-[40vh]">
-                  {fileView === 'activity' ? (
-                    <FileList
-                      bucket="landmarks"
-                      selected={landmarkFile}
-                      onSelect={loadLandmarks}
-                      formatLabel={(name) => formatFileTimestamp(name)}
-                      onDelete={(f) => {
-                        if (landmarkFile === f.key) setLandmarkFile(null);
-                      }}
-                    />
-                  ) : (
-                    <FileList
-                      bucket="svgs"
-                      selected={svgFile}
-                      onSelect={loadSvgs}
-                      formatLabel={(name) => formatFileTimestamp(name)}
-                      onDelete={(f) => {
-                        if (svgFile === f.key) setSvgFile(null);
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            }
+          <CollectionSection
+            landmarkFile={landmarkFile}
+            onLandmarkSelect={loadLandmarks}
+            onLandmarkDeselect={() => setLandmarkFile(null)}
+            svgFile={svgFile}
+            onSvgSelect={loadSvgs}
+            onSvgDeselect={() => setSvgFile(null)}
+            isOpen={isOpen('files')}
+            onToggle={() => toggle('files')}
+            onClose={() => close('files')}
           />
-
-          {/* Tools */}
-          <ToolbarSection
-            icon={<PanelIcon />}
-            label="Modify"
-            onClick={() => toggle('tools')}
-            dropdownOpen={isOpen('tools')}
-            onDropdownClose={() => close('tools')}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                {/* SegmentedControl + Show Joints inline */}
-                <div className="flex items-center gap-2">
-                  <SegmentedControl
-                    options={['shift', 'scale'] as const}
-                    value={toolsPanel}
-                    onChange={setToolsPanel}
-                    labels={{
-                      shift: (
-                        <span className="flex items-center gap-1">
-                          <ShiftIcon /> Shift
-                        </span>
-                      ),
-                      scale: (
-                        <span className="flex items-center gap-1">
-                          <ScaleIcon /> Scale
-                        </span>
-                      ),
-                    }}
-                  />
-                  <button
-                    onClick={() => setShowAnchors((v) => !v)}
-                    title={showAnchors ? 'Hide Joints' : 'Show Joints'}
-                    aria-label={showAnchors ? 'Hide Joints' : 'Show Joints'}
-                    style={{
-                      padding: '3px 7px',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      backgroundColor: showAnchors
-                        ? 'transparent'
-                        : 'var(--surface-raised)',
-                      color: showAnchors ? 'var(--accent)' : 'var(--fg-muted)',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      lineHeight: 1,
-                      flexShrink: 0,
-                    }}
-                  >
-                    ⊙
-                  </button>
-                </div>
-                {toolsPanel === 'shift' && <ShiftControls />}
-                {toolsPanel === 'scale' && <ScaleControls />}
-              </div>
-            }
+          <ModifySection
+            showAnchors={showAnchors}
+            onShowAnchorsChange={setShowAnchors}
+            isOpen={isOpen('tools')}
+            onToggle={() => toggle('tools')}
+            onClose={() => close('tools')}
           />
-
-          {/* Preview */}
-          <ToolbarSection
-            icon={<PreviewIcon />}
-            label="Preview"
-            onClick={() => toggle('preview')}
-            dropdownOpen={isOpen('preview')}
-            onDropdownClose={() => close('preview')}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
-                  <span>Background</span>
-                  <input
-                    type="color"
-                    value={previewBgColor}
-                    onChange={(e) => setPreviewBgColor(e.target.value)}
-                    className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-                    title="Canvas background colour"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
-                  <div className="flex items-center justify-between">
-                    <span>Size</span>
-                    <span className="font-mono text-[10px]">
-                      {Math.round(previewScale * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.25"
-                    max="2"
-                    step="0.05"
-                    value={previewScale}
-                    onChange={(e) =>
-                      setPreviewScale(parseFloat(e.target.value))
-                    }
-                    className="w-full accent-accent"
-                  />
-                </label>
-              </div>
-            }
+          <PreviewSection
+            bgColor={previewBgColor}
+            onBgColorChange={setPreviewBgColor}
+            scale={previewScale}
+            onScaleChange={setPreviewScale}
+            isOpen={isOpen('preview')}
+            onToggle={() => toggle('preview')}
+            onClose={() => close('preview')}
           />
         </PageToolbar>
 

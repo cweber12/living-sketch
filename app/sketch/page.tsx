@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -12,16 +12,24 @@ import {
   ToolbarLayout,
   PageToolbar,
 } from '@/components/shared/ui/toolbar/toolbar-main';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
 import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
-import { Flask2Icon } from '@/components/sketch/icons/flask-2';
-import { TrashIcon } from '@/components/shared/icons/trash';
-import { UndoIcon } from '@/components/shared/icons/undo';
-import { TableIcon } from '@/components/sketch/icons/table';
-import { DrillIcon } from '@/components/shared/icons/drill';
-import { OptionsIcon } from '@/components/shared/icons/options';
+import { HistorySection } from '@/components/sketch/toolbar/history';
+import {
+  LayoutSection,
+  type ArmPose,
+  type ViewMode,
+} from '@/components/sketch/toolbar/layout';
+import { ToolsSection } from '@/components/sketch/toolbar/tools';
+import {
+  OptionsSection,
+  DEFAULT_BRUSH,
+} from '@/components/sketch/toolbar/options';
+import {
+  ColorSection,
+  DEFAULT_COLOR_LIGHT,
+  DEFAULT_COLOR_DARK,
+} from '@/components/sketch/toolbar/color';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
@@ -31,26 +39,12 @@ import {
   PARTS_ORDER,
 } from '@/components/sketch/sketch-constants';
 
-const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [
-  { value: 'pen', label: '✏ Pen' },
-  { value: 'line', label: '╱ Line' },
-  { value: 'rect', label: '▭ Rectangle' },
-  { value: 'circle', label: '○ Circle' },
-  { value: 'ellipse', label: '⬭ Ellipse' },
-];
-
 const SESSION_STATE_KEY = 'sketch-page-state';
 
-const DEFAULT_COLOR_LIGHT = '#000000';
-const DEFAULT_COLOR_DARK = '#ffffff';
-const DEFAULT_BRUSH = 6;
 const DEFAULT_CANVAS_SIZE = 110;
 const MOBILE_BP = 1024;
 
-type ArmPose = 'up' | 'down';
-type ViewMode = 'body' | 'single';
-
-/* ─── Page ────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 /** Rotate a square data-URL image 90 degrees CW (+90) or CCW (-90) */
 function rotateSquareDataURL(
@@ -202,7 +196,7 @@ export default function SketchPage() {
   }, []);
 
   // Persist page state to sessionStorage whenever relevant values change.
-  // armPose is intentionally excluded — it must always reflect the actual device
+  // armPose is intentionally excluded â€” it must always reflect the actual device
   // orientation on load, not a stale persisted value.
   useEffect(() => {
     try {
@@ -226,7 +220,7 @@ export default function SketchPage() {
 
   // After hydration: correct arm pose to match the actual device orientation.
   // armPose initialises as 'up' (SSR-safe); this effect fixes it on the client.
-  // We intentionally don't canvas-rotate here — canvases are still loading from
+  // We intentionally don't canvas-rotate here â€” canvases are still loading from
   // session at this point. The existing orientation-change listener handles
   // subsequent rotations.
 
@@ -280,7 +274,7 @@ export default function SketchPage() {
 
   /**
    * Change arm pose: rotate arm/hand canvases to match new orientation.
-   * Front: L-arms CCW (-90°), R-arms CW (+90°) going to arms-down.
+   * Front: L-arms CCW (-90Â°), R-arms CW (+90Â°) going to arms-down.
    * Reverse for going back to arms-up.
    */
   const handleArmPoseChange = useCallback(
@@ -386,7 +380,7 @@ export default function SketchPage() {
       // the API would return HTTP 200 with an empty paths array.
       if (!json.paths?.length)
         throw new Error(
-          'No images saved — canvas export may not be supported on this browser.',
+          'No images saved â€” canvas export may not be supported on this browser.',
         );
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -410,7 +404,7 @@ export default function SketchPage() {
     if (idx >= 0) setFocusIdx(idx);
   }, []);
 
-  /* ── Grid sizing ── */
+  /* â”€â”€ Grid sizing â”€â”€ */
   const u = DEFAULT_CANVAS_SIZE;
   const armsUp = effectiveArms === 'up';
   const gridTemplate = armsUp ? GRID_ARMS_UP : GRID_ARMS_DOWN;
@@ -463,7 +457,7 @@ export default function SketchPage() {
         .map((v) => `${Math.round(v)}px`)
         .join(' ');
 
-  /* ── Render helpers ── */
+  /* â”€â”€ Render helpers â”€â”€ */
   const activeTool = isEraser ? 'pen' : tool;
 
   function renderCanvas(s: Side, part: BodyPartName) {
@@ -497,7 +491,7 @@ export default function SketchPage() {
           onStrokeStart={handleStrokeStart}
           onStrokeEnd={handleStrokeEnd}
         />
-        {/* L / R shoulder → torso-edge indicators */}
+        {/* L / R shoulder â†’ torso-edge indicators */}
         {part === 'torso' && (
           <>
             <span
@@ -520,7 +514,7 @@ export default function SketchPage() {
 
   const focusProps = PART_PROPORTIONS[focusPart];
 
-  // In armsDown mode, arm/hand parts are rotated 90° — swap aspect ratio
+  // In armsDown mode, arm/hand parts are rotated 90Â° â€” swap aspect ratio
   const ARM_PART_SET = new Set<BodyPartName>([
     'leftUpperArm',
     'leftLowerArm',
@@ -530,358 +524,77 @@ export default function SketchPage() {
     'rightHand',
   ]);
   // When arms are in T-pose (up), arm canvases are landscape; flip the aspect ratio.
-  // When arms are down (mobile), canvases are portrait — use PART_PROPORTIONS directly.
+  // When arms are down (mobile), canvases are portrait â€” use PART_PROPORTIONS directly.
   const effectiveFocusProps =
     ARM_PART_SET.has(focusPart) && effectiveArms === 'up'
       ? { w: focusProps.h, h: focusProps.w }
       : focusProps;
 
-  /* ── Toolbar content ── */
+  /* â”€â”€ Toolbar content â”€â”€ */
 
   return (
     <main className="flex flex-1 w-full overflow-hidden">
       <ToolbarLayout>
-        {/* ── Unified toolbar ── */}
+        {/* â”€â”€ Unified toolbar â”€â”€ */}
         <PageToolbar
           onSave={handleSave}
           saveStatus={saveStatus}
           saveDisabled={saveStatus === 'saving'}
         >
-          <div className="flex items-center gap-1">
-            {/* Undo */}
-            <ToolbarSection
-              icon={<UndoIcon />}
-              label="Undo"
-              onClick={handleUndo}
-              title="Undo last stroke"
-            />
-            {/* Clear All */}
-            <ToolbarSection
-              icon={<TrashIcon />}
-              label="Clear"
-              danger
-              onClick={() => toggle('clear')}
-              dropdownOpen={isOpen('clear')}
-              onDropdownClose={() => close('clear')}
-              dropdownContent={
-                <div className="flex flex-col gap-2">
-                  <span
-                    className="text-[10px] uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Clear all canvases?
-                  </span>
-                  <button
-                    onClick={() => {
-                      clearAll();
-                      close('clear');
-                    }}
-                    className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
-                    style={{
-                      backgroundColor: 'var(--danger)',
-                      color: '#fff',
-                    }}
-                  >
-                    ✕ Clear All
-                  </button>
-                </div>
-              }
-            />
-          </div>
-          {/* Layout */}
-          <ToolbarSection
-            icon={<TableIcon />}
-            label="Layout"
-            onClick={() => toggle('layout')}
-            dropdownOpen={isOpen('layout')}
-            onDropdownClose={() => close('layout')}
-            dropdownContent={
-              <div className="flex flex-col gap-1.5">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Side
-                </span>
-                <SegmentedControl
-                  options={['front', 'back'] as Side[]}
-                  value={side}
-                  onChange={handleSideChange}
-                  labels={{ front: 'Front', back: 'Back' }}
-                />
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Body
-                </span>
-                <SegmentedControl
-                  options={['body', 'single'] as ViewMode[]}
-                  value={viewMode}
-                  onChange={setViewMode}
-                  labels={{ body: 'Full', single: 'Parts' }}
-                />
-                {viewMode === 'single' && (
-                  <select
-                    value={focusIdx}
-                    onChange={(e) => setFocusIdx(Number(e.target.value))}
-                    className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-                    style={{
-                      backgroundColor: 'var(--bg)',
-                      color: 'var(--fg)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {PARTS_ORDER.map((p, i) => (
-                      <option key={p} value={i}>
-                        {PART_LABEL[p]}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Arm Orientation
-                </span>
-                <SegmentedControl
-                  options={['up', 'down'] as ArmPose[]}
-                  value={armPose}
-                  onChange={handleArmPoseChange}
-                  labels={{ up: 'Up', down: 'Down' }}
-                />
-              </div>
-            }
+          <HistorySection
+            onUndo={handleUndo}
+            onClearAll={clearAll}
+            isClearOpen={isOpen('clear')}
+            onClearToggle={() => toggle('clear')}
+            onClearClose={() => close('clear')}
           />
-
-          {/* Tools — shape picker */}
-          <ToolbarSection
-            icon={<DrillIcon />}
-            label="Tools"
-            onClick={() => toggle('tools')}
-            dropdownOpen={isOpen('tools')}
-            onDropdownClose={() => close('tools')}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Tool
-                </span>
-                <SegmentedControl
-                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
-                  value={isEraser ? 'erase' : 'sketch'}
-                  onChange={(v) => setIsEraser(v === 'erase')}
-                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
-                  dangerValue="erase"
-                />
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Shape Tool
-                </span>
-                <div className="flex items-center gap-2">
-                  {!isEraser && (
-                    <select
-                      value={tool}
-                      onChange={(e) => {
-                        const v = e.target.value as ShapeTool;
-                        setTool(v);
-                        if (v !== 'pen') setIsEraser(false);
-                      }}
-                      className="flex-1 min-w-0 rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-                      style={{
-                        backgroundColor: 'var(--bg)',
-                        color: 'var(--fg)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      {SHAPE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {isEraser && (
-                    <span
-                      className="flex-1 text-[10px] uppercase tracking-widest"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      Eraser active
-                    </span>
-                  )}
-                </div>
-              </div>
-            }
+          <LayoutSection
+            side={side}
+            onSideChange={handleSideChange}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            focusIdx={focusIdx}
+            onFocusIdxChange={setFocusIdx}
+            armPose={armPose}
+            onArmPoseChange={handleArmPoseChange}
+            isOpen={isOpen('layout')}
+            onToggle={() => toggle('layout')}
+            onClose={() => close('layout')}
           />
-
-          {/* Options — sketch/erase, stroke width, zoom */}
-          <ToolbarSection
-            icon={<OptionsIcon />}
-            label="Options"
-            onClick={() => toggle('options')}
-            dropdownOpen={isOpen('options')}
-            onDropdownClose={() => close('options')}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Stroke Width
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={1}
-                    max={40}
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                    className="flex-1 accent-accent"
-                    title="Brush size"
-                  />
-                  <div
-                    className="shrink-0 flex items-center justify-center"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <div
-                      style={{
-                        width: Math.min(brushSize, 28),
-                        height: Math.min(brushSize, 28),
-                        borderRadius: '50%',
-                        backgroundColor: isEraser
-                          ? 'var(--danger)'
-                          : 'var(--accent)',
-                        opacity: isEraser ? 0.5 : 0.85,
-                        border: '1px solid var(--border-strong)',
-                        flexShrink: 0,
-                      }}
-                    />
-                  </div>
-                </div>
-                <span
-                  className="text-[9px] uppercase tracking-widest mt-1"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Zoom
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min={0.5}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1 accent-accent"
-                    title="Canvas zoom"
-                  />
-                  <span
-                    className="text-[10px] tabular-nums shrink-0 w-8"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {Math.round(zoom * 100)}%
-                  </span>
-                </div>
-                <button
-                  onClick={() => setZoom(1)}
-                  className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
-                >
-                  Reset Zoom
-                </button>
-              </div>
-            }
+          <ToolsSection
+            tool={tool}
+            onToolChange={setTool}
+            isEraser={isEraser}
+            onIsEraserChange={setIsEraser}
+            isOpen={isOpen('tools')}
+            onToggle={() => toggle('tools')}
+            onClose={() => close('tools')}
           />
-
-          {/* Color */}
-          <ToolbarSection
-            icon={<Flask2Icon />}
-            label="Color"
-            onClick={() => toggle('color')}
-            dropdownOpen={isOpen('color')}
-            onDropdownClose={() => close('color')}
-            dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Color
-                </span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => {
-                      setColor(e.target.value);
-                      setIsEraser(false);
-                    }}
-                    style={{
-                      width: 48,
-                      height: 28,
-                      cursor: 'pointer',
-                      border: '1px solid var(--border)',
-                      borderRadius: 4,
-                      backgroundColor: 'transparent',
-                      padding: 0,
-                    }}
-                    aria-label="Stroke color"
-                  />
-                  <span
-                    className="text-[10px] font-mono"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    {color}
-                  </span>
-                </div>
-                {usedColors.length > 0 && (
-                  <>
-                    <span
-                      className="text-[9px] uppercase tracking-widest"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      Recent
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {usedColors.map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => {
-                            setColor(c);
-                            setIsEraser(false);
-                          }}
-                          title={c}
-                          className="rounded transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                          style={{
-                            width: 20,
-                            height: 20,
-                            padding: 0,
-                            background: 'none',
-                            flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'var(--fg-muted)',
-                          }}
-                        >
-                          <Flask2Icon size={18} secondaryColor={c} />
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            }
+          <OptionsSection
+            brushSize={brushSize}
+            onBrushSizeChange={setBrushSize}
+            isEraser={isEraser}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onZoomReset={() => setZoom(1)}
+            isOpen={isOpen('options')}
+            onToggle={() => toggle('options')}
+            onClose={() => close('options')}
+          />
+          <ColorSection
+            color={color}
+            onColorChange={setColor}
+            onEraserOff={() => setIsEraser(false)}
+            usedColors={usedColors}
+            isOpen={isOpen('color')}
+            onToggle={() => toggle('color')}
+            onClose={() => close('color')}
           />
         </PageToolbar>
 
-        {/* ── Canvas area ── */}
+        {/* â”€â”€ Canvas area â”€â”€ */}
         <div className="flex flex-col flex-1 overflow-hidden relative">
-          {/* ── BODY MODE ── */}
+          {/* â”€â”€ BODY MODE â”€â”€ */}
           <div
             className={
               viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
@@ -907,16 +620,16 @@ export default function SketchPage() {
             </div>
           </div>
 
-          {/* ── SINGLE-PART MODE ── */}
+          {/* â”€â”€ SINGLE-PART MODE â”€â”€ */}
           {viewMode === 'single' && (
             <>
               {/* Responsive single-part layout:
-                  mobile (< md) – full-width canvas, nav buttons below
-                  desktop (md+) – ◀ canvas ▶ side-by-side               */}
+                  mobile (< md) â€“ full-width canvas, nav buttons below
+                  desktop (md+) â€“ â—€ canvas â–¶ side-by-side               */}
               <div className="flex-1 flex flex-col items-stretch min-h-0 py-3">
                 {/* Canvas row */}
                 <div className="flex-1 flex items-center justify-center gap-2 px-0 md:px-2 min-h-0">
-                  {/* Prev – large screens only */}
+                  {/* Prev â€“ large screens only */}
                   <button
                     onClick={goPrev}
                     className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -927,7 +640,7 @@ export default function SketchPage() {
                     }}
                     aria-label="Previous part"
                   >
-                    ◀
+                    â—€
                   </button>
 
                   <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0 w-full">
@@ -935,7 +648,7 @@ export default function SketchPage() {
                       className="text-[10px] font-bold uppercase tracking-widest shrink-0"
                       style={{ color: 'var(--accent)' }}
                     >
-                      {PART_LABEL[focusPart]} · {side}
+                      {PART_LABEL[focusPart]} Â· {side}
                     </p>
                     <div
                       style={{
@@ -983,7 +696,7 @@ export default function SketchPage() {
                     </p>
                   </div>
 
-                  {/* Next – large screens only */}
+                  {/* Next â€“ large screens only */}
                   <button
                     onClick={goNext}
                     className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -994,11 +707,11 @@ export default function SketchPage() {
                     }}
                     aria-label="Next part"
                   >
-                    ▶
+                    â–¶
                   </button>
                 </div>
 
-                {/* Mobile nav buttons – below canvas */}
+                {/* Mobile nav buttons â€“ below canvas */}
                 <div className="flex md:hidden justify-between items-center px-6 pb-1 shrink-0 gap-4">
                   <button
                     onClick={goPrev}
@@ -1010,7 +723,7 @@ export default function SketchPage() {
                     }}
                     aria-label="Previous part"
                   >
-                    ◀{' '}
+                    â—€{' '}
                     <span className="text-[11px] font-semibold uppercase tracking-widest">
                       Prev
                     </span>
@@ -1028,7 +741,7 @@ export default function SketchPage() {
                     <span className="text-[11px] font-semibold uppercase tracking-widest">
                       Next
                     </span>{' '}
-                    ▶
+                    â–¶
                   </button>
                 </div>
               </div>
@@ -1037,7 +750,7 @@ export default function SketchPage() {
             </>
           )}
 
-          {/* ── Copy-front overlay (subsequent back visits) ── */}
+          {/* â”€â”€ Copy-front overlay (subsequent back visits) â”€â”€ */}
           {side === 'back' && showCopyFront && (
             <div className="absolute top-2 left-1.5 right-0 flex justify-start z-10 pointer-events-none">
               <div
@@ -1059,7 +772,7 @@ export default function SketchPage() {
                   }}
                   aria-label="Dismiss copy front"
                 >
-                  ✕
+                  âœ•
                 </button>
                 <button
                   onClick={() => {
