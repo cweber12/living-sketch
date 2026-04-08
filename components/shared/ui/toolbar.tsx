@@ -20,6 +20,7 @@ interface ToolbarCtxValue {
   mode: ToolbarMode;
   collapsed: boolean;
   isMobile: boolean;
+  disableAutoCollapse: boolean;
   setPreferSide: (v: boolean) => void;
   setCollapsed: (v: boolean) => void;
 }
@@ -28,6 +29,7 @@ const ToolbarCtx = createContext<ToolbarCtxValue>({
   mode: 'top',
   collapsed: false,
   isMobile: false,
+  disableAutoCollapse: false,
   setPreferSide: () => {},
   setCollapsed: () => {},
 });
@@ -101,9 +103,15 @@ const TOOLBAR_H_MOBILE = 56;
 export function ToolbarLayout({
   children,
   className = '',
+  disableAutoCollapse = false,
+  noToolbar = false,
 }: {
   children: ReactNode;
   className?: string;
+  /** Disable touch-scroll auto-collapse (e.g. pages where that gesture should not collapse the toolbar). */
+  disableAutoCollapse?: boolean;
+  /** When true, apply zero padding (the page manages whether PageToolbar renders). */
+  noToolbar?: boolean;
 }) {
   const [preferSide, setPreferSide] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -126,15 +134,24 @@ export function ToolbarLayout({
     !mounted || isMobile ? 'top' : preferSide ? 'side' : 'top';
 
   // Padding applied to the content area to offset the fixed toolbar
-  const contentStyle: React.CSSProperties = isMobile
-    ? { paddingBottom: TOOLBAR_H_MOBILE }
-    : mode === 'side'
-      ? { paddingLeft: collapsed ? 0 : TOOLBAR_W }
-      : { paddingTop: collapsed ? 0 : TOOLBAR_H };
+  const contentStyle: React.CSSProperties = noToolbar
+    ? {}
+    : isMobile
+      ? { paddingBottom: TOOLBAR_H_MOBILE }
+      : mode === 'side'
+        ? { paddingLeft: collapsed ? 0 : TOOLBAR_W }
+        : { paddingTop: collapsed ? 0 : TOOLBAR_H };
 
   return (
     <ToolbarCtx.Provider
-      value={{ mode, collapsed, isMobile, setPreferSide, setCollapsed }}
+      value={{
+        mode,
+        collapsed,
+        isMobile,
+        disableAutoCollapse,
+        setPreferSide,
+        setCollapsed,
+      }}
     >
       {/* Content area — padded to avoid being covered by fixed toolbar */}
       <div

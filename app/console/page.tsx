@@ -36,6 +36,7 @@ import { FilesIcon } from '@/components/console/icons/files-icon';
 import { ShiftIcon } from '@/components/console/icons/shift-icon';
 import { ScaleIcon } from '@/components/console/icons/scale-icon';
 import { PreviewIcon } from '@/components/console/icons/preview-icon';
+import { FridgeIcon } from '@/components/shared/icons/fridge';
 
 const CANVAS_W = 640;
 const CANVAS_H = 480;
@@ -83,6 +84,14 @@ export default function ConsolePage() {
   const [fileView, setFileView] = useState<'activity' | 'creations'>(
     'activity',
   );
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -376,9 +385,9 @@ export default function ConsolePage() {
           <ToolbarSection
             icon={<PreviewIcon />}
             label="Preview"
-            onClick={() => toggle('preview')}
-            dropdownOpen={openId === 'preview'}
-            onDropdownClose={close}
+            onClick={isMobile ? undefined : () => toggle('preview')}
+            dropdownOpen={isMobile ? false : openId === 'preview'}
+            onDropdownClose={isMobile ? undefined : close}
             inlineContent={
               <input
                 type="color"
@@ -389,43 +398,45 @@ export default function ConsolePage() {
               />
             }
             dropdownContent={
-              <div className="flex flex-col gap-2 w-full">
-                <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
-                  <span>Background</span>
-                  <input
-                    type="color"
-                    value={previewBgColor}
-                    onChange={(e) => setPreviewBgColor(e.target.value)}
-                    className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-                    title="Canvas background colour"
-                  />
-                </label>
-                <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
-                  <div className="flex items-center justify-between">
-                    <span>Size</span>
-                    <span className="font-mono text-[10px]">
-                      {Math.round(previewScale * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.25"
-                    max="2"
-                    step="0.05"
-                    value={previewScale}
-                    onChange={(e) =>
-                      setPreviewScale(parseFloat(e.target.value))
-                    }
-                    className="w-full accent-accent"
-                  />
-                </label>
-              </div>
+              isMobile ? undefined : (
+                <div className="flex flex-col gap-2 w-full">
+                  <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
+                    <span>Background</span>
+                    <input
+                      type="color"
+                      value={previewBgColor}
+                      onChange={(e) => setPreviewBgColor(e.target.value)}
+                      className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+                      title="Canvas background colour"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
+                    <div className="flex items-center justify-between">
+                      <span>Size</span>
+                      <span className="font-mono text-[10px]">
+                        {Math.round(previewScale * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.25"
+                      max="2"
+                      step="0.05"
+                      value={previewScale}
+                      onChange={(e) =>
+                        setPreviewScale(parseFloat(e.target.value))
+                      }
+                      className="w-full accent-accent"
+                    />
+                  </label>
+                </div>
+              )
             }
           />
 
           {/* Save */}
           <ToolbarSection
-            icon={<span>↑</span>}
+            icon={<FridgeIcon />}
             label={
               saveStatus === 'saving'
                 ? '…'
@@ -443,7 +454,10 @@ export default function ConsolePage() {
         </PageToolbar>
 
         {/* Canvas area */}
-        <div className="flex flex-1 items-center justify-center p-4">
+        <div
+          className="flex flex-1 items-center justify-center p-4 min-h-0 overflow-hidden"
+          style={{ backgroundColor: previewBgColor }}
+        >
           <AnimationCanvas
             frames={scaledFrames}
             svgImages={svgImages}

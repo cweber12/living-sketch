@@ -16,6 +16,7 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
   mode: 'top',
   collapsed: false,
   isMobile: false,
+  disableAutoCollapse: false,
   setPreferSide: () => {},
   setCollapsed: () => {},
 });
@@ -40,9 +41,16 @@ const TOOLBAR_H_MOBILE = 56;
 export function ToolbarLayout({
   children,
   className = '',
+  disableAutoCollapse = false,
+  noToolbar = false,
 }: {
   children: ReactNode;
   className?: string;
+  /** Disable touch-scroll auto-collapse (e.g. for pages where that scroll gesture
+   *  should not affect the toolbar). */
+  disableAutoCollapse?: boolean;
+  /** When true, apply zero padding (the page controls whether PageToolbar renders). */
+  noToolbar?: boolean;
 }) {
   const [preferSide, setPreferSide] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -64,7 +72,7 @@ export function ToolbarLayout({
 
   // Mobile scroll → auto-collapse/expand the bottom toolbar
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isMobile || disableAutoCollapse) return;
     const THRESHOLD = 40;
     const onTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
@@ -87,21 +95,36 @@ export function ToolbarLayout({
       document.removeEventListener('touchstart', onTouchStart);
       document.removeEventListener('touchmove', onTouchMove);
     };
-  }, [isMobile]);
+  }, [isMobile, disableAutoCollapse]);
 
   const mode: ToolbarMode =
     !mounted || isMobile ? 'top' : preferSide ? 'side' : 'top';
 
   // Padding applied to the content area to offset the fixed toolbar
-  const contentStyle: React.CSSProperties = isMobile
-    ? { paddingBottom: collapsed ? 20 : TOOLBAR_H_MOBILE }
-    : mode === 'side'
-      ? { paddingLeft: collapsed ? 0 : TOOLBAR_W }
-      : { paddingTop: collapsed ? 0 : TOOLBAR_H };
+  const contentStyle: React.CSSProperties = noToolbar
+    ? {}
+    : isMobile
+      ? {
+          paddingBottom: collapsed
+            ? disableAutoCollapse
+              ? 0
+              : 20
+            : TOOLBAR_H_MOBILE,
+        }
+      : mode === 'side'
+        ? { paddingLeft: collapsed ? 0 : TOOLBAR_W }
+        : { paddingTop: collapsed ? 0 : TOOLBAR_H };
 
   return (
     <ToolbarCtx.Provider
-      value={{ mode, collapsed, isMobile, setPreferSide, setCollapsed }}
+      value={{
+        mode,
+        collapsed,
+        isMobile,
+        disableAutoCollapse,
+        setPreferSide,
+        setCollapsed,
+      }}
     >
       {/* Content area — padded to avoid being covered by fixed toolbar */}
       <div
@@ -117,8 +140,14 @@ export function ToolbarLayout({
 
 /* ── PageToolbar ───────────────────────────────────────────────────── */
 export function PageToolbar({ children }: { children: ReactNode }) {
-  const { mode, collapsed, isMobile, setPreferSide, setCollapsed } =
-    useContext(ToolbarCtx);
+  const {
+    mode,
+    collapsed,
+    isMobile,
+    disableAutoCollapse,
+    setPreferSide,
+    setCollapsed,
+  } = useContext(ToolbarCtx);
 
   /* ── Side mode ── */
   if (mode === 'side') {
@@ -432,8 +461,9 @@ export function PageToolbar({ children }: { children: ReactNode }) {
         </button>
       )}
 
-      {/* Mobile expand handle — visible at bottom when toolbar is collapsed */}
-      {isBottom && collapsed && (
+      {/* Mobile expand handle — visible at bottom when toolbar is collapsed.
+          Hidden when disableAutoCollapse is true (page manages collapsed state directly). */}
+      {isBottom && collapsed && !disableAutoCollapse && (
         <button
           onClick={() => setCollapsed(false)}
           title="Expand toolbar"

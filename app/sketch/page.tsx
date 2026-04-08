@@ -19,7 +19,7 @@ import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import { Flask2Icon } from '@/components/sketch/icons/flask-2';
 import { TrashIcon } from '@/components/shared/icons/trash';
 import { UndoIcon } from '@/components/shared/icons/undo';
-import { TagIcon } from '@/components/sketch/icons/tag';
+import { FridgeIcon } from '@/components/shared/icons/fridge';
 import { TableIcon } from '@/components/sketch/icons/table';
 import { DrillIcon } from '@/components/shared/icons/drill';
 import {
@@ -382,6 +382,12 @@ export default function SketchPage() {
         paths?: string[];
       };
       if (!res.ok) throw new Error(json.error ?? 'Upload failed');
+      // Guard against mobile browsers that don't support WebP encoding:
+      // the API would return HTTP 200 with an empty paths array.
+      if (!json.paths?.length)
+        throw new Error(
+          'No images saved — canvas export may not be supported on this browser.',
+        );
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -1035,7 +1041,7 @@ export default function SketchPage() {
 
           {/* Save */}
           <ToolbarSection
-            icon={<TagIcon />}
+            icon={<FridgeIcon />}
             label={
               saveStatus === 'saving'
                 ? '…'

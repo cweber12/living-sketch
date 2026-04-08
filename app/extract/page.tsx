@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { PoseCanvas } from '@/components/extract/canvas/pose-canvas';
 import { usePoseDetection } from '@/hooks/use-pose-detection';
 import { useLandmarksStore } from '@/lib/stores/landmarks-store';
@@ -8,32 +9,26 @@ import {
   ToolbarLayout,
   PageToolbar,
   ToolbarSection,
-  useDropdown,
-  SegmentedControl,
 } from '@/components/shared/ui/toolbar';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
-import {
-  FridgeClosedIcon,
-  FridgeOpenIcon,
-} from '@/components/shared/icons/fridge';
-import { ScalpelTrimIcon } from '@/components/extract/icons/scalpel-trim';
+import { FridgeIcon, FridgeOpenIcon } from '@/components/shared/icons/fridge';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
-import { JarIcon } from '@/components/extract/icons/jar';
 import type { LandmarkFrame } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
-import {
-  filterAndInterpolateFrames,
-  applyFrameInterval,
-} from '@/lib/utils/frame-filter';
+import { filterAndInterpolateFrames } from '@/lib/utils/frame-filter';
 
 const PREVIEW_FRAME_MS = 1000 / 30;
 
 type Source = 'live' | 'browse';
+type ExtractPhase = 'source-select' | 'ready' | 'detecting' | 'complete';
 
 export default function ExtractPage() {
-  /* ── State ──────────────────────────────────────────────── */
+  /* â”€â”€ Router for post-save navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  const router = useRouter();
+
+  /* â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const [source, setSource] = useState<Source>('browse');
   const [sourceSelected, setSourceSelected] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<
@@ -45,13 +40,10 @@ export default function ExtractPage() {
   >('unknown');
   const [webcamReady, setWebcamReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [videoFileName, setVideoFileName] = useState('');
+  const [, setVideoFileName] = useState('');
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
-  const { openId, toggle, close } = useDropdown();
-  const [jitterInterval, setJitterInterval] = useState(1);
-  const [activeJitterInterval, setActiveJitterInterval] = useState(1);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -65,7 +57,7 @@ export default function ExtractPage() {
     usePoseDetection();
   const { frames, currentFrame, dimensions } = useLandmarksStore();
 
-  /* ── Webcam lifecycle ───────────────────────────────────────────── */
+  /* â”€â”€ Webcam lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const stopWebcam = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -91,7 +83,7 @@ export default function ExtractPage() {
         }
       }
     } catch {
-      // permissions API not supported — proceed with getUserMedia
+      // permissions API not supported â€” proceed with getUserMedia
     }
 
     try {
@@ -132,7 +124,7 @@ export default function ExtractPage() {
     };
   }, []);
 
-  /* ── Track actual video dimensions ─────────────────────────────── */
+  /* â”€â”€ Track actual video dimensions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -148,9 +140,9 @@ export default function ExtractPage() {
       video.removeEventListener('loadedmetadata', updateDims);
       video.removeEventListener('resize', updateDims);
     };
-  }, []); // once — video element DOM node is stable
+  }, []); // once â€” video element DOM node is stable
 
-  /* ── File upload ────────────────────────────────────────────────── */
+  /* â”€â”€ File upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -175,7 +167,7 @@ export default function ExtractPage() {
     [],
   );
 
-  /* ── Detection controls ─────────────────────────────────────────── */
+  /* â”€â”€ Detection controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleStart = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
@@ -216,7 +208,7 @@ export default function ExtractPage() {
     if (source === 'browse') videoRef.current?.pause();
   }, [stop, source]);
 
-  /* ── Upload landmarks to Supabase ───────────────────────────────── */
+  /* â”€â”€ Upload landmarks to Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleUpload = useCallback(async () => {
     if (frames.length === 0) return;
     setUploadStatus('uploading');
@@ -231,15 +223,17 @@ export default function ExtractPage() {
       const json = (await res.json()) as { error?: string; path?: string };
       if (!res.ok) throw new Error(json.error ?? 'Upload failed');
       setUploadStatus('done');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      router.push('/console');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Upload failed');
       setUploadStatus('error');
       setTimeout(() => setUploadStatus('idle'), 4000);
     }
-  }, [frames, dimensions]);
-
-  /* ── Video ended event (stop detection automatically) ───────────── */
+  }, [frames, dimensions, router]);
+  const handleReExtract = useCallback(() => {
+    window.location.reload();
+  }, []);
+  /* â”€â”€ Video ended event (stop detection automatically) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -250,25 +244,27 @@ export default function ExtractPage() {
     return () => video.removeEventListener('ended', onEnded);
   }, [isDetecting, handleStop]);
 
-  /* ── Derived ────────────────────────────────────────────────────── */
+  /* â”€â”€ Derived â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
-  // Auto-close dropdowns when detection starts
-  useEffect(() => {
-    if (isDetecting) close();
-  }, [isDetecting, close]);
+  // Phase-based toolbar state machine
+  const extractPhase: ExtractPhase = !sourceSelected
+    ? 'source-select'
+    : isDetecting
+      ? 'detecting'
+      : captureComplete
+        ? 'complete'
+        : 'ready';
 
-  // Smoothed, filtered frames for preview — computed once after capture completes
+  // Toolbar renders only once media source is ready OR during/after detection
+  const showToolbar =
+    webcamReady || videoReady || isDetecting || captureComplete;
+
+  // Smoothed, filtered frames for preview â€” computed once after capture completes
   const smoothedBaseFrames = useMemo(() => {
     if (!captureComplete || frames.length === 0) return frames;
     return smoothLandmarkFrames(filterAndInterpolateFrames(frames));
   }, [captureComplete, frames]);
-
-  // Apply jitter reduction interval on top of smoothed frames
-  const previewFrames = useMemo(
-    () => applyFrameInterval(smoothedBaseFrames, activeJitterInterval),
-    [smoothedBaseFrames, activeJitterInterval],
-  );
 
   // Re-detection is allowed: remove !captureComplete guard so users can
   // run detection again on the same or a new video after a capture.
@@ -276,217 +272,131 @@ export default function ExtractPage() {
     isModelReady &&
     !isDetecting &&
     (source === 'live' ? webcamReady : videoReady);
-  const canUpload = captureComplete && uploadStatus !== 'uploading';
+  const canUpload =
+    captureComplete && uploadStatus !== 'uploading' && uploadStatus !== 'done';
 
   const videoW = videoDims.w || dimensions.width || 640;
   const videoH = videoDims.h || dimensions.height || 480;
 
-  /* ── Animated skeleton preview ──────────────────────────────────── */
+  /* â”€â”€ Animated skeleton preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
-    if (!captureComplete || previewFrames.length === 0) {
+    if (!captureComplete || smoothedBaseFrames.length === 0) {
       cancelAnimationFrame(previewRafRef.current);
       setPreviewLandmarks(null);
       return;
     }
     previewIdxRef.current = 0;
     previewLastTimeRef.current = 0;
-    setPreviewLandmarks(previewFrames[0]);
+    setPreviewLandmarks(smoothedBaseFrames[0]);
     function loop(ts: number) {
       if (ts - previewLastTimeRef.current >= PREVIEW_FRAME_MS) {
         previewLastTimeRef.current = ts;
-        setPreviewLandmarks(previewFrames[previewIdxRef.current]);
+        setPreviewLandmarks(smoothedBaseFrames[previewIdxRef.current]);
         previewIdxRef.current =
-          (previewIdxRef.current + 1) % previewFrames.length;
+          (previewIdxRef.current + 1) % smoothedBaseFrames.length;
       }
       previewRafRef.current = requestAnimationFrame(loop);
     }
     previewRafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(previewRafRef.current);
-  }, [captureComplete, previewFrames]);
+  }, [captureComplete, smoothedBaseFrames]);
 
   return (
     <main className="flex flex-1 w-full overflow-hidden">
-      <ToolbarLayout>
-        {/* ── Unified toolbar ── */}
-        <PageToolbar>
-          {/* Extract / Stop / Re-Extract */}
-          {isDetecting ? (
-            <ToolbarSection
-              icon={<span>■</span>}
-              label="Stop"
-              danger
-              onClick={handleStop}
-              title="Stop extraction"
-            />
-          ) : (
-            <ToolbarSection
-              icon={<CircularSawIcon />}
-              label={captureComplete ? 'Re-Extract' : 'Extract'}
-              primary={canStart && !captureComplete}
-              glow={canStart && !captureComplete}
-              disabled={!canStart}
-              onClick={async () => {
-                // Clear previous capture data before restarting
-                if (captureComplete) {
-                  cancelAnimationFrame(previewRafRef.current);
-                  useLandmarksStore.getState().reset();
-                  setUploadStatus('idle');
-                  setErrorMsg('');
-                }
-                await handleStart();
-              }}
-              title={
-                captureComplete ? 'Start new extraction' : 'Start extraction'
-              }
-            />
-          )}
+      {/*
+       * disableAutoCollapse: touch-scroll should not collapse the toolbar here.
+       * noToolbar: no bottom padding when toolbar is hidden (source-select phase).
+       */}
+      <ToolbarLayout disableAutoCollapse noToolbar={!showToolbar}>
+        {/* â”€â”€ Phase-based toolbar â”€â”€ */}
+        {showToolbar && (
+          <PageToolbar>
+            {/* Phase: ready â€” Extract only, centered */}
+            {extractPhase === 'ready' && (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'stretch',
+                }}
+              >
+                <ToolbarSection
+                  icon={<CircularSawIcon />}
+                  label="Extract"
+                  primary={canStart}
+                  glow={canStart}
+                  disabled={!canStart}
+                  onClick={handleStart}
+                  title="Start pose extraction"
+                />
+              </div>
+            )}
 
-          {/* Source */}
-          {!isDetecting && (
-            <ToolbarSection
-              icon={<BrainIcon />}
-              label="Source"
-              onClick={() => toggle('source')}
-              dropdownOpen={openId === 'source'}
-              onDropdownClose={close}
-              dropdownContent={
-                <div className="flex flex-col gap-2 w-full">
-                  <SegmentedControl
-                    options={['live', 'browse'] as Source[]}
-                    value={source}
-                    onChange={(v) => {
-                      if (isDetecting) handleStop();
-                      if (v === 'live') {
-                        setVideoReady(false);
-                        setVideoFileName('');
-                      } else {
-                        setWebcamReady(false);
-                      }
-                      setSource(v);
-                      setSourceSelected(true);
-                    }}
-                    labels={{
-                      live: (
-                        <span className="flex items-center gap-1">
-                          <BodyRunningIcon />
-                          Live
-                        </span>
-                      ),
-                      browse: (
-                        <span className="flex items-center gap-1">
-                          <FridgeOpenIcon />
-                          Browse
-                        </span>
-                      ),
-                    }}
-                  />
-                  {source === 'browse' && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isDetecting}
-                      className="btn-ghost rounded py-1.5 text-xs uppercase tracking-widest font-semibold disabled:opacity-50 w-full text-left px-2 truncate flex items-center gap-1.5"
-                      title={videoFileName || 'Select video file'}
+            {/* Phase: detecting â€” Stop + inline Status */}
+            {extractPhase === 'detecting' && (
+              <>
+                <ToolbarSection
+                  icon={<span>â– </span>}
+                  label="Stop"
+                  danger
+                  onClick={handleStop}
+                  title="Stop extraction"
+                />
+                <ToolbarSection
+                  icon={<PulseIcon />}
+                  label="Status"
+                  active
+                  inlineContent={
+                    <span
+                      className="flex items-center gap-1 text-[10px] uppercase tracking-widest"
+                      style={{ color: 'var(--fg-muted)' }}
                     >
-                      <JarIcon />
-                      {videoFileName || 'Select…'}
-                    </button>
-                  )}
-                </div>
-              }
-            />
-          )}
-
-          {/* Status */}
-          {(isDetecting || captureComplete) && (
-            <ToolbarSection
-              icon={<PulseIcon />}
-              label="Status"
-              active={isDetecting}
-              onClick={() => toggle('status')}
-              dropdownOpen={openId === 'status'}
-              onDropdownClose={close}
-              inlineContent={
-                <span
-                  className="text-[10px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  {isDetecting && (
-                    <span className="flex items-center gap-1">
                       <span
                         className="inline-block w-2 h-2 rounded-full animate-pulse"
                         style={{ backgroundColor: 'var(--danger)' }}
                       />
                       {frameCount}
                     </span>
-                  )}
-                  {captureComplete && (
-                    <span style={{ color: 'var(--accent)' }}>
-                      ✓ {frames.length}
-                    </span>
-                  )}
-                </span>
-              }
-            />
-          )}
+                  }
+                />
+              </>
+            )}
 
-          {/* Trim (shown only after capture) */}
-          {captureComplete && (
-            <ToolbarSection
-              icon={<ScalpelTrimIcon />}
-              label="Trim"
-              onClick={() => toggle('trim')}
-              dropdownOpen={openId === 'trim'}
-              onDropdownClose={close}
-              dropdownContent={
-                <div className="flex flex-col gap-1.5 w-full">
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={jitterInterval}
-                    onChange={(e) => setJitterInterval(Number(e.target.value))}
-                    onMouseUp={() => {
-                      setActiveJitterInterval(jitterInterval);
-                      previewIdxRef.current = 0;
-                    }}
-                    className="w-full accent-accent"
-                    title="Frame interval"
-                  />
-                  <span
-                    className="text-[10px]"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Interval: {jitterInterval}
-                  </span>
-                </div>
-              }
-            />
-          )}
+            {/* Phase: complete â€” Re-Extract + Save */}
+            {extractPhase === 'complete' && (
+              <>
+                <ToolbarSection
+                  icon={<CircularSawIcon />}
+                  label="Re-Extract"
+                  onClick={handleReExtract}
+                  title="Reload and start a new extraction"
+                />
+                <ToolbarSection
+                  icon={<FridgeIcon />}
+                  label={
+                    uploadStatus === 'uploading'
+                      ? 'â€¦'
+                      : uploadStatus === 'done'
+                        ? 'Saved'
+                        : uploadStatus === 'error'
+                          ? 'Error'
+                          : 'Save'
+                  }
+                  primary={uploadStatus === 'idle'}
+                  glow={uploadStatus === 'idle'}
+                  disabled={!canUpload}
+                  onClick={handleUpload}
+                  title="Save landmarks and go to Re-Animate"
+                />
+              </>
+            )}
+          </PageToolbar>
+        )}
 
-          {/* Save */}
-          <ToolbarSection
-            icon={<FridgeClosedIcon />}
-            label={
-              uploadStatus === 'uploading'
-                ? '…'
-                : uploadStatus === 'done'
-                  ? 'Saved'
-                  : uploadStatus === 'error'
-                    ? 'Error'
-                    : 'Save'
-            }
-            primary={captureComplete && uploadStatus === 'idle'}
-            glow={captureComplete && uploadStatus === 'idle'}
-            disabled={!canUpload}
-            onClick={handleUpload}
-            title="Archive captured landmarks"
-          />
-        </PageToolbar>
-
-        {/* ── Main content ── */}
+        {/* â”€â”€ Main content â”€â”€ */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* ── Error banner ── */}
+          {/* â”€â”€ Error banner â”€â”€ */}
           {errorMsg && (
             <div
               className="shrink-0 px-4 py-2 text-xs"
@@ -495,7 +405,8 @@ export default function ExtractPage() {
               {errorMsg}
             </div>
           )}
-          {/* ── Model loading overlay ── */}
+
+          {/* â”€â”€ Model loading overlay â”€â”€ */}
           {isLoading && (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
               <div
@@ -509,7 +420,7 @@ export default function ExtractPage() {
                 className="font-display text-sm uppercase tracking-widest text-center"
                 style={{ color: 'var(--accent)' }}
               >
-                Reanimating neural pathways…
+                Reanimating neural pathwaysâ€¦
               </p>
               <p
                 className="text-[10px] uppercase tracking-widest"
@@ -520,7 +431,7 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* ── Source cards (initial state) ── */}
+          {/* â”€â”€ Source cards (initial state: no source selected) â”€â”€ */}
           {!isLoading && !sourceSelected && !captureComplete && (
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
               <div className="flex flex-col items-center gap-8 max-w-2xl w-full">
@@ -578,7 +489,7 @@ export default function ExtractPage() {
                       className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
                       style={{ color: 'var(--accent)' }}
                     >
-                      Begin Capture →
+                      Begin Capture â†’
                     </span>
                   </button>
 
@@ -622,7 +533,7 @@ export default function ExtractPage() {
                       className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
                       style={{ color: 'var(--accent)' }}
                     >
-                      Select Recording →
+                      Select Recording â†’
                     </span>
                   </button>
                 </div>
@@ -630,7 +541,7 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* Hidden file input — available at all times for source cards + dropdown */}
+          {/* Hidden file input â€” available at all times for source cards */}
           <input
             ref={fileInputRef}
             type="file"
@@ -639,98 +550,91 @@ export default function ExtractPage() {
             className="hidden"
           />
 
-          {/* ── Video + pose overlay ── */}
+          {/*
+           * â”€â”€ Video + pose overlay â”€â”€
+           * flex-1 + absolute positioning fills available space between navbar
+           * and toolbar without overflowing or causing page scroll on iOS.
+           * object-contain on the video preserves aspect ratio with letterboxing.
+           * PoseCanvas covers the same container; both scale from videoWÃ—videoH
+           * coordinates to CSS container size uniformly, keeping overlay aligned.
+           */}
           {!isLoading && sourceSelected && !captureComplete && (
-            <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 min-h-0 overflow-hidden">
-              <div
-                className="relative rounded-lg overflow-hidden"
-                style={{
-                  aspectRatio: `${videoW} / ${videoH}`,
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--surface)',
-                }}
-              >
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  controls={source === 'browse' && !isDetecting}
-                  className="w-full h-full object-contain"
-                  style={{ display: 'block' }}
+            <div
+              className="flex-1 min-h-0 overflow-hidden relative"
+              style={{ backgroundColor: 'var(--surface)' }}
+            >
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                controls={source === 'browse' && !isDetecting}
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ display: 'block' }}
+              />
+              {currentFrame && (
+                <PoseCanvas
+                  width={videoW}
+                  height={videoH}
+                  landmarks={currentFrame}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
                 />
-                {currentFrame && (
-                  <PoseCanvas
-                    width={videoW}
-                    height={videoH}
-                    landmarks={currentFrame}
-                  />
-                )}
+              )}
 
-                {/* Empty state */}
-                {!webcamReady && source === 'live' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
-                    {cameraPermission === 'denied' ? (
-                      <>
-                        <p
-                          className="text-sm uppercase tracking-widest text-center"
-                          style={{ color: 'var(--danger)' }}
-                        >
-                          Camera access blocked
-                        </p>
-                        <p
-                          className="text-xs tracking-wider text-center max-w-xs"
-                          style={{ color: 'var(--fg-muted)' }}
-                        >
-                          Allow camera access in your browser settings, then
-                          reload the page.
-                        </p>
-                      </>
-                    ) : (
+              {/* Empty state: camera not yet ready */}
+              {!webcamReady && source === 'live' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
+                  {cameraPermission === 'denied' ? (
+                    <>
                       <p
-                        className="text-sm uppercase tracking-widest"
+                        className="text-sm uppercase tracking-widest text-center"
+                        style={{ color: 'var(--danger)' }}
+                      >
+                        Camera access blocked
+                      </p>
+                      <p
+                        className="text-xs tracking-wider text-center max-w-xs"
                         style={{ color: 'var(--fg-muted)' }}
                       >
-                        {cameraPermission === 'prompt'
-                          ? 'Allow camera access to continue…'
-                          : 'Starting camera…'}
+                        Allow camera access in your browser settings, then
+                        reload the page.
                       </p>
-                    )}
-                  </div>
-                )}
-                {source === 'browse' && !videoReady && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                    </>
+                  ) : (
                     <p
                       className="text-sm uppercase tracking-widest"
                       style={{ color: 'var(--fg-muted)' }}
                     >
-                      Browse to select a video
+                      {cameraPermission === 'prompt'
+                        ? 'Allow camera access to continueâ€¦'
+                        : 'Starting cameraâ€¦'}
                     </p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
+
+              {/* Empty state: no video file selected */}
+              {source === 'browse' && !videoReady && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p
+                    className="text-sm uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Browse to select a video
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── Skeleton preview (capture complete) ── */}
+          {/* â”€â”€ Skeleton preview (capture complete) â”€â”€ */}
           {captureComplete && (
-            <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-4 min-h-0 overflow-hidden">
-              <div
-                className="relative"
-                style={{
-                  aspectRatio: `${videoW} / ${videoH}`,
-                  height: '100%',
-                  maxWidth: '100%',
-                }}
-              >
-                <PoseCanvas
-                  width={videoW}
-                  height={videoH}
-                  landmarks={previewLandmarks}
-                  className="w-full h-full"
-                />
-              </div>
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+              <PoseCanvas
+                width={videoW}
+                height={videoH}
+                landmarks={previewLandmarks}
+                className="absolute inset-0 w-full h-full"
+              />
             </div>
           )}
         </div>

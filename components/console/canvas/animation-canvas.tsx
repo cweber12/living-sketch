@@ -139,11 +139,10 @@ export default function AnimationCanvas({
       width={width}
       height={height}
       style={{
-        width: `${width * previewScale}px`,
-        height: `${height * previewScale}px`,
-        background: bgColor ?? undefined,
+        width: `min(${width * previewScale}px, 100%)`,
+        height: 'auto',
+        aspectRatio: `${width} / ${height}`,
       }}
-      className="rounded-lg border border-neutral-300 dark:border-neutral-700"
     />
   );
 }

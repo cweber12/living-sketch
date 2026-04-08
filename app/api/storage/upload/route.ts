@@ -15,6 +15,7 @@ interface UploadBody {
 }
 
 const WEBP_PREFIX = 'data:image/webp;base64,';
+const PNG_PREFIX = 'data:image/png;base64,';
 
 /**
  * GET: Download all images from an SVG set folder, return as data-URL map.
@@ -55,7 +56,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const webpFiles = (files ?? []).filter((f) => f.name.endsWith('.webp'));
+  const webpFiles = (files ?? []).filter(
+    (f) => f.name.endsWith('.webp') || f.name.endsWith('.png'),
+  );
 
   const results = await Promise.allSettled(
     webpFiles.map(async (file) => {
@@ -124,16 +127,32 @@ export async function POST(req: NextRequest) {
     const sideImages = images[side] ?? {};
     for (const [partName, dataUrl] of Object.entries(sideImages)) {
       if (!VALID_PARTS.has(partName)) continue;
-      if (!dataUrl || !dataUrl.startsWith(WEBP_PREFIX)) continue;
+      if (!dataUrl) continue;
 
-      const base64 = dataUrl.slice(WEBP_PREFIX.length);
+      // Determine format — iOS Safari falls back from WebP to PNG silently
+      let prefix: string;
+      let contentType: string;
+      let ext: string;
+      if (dataUrl.startsWith(WEBP_PREFIX)) {
+        prefix = WEBP_PREFIX;
+        contentType = 'image/webp';
+        ext = 'webp';
+      } else if (dataUrl.startsWith(PNG_PREFIX)) {
+        prefix = PNG_PREFIX;
+        contentType = 'image/png';
+        ext = 'png';
+      } else {
+        continue; // unsupported format
+      }
+
+      const base64 = dataUrl.slice(prefix.length);
       const buffer = Buffer.from(base64, 'base64');
-      const storagePath = `${user.id}/${sanitizedName}/${partName}-${side}.webp`;
+      const storagePath = `${user.id}/${sanitizedName}/${partName}-${side}.${ext}`;
 
       const { error } = await storageClient.storage
         .from('svgs')
         .upload(storagePath, buffer, {
-          contentType: 'image/webp',
+          contentType,
           upsert: true,
         });
 

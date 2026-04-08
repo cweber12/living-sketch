@@ -6,6 +6,7 @@ export interface ToolbarCtxValue {
   mode: ToolbarMode;
   collapsed: boolean;
   isMobile: boolean;
+  disableAutoCollapse: boolean;
   setPreferSide: (v: boolean) => void;
   setCollapsed: (v: boolean) => void;
 }
