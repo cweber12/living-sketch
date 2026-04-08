@@ -8,7 +8,8 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { ToolbarMode, ToolbarCtxValue } from './types';
+import { ToolbarMode, ToolbarCtxValue, PageToolbarProps } from './types';
+import { FridgeIcon } from '@/components/shared/icons/fridge';
 
 /* ── Toolbar Context ───────────────────────────────────────────────── */
 /** Managing toolbar state and behavior */
@@ -21,15 +22,15 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
   setCollapsed: () => {},
 });
 
-/* ── Constants ─────────────────────────────────────────────────────── */
-/** Approximate height of the sticky NavBar (px) — toolbar must sit below it */
-const NAVBAR_H = 44;
+/* ── Constants (exported for use in dropdown-panel and other consumers) ──── */
+/** Height of the sticky NavBar (px) */
+export const NAVBAR_H = 48;
 /** Height of the top toolbar in desktop mode (px) */
-const TOOLBAR_H = 48;
+export const TOOLBAR_H = 48;
 /** Width of the side toolbar (px) */
-const TOOLBAR_W = 56;
+export const TOOLBAR_W = 56;
 /** Height of the mobile bottom toolbar (px) */
-const TOOLBAR_H_MOBILE = 56;
+export const TOOLBAR_H_MOBILE = 56;
 
 /* ── ToolbarLayout ─────────────────────────────────────────────────── */
 /**
@@ -139,7 +140,12 @@ export function ToolbarLayout({
 }
 
 /* ── PageToolbar ───────────────────────────────────────────────────── */
-export function PageToolbar({ children }: { children: ReactNode }) {
+export function PageToolbar({
+  children,
+  onSave,
+  saveStatus = 'idle',
+  saveDisabled,
+}: PageToolbarProps) {
   const {
     mode,
     collapsed,
@@ -155,7 +161,7 @@ export function PageToolbar({ children }: { children: ReactNode }) {
       <div
         style={{
           position: 'fixed',
-          top: 0,
+          top: NAVBAR_H,
           left: 0,
           bottom: 0,
           width: collapsed ? 0 : TOOLBAR_W,
@@ -209,6 +215,46 @@ export function PageToolbar({ children }: { children: ReactNode }) {
               <div className="flex flex-col flex-1 overflow-y-auto">
                 {children}
               </div>
+              {/* Save button — rendered above bottom controls when onSave is provided */}
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  disabled={saveDisabled}
+                  title="Save"
+                  aria-label="Save"
+                  style={{
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    color: 'var(--bg)',
+                    backgroundColor:
+                      saveStatus === 'error'
+                        ? 'var(--danger)'
+                        : 'var(--accent)',
+                    border: 'none',
+                    borderTop: '2px solid var(--border-strong)',
+                    cursor: saveDisabled ? 'not-allowed' : 'pointer',
+                    opacity: saveDisabled ? 0.5 : 1,
+                    width: '100%',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    flexDirection: 'column',
+                  }}
+                >
+                  <FridgeIcon size="18px" />
+                  <span style={{ fontSize: 9, lineHeight: 1 }}>
+                    {saveStatus === 'saving'
+                      ? 'Saving'
+                      : saveStatus === 'saved'
+                        ? 'Saved'
+                        : saveStatus === 'error'
+                          ? 'Error'
+                          : 'Save'}
+                  </span>
+                </button>
+              )}
               {/* Bottom controls */}
               <button
                 onClick={() => setCollapsed(true)}
@@ -324,7 +370,55 @@ export function PageToolbar({ children }: { children: ReactNode }) {
             : undefined,
         }}
       >
-        {children}
+        {/* Sections — flex-1 scrolls horizontally on mobile */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'stretch',
+            flex: isBottom ? undefined : 1,
+            overflow: isBottom ? undefined : 'hidden',
+            overflowX: isBottom ? 'auto' : undefined,
+          }}
+        >
+          {children}
+        </div>
+
+        {/* Save button */}
+        {onSave && (
+          <button
+            onClick={onSave}
+            disabled={saveDisabled}
+            title="Save"
+            aria-label="Save"
+            style={{
+              padding: '0 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              color: 'var(--bg)',
+              backgroundColor:
+                saveStatus === 'error' ? 'var(--danger)' : 'var(--accent)',
+              border: 'none',
+              borderLeft: '2px solid var(--border-strong)',
+              cursor: saveDisabled ? 'not-allowed' : 'pointer',
+              opacity: saveDisabled ? 0.5 : 1,
+              flexShrink: 0,
+            }}
+          >
+            <FridgeIcon size="16px" />
+            <span style={{ fontSize: 11, fontWeight: 600 }}>
+              {saveStatus === 'saving'
+                ? 'Saving…'
+                : saveStatus === 'saved'
+                  ? 'Saved'
+                  : saveStatus === 'error'
+                    ? 'Error'
+                    : 'Save'}
+            </span>
+          </button>
+        )}
 
         {/* Desktop-only: collapse + sidebar controls */}
         {!isBottom && (

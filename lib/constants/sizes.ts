@@ -22,4 +22,4 @@ export const ICON_SIZES = {
   buttonIconSmall: 14,
 } as const;
 
-export const SVG_LINE_WIDTH = { line: 1.5 } as const;
+export const SVG_LINE_WIDTH = { line: 1.25 } as const;

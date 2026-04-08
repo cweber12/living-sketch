@@ -16,7 +16,7 @@ export async function NavBar() {
         borderBottom: '2px solid var(--border-strong)',
       }}
     >
-      <div className="flex items-center justify-between px-3 sm:px-5 py-2">
+      <div className="flex items-center h-12 justify-between px-3 sm:px-5 py-2">
         {/* Left: nav dropdown + title */}
         <div className="flex items-center gap-2">
           <Link

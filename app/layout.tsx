@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Space_Grotesk } from 'next/font/google';
 import './globals.css';
-import { NavBar } from '@/components/shared/ui/nav-bar';
+import { NavBar } from '@/components/shared/ui/nav/nav-bar';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

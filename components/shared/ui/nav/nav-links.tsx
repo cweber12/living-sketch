@@ -47,7 +47,6 @@ export function NavDropdown() {
         style={{
           color: 'var(--fg-muted)',
           backgroundColor: open ? 'var(--surface-raised)' : 'transparent',
-          border: '1px solid transparent',
         }}
         onMouseEnter={(e) => {
           if (!open)
@@ -121,7 +120,7 @@ export function NavDropdown() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full mt-1 z-50 min-w-[180px] rounded-md py-1 shadow-lg"
+          className="absolute left-0 top-full mt-1 z-50 min-w-45 rounded-md py-1 shadow-lg"
           style={{
             backgroundColor: 'var(--surface)',
             border: '1px solid var(--border-strong)',

@@ -64,6 +64,7 @@
     --signal: #fbbf24; /* amber warning signal                     */
     --signal-faint: rgba(251, 191, 36, 0.1);
     --overlay: rgba(0, 0, 0, 0.72);
+    --overlay-faint: rgba(0, 0, 0, 0.32);
   }
 }
 
@@ -82,6 +83,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-danger: var(--danger);
   --color-signal: var(--signal);
+  --color-overlay: var(--overlay);
+  --color-overlay-faint: var(--overlay-faint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-space-grotesk);

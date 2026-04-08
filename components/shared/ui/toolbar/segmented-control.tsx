@@ -51,8 +51,8 @@ export function SegmentedControl<T extends string>({
                 ? { backgroundColor: 'var(--danger)', color: '#fff' }
                 : active
                   ? {
-                      backgroundColor: 'var(--surface-inset)',
-                      color: 'var(--fg)',
+                      backgroundColor: 'var(--accent)',
+                      color: 'var(--bg)',
                       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
                     }
                   : isHovered

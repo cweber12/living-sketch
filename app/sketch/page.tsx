@@ -11,7 +11,7 @@ import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 import {
   ToolbarLayout,
   PageToolbar,
-} from '@/components/shared/ui/toolbar/toolbar';
+} from '@/components/shared/ui/toolbar/toolbar-main';
 import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
 import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
 import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
@@ -19,9 +19,9 @@ import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import { Flask2Icon } from '@/components/sketch/icons/flask-2';
 import { TrashIcon } from '@/components/shared/icons/trash';
 import { UndoIcon } from '@/components/shared/icons/undo';
-import { FridgeIcon } from '@/components/shared/icons/fridge';
 import { TableIcon } from '@/components/sketch/icons/table';
 import { DrillIcon } from '@/components/shared/icons/drill';
+import { OptionsIcon } from '@/components/shared/icons/options';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
@@ -126,7 +126,7 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const { openId, toggle, close } = useDropdown();
+  const { isOpen, toggle, close } = useDropdown();
   const [zoom, setZoom] = useState(() =>
     // On mobile, start zoomed in so head+torso fill the initial viewport
     typeof window !== 'undefined' && window.innerWidth < MOBILE_BP ? 1.5 : 1,
@@ -542,80 +542,73 @@ export default function SketchPage() {
     <main className="flex flex-1 w-full overflow-hidden">
       <ToolbarLayout>
         {/* ── Unified toolbar ── */}
-        <PageToolbar>
-          {/* Undo */}
-          <ToolbarSection
-            icon={<UndoIcon />}
-            label="Undo"
-            onClick={handleUndo}
-            title="Undo last stroke"
-          />
-
-          {/* Clear All */}
-          <ToolbarSection
-            icon={<TrashIcon />}
-            label="Clear"
-            danger
-            onClick={() => toggle('clear')}
-            dropdownOpen={openId === 'clear'}
-            onDropdownClose={close}
-            dropdownContent={
-              <div className="flex flex-col gap-2">
-                <span
-                  className="text-[10px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Clear all canvases?
-                </span>
-                <button
-                  onClick={() => {
-                    clearAll();
-                    close();
-                  }}
-                  className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
-                  style={{
-                    backgroundColor: 'var(--danger)',
-                    color: '#fff',
-                  }}
-                >
-                  ✕ Clear All
-                </button>
-              </div>
-            }
-          />
-
+        <PageToolbar
+          onSave={handleSave}
+          saveStatus={saveStatus}
+          saveDisabled={saveStatus === 'saving'}
+        >
+          <div className="flex items-center gap-1">
+            {/* Undo */}
+            <ToolbarSection
+              icon={<UndoIcon />}
+              label="Undo"
+              onClick={handleUndo}
+              title="Undo last stroke"
+            />
+            {/* Clear All */}
+            <ToolbarSection
+              icon={<TrashIcon />}
+              label="Clear"
+              danger
+              onClick={() => toggle('clear')}
+              dropdownOpen={isOpen('clear')}
+              onDropdownClose={() => close('clear')}
+              dropdownContent={
+                <div className="flex flex-col gap-2">
+                  <span
+                    className="text-[10px] uppercase tracking-widest"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    Clear all canvases?
+                  </span>
+                  <button
+                    onClick={() => {
+                      clearAll();
+                      close('clear');
+                    }}
+                    className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
+                    style={{
+                      backgroundColor: 'var(--danger)',
+                      color: '#fff',
+                    }}
+                  >
+                    ✕ Clear All
+                  </button>
+                </div>
+              }
+            />
+          </div>
           {/* Layout */}
           <ToolbarSection
             icon={<TableIcon />}
             label="Layout"
             onClick={() => toggle('layout')}
-            dropdownOpen={openId === 'layout'}
-            onDropdownClose={close}
-            inlineContent={
-              <SegmentedControl
-                options={['front', 'back'] as Side[]}
-                value={side}
-                onChange={handleSideChange}
-                labels={{ front: 'Front', back: 'Back' }}
-              />
-            }
+            dropdownOpen={isOpen('layout')}
+            onDropdownClose={() => close('layout')}
             dropdownContent={
               <div className="flex flex-col gap-1.5">
-                {/* front/back only shown in dropdown on small screens — deduped with inline control */}
-                <div className="block md:hidden">
-                  <span
-                    className="text-[9px] uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Side
-                  </span>
-                  <SegmentedControl
-                    options={['front', 'back'] as Side[]}
-                    value={side}
-                    onChange={handleSideChange}
-                    labels={{ front: 'Front', back: 'Back' }}
-                  />
-                </div>
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Side
+                </span>
+                <SegmentedControl
+                  options={['front', 'back'] as Side[]}
+                  value={side}
+                  onChange={handleSideChange}
+                  labels={{ front: 'Front', back: 'Back' }}
+                />
                 <span
                   className="text-[9px] uppercase tracking-widest mt-1"
                   style={{ color: 'var(--fg-muted)' }}
@@ -646,22 +639,18 @@ export default function SketchPage() {
                     ))}
                   </select>
                 )}
-                {!isMobile && (
-                  <>
-                    <span
-                      className="text-[9px] uppercase tracking-widest mt-1"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      Arm Orientation
-                    </span>
-                    <SegmentedControl
-                      options={['up', 'down'] as ArmPose[]}
-                      value={armPose}
-                      onChange={handleArmPoseChange}
-                      labels={{ up: 'Up', down: 'Down' }}
-                    />
-                  </>
-                )}
+                <span
+                  className="text-[9px] uppercase tracking-widest mt-1"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Arm Orientation
+                </span>
+                <SegmentedControl
+                  options={['up', 'down'] as ArmPose[]}
+                  value={armPose}
+                  onChange={handleArmPoseChange}
+                  labels={{ up: 'Up', down: 'Down' }}
+                />
               </div>
             }
           />
@@ -671,10 +660,23 @@ export default function SketchPage() {
             icon={<DrillIcon />}
             label="Tools"
             onClick={() => toggle('tools')}
-            dropdownOpen={openId === 'tools'}
-            onDropdownClose={close}
+            dropdownOpen={isOpen('tools')}
+            onDropdownClose={() => close('tools')}
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Tool
+                </span>
+                <SegmentedControl
+                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
+                  value={isEraser ? 'erase' : 'sketch'}
+                  onChange={(v) => setIsEraser(v === 'erase')}
+                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
+                  dangerValue="erase"
+                />
                 <span
                   className="text-[9px] uppercase tracking-widest"
                   style={{ color: 'var(--fg-muted)' }}
@@ -719,133 +721,13 @@ export default function SketchPage() {
 
           {/* Options — sketch/erase, stroke width, zoom */}
           <ToolbarSection
-            icon={
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <line
-                  x1="2"
-                  y1="4"
-                  x2="14"
-                  y2="4"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
-                <circle
-                  cx="5"
-                  cy="4"
-                  r="1.9"
-                  fill="var(--surface)"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <line
-                  x1="2"
-                  y1="9"
-                  x2="14"
-                  y2="9"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
-                <circle
-                  cx="10"
-                  cy="9"
-                  r="1.9"
-                  fill="var(--surface)"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <line
-                  x1="2"
-                  y1="13"
-                  x2="14"
-                  y2="13"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
-                <circle
-                  cx="7"
-                  cy="13"
-                  r="1.9"
-                  fill="var(--surface)"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-              </svg>
-            }
+            icon={<OptionsIcon />}
             label="Options"
-            active={zoom !== 1 || isEraser}
             onClick={() => toggle('options')}
-            dropdownOpen={openId === 'options'}
-            onDropdownClose={close}
-            inlineContent={
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="range"
-                    min={1}
-                    max={40}
-                    value={brushSize}
-                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                    className="w-20 accent-accent"
-                    title="Brush size"
-                  />
-                  {/* Fixed-size box so brush preview doesn't shift layout */}
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: Math.min(brushSize, 22),
-                        height: Math.min(brushSize, 22),
-                        borderRadius: '50%',
-                        backgroundColor: isEraser
-                          ? 'var(--danger)'
-                          : 'var(--accent)',
-                        opacity: isEraser ? 0.5 : 0.85,
-                        border: '1px solid var(--border-strong)',
-                      }}
-                    />
-                  </div>
-                </div>
-                <SegmentedControl
-                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
-                  value={isEraser ? 'erase' : 'sketch'}
-                  onChange={(v) => setIsEraser(v === 'erase')}
-                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
-                  dangerValue="erase"
-                />
-              </div>
-            }
+            dropdownOpen={isOpen('options')}
+            onDropdownClose={() => close('options')}
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
-                <span
-                  className="text-[9px] uppercase tracking-widest"
-                  style={{ color: 'var(--fg-muted)' }}
-                >
-                  Sketch / Erase
-                </span>
-                <SegmentedControl
-                  options={['sketch', 'erase'] as ('sketch' | 'erase')[]}
-                  value={isEraser ? 'erase' : 'sketch'}
-                  onChange={(v) => setIsEraser(v === 'erase')}
-                  labels={{ sketch: 'Sketch', erase: 'Erase' }}
-                  dangerValue="erase"
-                />
                 <span
                   className="text-[9px] uppercase tracking-widest mt-1"
                   style={{ color: 'var(--fg-muted)' }}
@@ -920,85 +802,42 @@ export default function SketchPage() {
             icon={<Flask2Icon />}
             label="Color"
             onClick={() => toggle('color')}
-            dropdownOpen={openId === 'color'}
-            onDropdownClose={close}
-            inlineContent={
-              <label
-                style={{
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                }}
-                title="Select color"
-              >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 18,
-                    height: 18,
-                    borderRadius: 3,
-                    backgroundColor: color,
-                    border: '1px solid var(--border-strong)',
-                    flexShrink: 0,
-                  }}
-                />
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                    setIsEraser(false);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    opacity: 0,
-                    width: 0,
-                    height: 0,
-                    pointerEvents: 'none',
-                  }}
-                  tabIndex={-1}
-                  aria-label="Stroke color"
-                />
-              </label>
-            }
+            dropdownOpen={isOpen('color')}
+            onDropdownClose={() => close('color')}
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
-                {isMobile && (
-                  <>
-                    <span
-                      className="text-[9px] uppercase tracking-widest"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      Color
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => {
-                          setColor(e.target.value);
-                          setIsEraser(false);
-                        }}
-                        style={{
-                          width: 48,
-                          height: 28,
-                          cursor: 'pointer',
-                          border: '1px solid var(--border)',
-                          borderRadius: 4,
-                          backgroundColor: 'transparent',
-                          padding: 0,
-                        }}
-                        aria-label="Stroke color"
-                      />
-                      <span
-                        className="text-[10px] font-mono"
-                        style={{ color: 'var(--fg-muted)' }}
-                      >
-                        {color}
-                      </span>
-                    </div>
-                  </>
-                )}
+                <span
+                  className="text-[9px] uppercase tracking-widest"
+                  style={{ color: 'var(--fg-muted)' }}
+                >
+                  Color
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => {
+                      setColor(e.target.value);
+                      setIsEraser(false);
+                    }}
+                    style={{
+                      width: 48,
+                      height: 28,
+                      cursor: 'pointer',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      backgroundColor: 'transparent',
+                      padding: 0,
+                    }}
+                    aria-label="Stroke color"
+                  />
+                  <span
+                    className="text-[10px] font-mono"
+                    style={{ color: 'var(--fg-muted)' }}
+                  >
+                    {color}
+                  </span>
+                </div>
                 {usedColors.length > 0 && (
                   <>
                     <span
@@ -1037,24 +876,6 @@ export default function SketchPage() {
                 )}
               </div>
             }
-          />
-
-          {/* Save */}
-          <ToolbarSection
-            icon={<FridgeIcon />}
-            label={
-              saveStatus === 'saving'
-                ? '…'
-                : saveStatus === 'saved'
-                  ? 'Saved'
-                  : saveStatus === 'error'
-                    ? 'Error'
-                    : 'Save'
-            }
-            primary={saveStatus === 'idle'}
-            onClick={handleSave}
-            disabled={saveStatus === 'saving'}
-            title="Save sketches to library"
           />
         </PageToolbar>
 
@@ -1218,7 +1039,7 @@ export default function SketchPage() {
 
           {/* ── Copy-front overlay (subsequent back visits) ── */}
           {side === 'back' && showCopyFront && (
-            <div className="absolute top-2 left-0 right-0 flex justify-center z-10 pointer-events-none">
+            <div className="absolute top-2 left-1.5 right-0 flex justify-start z-10 pointer-events-none">
               <div
                 className="flex items-center gap-1.5 rounded-full px-3 py-1 pointer-events-auto"
                 style={{
@@ -1227,6 +1048,19 @@ export default function SketchPage() {
                   boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
                 }}
               >
+                <button
+                  onClick={() => setShowCopyFront(false)}
+                  className="text-[10px] transition-colors"
+                  style={{
+                    color: 'var(--fg-muted)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  aria-label="Dismiss copy front"
+                >
+                  ✕
+                </button>
                 <button
                   onClick={() => {
                     for (const part of BODY_PARTS) {
@@ -1243,21 +1077,7 @@ export default function SketchPage() {
                     cursor: 'pointer',
                   }}
                 >
-                  ↩ Copy Front
-                </button>
-                <span style={{ color: 'var(--border-strong)' }}>·</span>
-                <button
-                  onClick={() => setShowCopyFront(false)}
-                  className="text-[10px] transition-colors"
-                  style={{
-                    color: 'var(--fg-muted)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  aria-label="Dismiss copy front"
-                >
-                  ✕
+                  Copy Front
                 </button>
               </div>
             </div>

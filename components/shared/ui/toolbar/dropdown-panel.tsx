@@ -5,10 +5,18 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useContext,
   type CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { DropdownPanelProps } from './types';
+import {
+  ToolbarCtx,
+  NAVBAR_H,
+  TOOLBAR_H,
+  TOOLBAR_W,
+  TOOLBAR_H_MOBILE,
+} from './toolbar-main';
 
 /* ── DropdownPanel ─────────────────────────────────────────────────── */
 export function DropdownPanel({
@@ -19,6 +27,7 @@ export function DropdownPanel({
   align = 'left',
   width,
 }: DropdownPanelProps) {
+  const { mode, isMobile } = useContext(ToolbarCtx);
   const panelRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ display: 'none' });
   const [mounted, setMounted] = useState(false);
@@ -30,26 +39,55 @@ export function DropdownPanel({
     if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
     const panelWidth = typeof width === 'number' ? width : 280;
-    const left =
-      align === 'right'
-        ? Math.max(0, rect.right - panelWidth)
-        : Math.min(rect.left, window.innerWidth - panelWidth);
-    // Open upward when anchor is in the bottom half (e.g. mobile bottom bar)
-    const openUpward = rect.top > window.innerHeight / 2;
-    setStyle({
-      position: 'fixed',
-      ...(openUpward
-        ? { bottom: window.innerHeight - rect.top + 4 }
-        : { top: rect.bottom + 4 }),
-      left: Math.max(4, left),
-      minWidth: 220,
-      maxWidth: typeof width === 'number' ? width : 360,
-      width: width ?? undefined,
-      zIndex: 60,
-      maxHeight: '70vh',
-      overflowY: 'auto',
-    });
-  }, [anchorRef, align, width]);
+
+    if (isMobile) {
+      /* ── Mobile: full-width panel above bottom toolbar ── */
+      setStyle({
+        position: 'fixed',
+        bottom: TOOLBAR_H_MOBILE,
+        left: 0,
+        right: 0,
+        maxHeight: '65vh',
+        zIndex: 60,
+        overflowY: 'auto',
+      });
+    } else if (mode === 'side') {
+      /* ── Side mode: panel to the right of the sidebar ── */
+      const top = Math.max(NAVBAR_H, rect.top);
+      setStyle({
+        position: 'fixed',
+        top,
+        left: TOOLBAR_W,
+        minWidth: 260,
+        maxWidth: typeof width === 'number' ? width : 360,
+        width: width ?? undefined,
+        maxHeight: `calc(100vh - ${top + 8}px)`,
+        zIndex: 60,
+        overflowY: 'auto',
+      });
+    } else {
+      /* ── Top mode: panel below the toolbar row ── */
+      const topOffset = NAVBAR_H + TOOLBAR_H;
+      const left =
+        align === 'right'
+          ? Math.max(4, rect.right - panelWidth)
+          : Math.min(
+              rect.left,
+              Math.max(4, window.innerWidth - panelWidth - 4),
+            );
+      setStyle({
+        position: 'fixed',
+        top: topOffset,
+        left: Math.max(4, left),
+        minWidth: 220,
+        maxWidth: typeof width === 'number' ? width : 360,
+        width: width ?? undefined,
+        maxHeight: `calc(100vh - ${topOffset + 8}px)`,
+        zIndex: 60,
+        overflowY: 'auto',
+      });
+    }
+  }, [anchorRef, align, width, mode, isMobile]);
 
   useEffect(() => {
     if (!open) return;
@@ -84,15 +122,24 @@ export function DropdownPanel({
   }, [open, onClose, anchorRef]);
 
   if (!mounted || !open) return null;
+
+  const isMobilePanel = isMobile;
+  const isSidePanel = !isMobile && mode === 'side';
+
   return createPortal(
     <div
       ref={panelRef}
       style={{
         ...style,
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'var(--overlay-faint)',
         border: '1px solid var(--border-strong)',
-        borderBottomLeftRadius: 6,
-        borderBottomRightRadius: 6,
+        borderRadius: isMobilePanel
+          ? 0
+          : isSidePanel
+            ? '0 6px 6px 0'
+            : '0 0 6px 6px',
+        borderLeft: isMobilePanel ? 'none' : undefined,
+        borderRight: isMobilePanel ? 'none' : undefined,
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
       }}
     >

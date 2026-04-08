@@ -22,13 +22,14 @@ import AnimationCanvas from '@/components/console/canvas/animation-canvas';
 import ShiftControls from '@/components/console/controls/shift-controls';
 import ScaleControls from '@/components/console/controls/scale-controls';
 import FileList from '@/components/console/controls/file-list';
+/* Toolbar components */
+import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
+import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
 import {
-  ToolbarLayout,
   PageToolbar,
-  ToolbarSection,
-  useDropdown,
-  SegmentedControl,
-} from '@/components/shared/ui/toolbar';
+  ToolbarLayout,
+} from '@/components/shared/ui/toolbar/toolbar-main';
+import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { PersonFrontIcon } from '@/components/shared/icons/person-view';
 import { PanelIcon } from '@/components/console/icons/panel';
@@ -36,7 +37,6 @@ import { FilesIcon } from '@/components/console/icons/files-icon';
 import { ShiftIcon } from '@/components/console/icons/shift-icon';
 import { ScaleIcon } from '@/components/console/icons/scale-icon';
 import { PreviewIcon } from '@/components/console/icons/preview-icon';
-import { FridgeIcon } from '@/components/shared/icons/fridge';
 
 const CANVAS_W = 640;
 const CANVAS_H = 480;
@@ -76,22 +76,14 @@ export default function ConsolePage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale' | null>(null);
+  const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale'>('shift');
   const [showAnchors, setShowAnchors] = useState(false);
-  const { openId, toggle, close } = useDropdown();
+  const { isOpen, toggle, close } = useDropdown();
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
   const [fileView, setFileView] = useState<'activity' | 'creations'>(
     'activity',
   );
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1023px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -254,14 +246,18 @@ export default function ConsolePage() {
     <main className="flex flex-1 overflow-hidden">
       <ToolbarLayout>
         {/* ── Unified toolbar ── */}
-        <PageToolbar>
+        <PageToolbar
+          onSave={save}
+          saveStatus={saveStatus}
+          saveDisabled={saveStatus === 'saving' || frames.length === 0}
+        >
           {/* Collection */}
           <ToolbarSection
             icon={<FilesIcon />}
             label="Collection"
             onClick={() => toggle('files')}
-            dropdownOpen={openId === 'files'}
-            onDropdownClose={close}
+            dropdownOpen={isOpen('files')}
+            onDropdownClose={() => close('files')}
             dropdownWidth={300}
             dropdownContent={
               <div className="flex flex-col gap-2 w-full">
@@ -316,67 +312,52 @@ export default function ConsolePage() {
             icon={<PanelIcon />}
             label="Modify"
             onClick={() => toggle('tools')}
-            dropdownOpen={openId === 'tools'}
-            onDropdownClose={close}
+            dropdownOpen={isOpen('tools')}
+            onDropdownClose={() => close('tools')}
             dropdownContent={
-              <div className="flex flex-col gap-0.5 w-full">
-                <button
-                  onClick={() =>
-                    setToolsPanel((p) => (p === 'shift' ? null : 'shift'))
-                  }
-                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'shift' ? 'font-bold' : ''}`}
-                  style={
-                    toolsPanel === 'shift'
-                      ? { color: 'var(--accent)' }
-                      : undefined
-                  }
-                >
-                  <span style={{ color: 'var(--accent)' }}>
-                    <ShiftIcon />
-                  </span>
-                  Shift Joints
-                </button>
-                <div
-                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                  style={{ maxHeight: toolsPanel === 'shift' ? 1000 : 0 }}
-                >
-                  <div className="pt-1.5">
-                    <ShiftControls />
-                  </div>
+              <div className="flex flex-col gap-2 w-full">
+                {/* SegmentedControl + Show Joints inline */}
+                <div className="flex items-center gap-2">
+                  <SegmentedControl
+                    options={['shift', 'scale'] as const}
+                    value={toolsPanel}
+                    onChange={setToolsPanel}
+                    labels={{
+                      shift: (
+                        <span className="flex items-center gap-1">
+                          <ShiftIcon /> Shift
+                        </span>
+                      ),
+                      scale: (
+                        <span className="flex items-center gap-1">
+                          <ScaleIcon /> Scale
+                        </span>
+                      ),
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowAnchors((v) => !v)}
+                    title={showAnchors ? 'Hide Joints' : 'Show Joints'}
+                    aria-label={showAnchors ? 'Hide Joints' : 'Show Joints'}
+                    style={{
+                      padding: '3px 7px',
+                      border: '1px solid var(--border)',
+                      borderRadius: 4,
+                      backgroundColor: showAnchors
+                        ? 'transparent'
+                        : 'var(--surface-raised)',
+                      color: showAnchors ? 'var(--accent)' : 'var(--fg-muted)',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      lineHeight: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    ⊙
+                  </button>
                 </div>
-
-                <button
-                  onClick={() =>
-                    setToolsPanel((p) => (p === 'scale' ? null : 'scale'))
-                  }
-                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 flex items-center gap-2 ${toolsPanel === 'scale' ? 'font-bold' : ''}`}
-                  style={
-                    toolsPanel === 'scale'
-                      ? { color: 'var(--accent)' }
-                      : undefined
-                  }
-                >
-                  <span style={{ color: 'var(--accent)' }}>
-                    <ScaleIcon />
-                  </span>
-                  Scale Parts
-                </button>
-                <div
-                  className="overflow-hidden transition-[max-height] duration-200 ease-in-out"
-                  style={{ maxHeight: toolsPanel === 'scale' ? 1000 : 0 }}
-                >
-                  <div className="pt-1.5">
-                    <ScaleControls />
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowAnchors((v) => !v)}
-                  className={`btn-ghost w-full rounded py-1.5 text-xs uppercase tracking-widest text-left px-2 ${showAnchors ? 'font-bold' : ''}`}
-                  style={showAnchors ? { color: 'var(--accent)' } : undefined}
-                >
-                  {showAnchors ? '⊙ Hide Joints' : '⊙ Show Joints'}
-                </button>
+                {toolsPanel === 'shift' && <ShiftControls />}
+                {toolsPanel === 'scale' && <ScaleControls />}
               </div>
             }
           />
@@ -385,71 +366,42 @@ export default function ConsolePage() {
           <ToolbarSection
             icon={<PreviewIcon />}
             label="Preview"
-            onClick={isMobile ? undefined : () => toggle('preview')}
-            dropdownOpen={isMobile ? false : openId === 'preview'}
-            onDropdownClose={isMobile ? undefined : close}
-            inlineContent={
-              <input
-                type="color"
-                value={previewBgColor}
-                onChange={(e) => setPreviewBgColor(e.target.value)}
-                className="h-5 w-6 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-                title="Canvas background colour"
-              />
-            }
+            onClick={() => toggle('preview')}
+            dropdownOpen={isOpen('preview')}
+            onDropdownClose={() => close('preview')}
             dropdownContent={
-              isMobile ? undefined : (
-                <div className="flex flex-col gap-2 w-full">
-                  <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
-                    <span>Background</span>
-                    <input
-                      type="color"
-                      value={previewBgColor}
-                      onChange={(e) => setPreviewBgColor(e.target.value)}
-                      className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
-                      title="Canvas background colour"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
-                    <div className="flex items-center justify-between">
-                      <span>Size</span>
-                      <span className="font-mono text-[10px]">
-                        {Math.round(previewScale * 100)}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.25"
-                      max="2"
-                      step="0.05"
-                      value={previewScale}
-                      onChange={(e) =>
-                        setPreviewScale(parseFloat(e.target.value))
-                      }
-                      className="w-full accent-accent"
-                    />
-                  </label>
-                </div>
-              )
+              <div className="flex flex-col gap-2 w-full">
+                <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
+                  <span>Background</span>
+                  <input
+                    type="color"
+                    value={previewBgColor}
+                    onChange={(e) => setPreviewBgColor(e.target.value)}
+                    className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+                    title="Canvas background colour"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
+                  <div className="flex items-center justify-between">
+                    <span>Size</span>
+                    <span className="font-mono text-[10px]">
+                      {Math.round(previewScale * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.25"
+                    max="2"
+                    step="0.05"
+                    value={previewScale}
+                    onChange={(e) =>
+                      setPreviewScale(parseFloat(e.target.value))
+                    }
+                    className="w-full accent-accent"
+                  />
+                </label>
+              </div>
             }
-          />
-
-          {/* Save */}
-          <ToolbarSection
-            icon={<FridgeIcon />}
-            label={
-              saveStatus === 'saving'
-                ? '…'
-                : saveStatus === 'saved'
-                  ? 'Saved'
-                  : saveStatus === 'error'
-                    ? 'Error'
-                    : 'Save'
-            }
-            primary={saveStatus === 'idle'}
-            disabled={saveStatus === 'saving' || frames.length === 0}
-            onClick={save}
-            title="Save animation"
           />
         </PageToolbar>
 

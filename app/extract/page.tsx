@@ -8,12 +8,12 @@ import { useLandmarksStore } from '@/lib/stores/landmarks-store';
 import {
   ToolbarLayout,
   PageToolbar,
-  ToolbarSection,
-} from '@/components/shared/ui/toolbar';
+} from '@/components/shared/ui/toolbar/toolbar-main';
+import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
-import { FridgeIcon, FridgeOpenIcon } from '@/components/shared/icons/fridge';
+import { FridgeOpenIcon } from '@/components/shared/icons/fridge';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
 import type { LandmarkFrame } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
@@ -25,10 +25,8 @@ type Source = 'live' | 'browse';
 type ExtractPhase = 'source-select' | 'ready' | 'detecting' | 'complete';
 
 export default function ExtractPage() {
-  /* â”€â”€ Router for post-save navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const router = useRouter();
 
-  /* â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const [source, setSource] = useState<Source>('browse');
   const [sourceSelected, setSourceSelected] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<
@@ -57,7 +55,6 @@ export default function ExtractPage() {
     usePoseDetection();
   const { frames, currentFrame, dimensions } = useLandmarksStore();
 
-  /* â”€â”€ Webcam lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const stopWebcam = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -310,7 +307,19 @@ export default function ExtractPage() {
       <ToolbarLayout disableAutoCollapse noToolbar={!showToolbar}>
         {/* â”€â”€ Phase-based toolbar â”€â”€ */}
         {showToolbar && (
-          <PageToolbar>
+          <PageToolbar
+            onSave={extractPhase === 'complete' ? handleUpload : undefined}
+            saveStatus={
+              uploadStatus === 'uploading'
+                ? 'saving'
+                : uploadStatus === 'done'
+                  ? 'saved'
+                  : uploadStatus === 'error'
+                    ? 'error'
+                    : 'idle'
+            }
+            saveDisabled={!canUpload}
+          >
             {/* Phase: ready â€” Extract only, centered */}
             {extractPhase === 'ready' && (
               <div
@@ -345,51 +354,20 @@ export default function ExtractPage() {
                 />
                 <ToolbarSection
                   icon={<PulseIcon />}
-                  label="Status"
+                  label={`Status: ${frameCount}`}
                   active
-                  inlineContent={
-                    <span
-                      className="flex items-center gap-1 text-[10px] uppercase tracking-widest"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
-                      <span
-                        className="inline-block w-2 h-2 rounded-full animate-pulse"
-                        style={{ backgroundColor: 'var(--danger)' }}
-                      />
-                      {frameCount}
-                    </span>
-                  }
                 />
               </>
             )}
 
             {/* Phase: complete â€” Re-Extract + Save */}
             {extractPhase === 'complete' && (
-              <>
-                <ToolbarSection
-                  icon={<CircularSawIcon />}
-                  label="Re-Extract"
-                  onClick={handleReExtract}
-                  title="Reload and start a new extraction"
-                />
-                <ToolbarSection
-                  icon={<FridgeIcon />}
-                  label={
-                    uploadStatus === 'uploading'
-                      ? 'â€¦'
-                      : uploadStatus === 'done'
-                        ? 'Saved'
-                        : uploadStatus === 'error'
-                          ? 'Error'
-                          : 'Save'
-                  }
-                  primary={uploadStatus === 'idle'}
-                  glow={uploadStatus === 'idle'}
-                  disabled={!canUpload}
-                  onClick={handleUpload}
-                  title="Save landmarks and go to Re-Animate"
-                />
-              </>
+              <ToolbarSection
+                icon={<CircularSawIcon />}
+                label="Re-Extract"
+                onClick={handleReExtract}
+                title="Reload and start a new extraction"
+              />
             )}
           </PageToolbar>
         )}
@@ -436,21 +414,15 @@ export default function ExtractPage() {
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
               <div className="flex flex-col items-center gap-8 max-w-2xl w-full">
                 {/* Header */}
-                <div className="text-center" style={{ color: 'var(--accent)' }}>
-                  <div className="flex flex-row items-center justify-center mb-2 gap-2">
-                    <BrainIcon size={24} />
-                    <p className="text-xs font-bold tracking-[0.35em] uppercase">
-                      The Extraction Chamber
-                    </p>
-                  </div>
-                  <p
-                    className="text-sm leading-relaxed max-w-sm"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
-                    Select a source to extract motor functions.
+                <div
+                  className="flex flex-row items-center justify-center mb-2 gap-2"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  <BrainIcon size={24} />
+                  <p className="text-xs font-bold tracking-[0.35em] uppercase">
+                    Select a source.
                   </p>
                 </div>
-
                 {/* Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                   {/* Live card */}

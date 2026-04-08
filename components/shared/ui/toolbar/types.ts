@@ -20,14 +20,20 @@ export interface DropdownPanelProps {
   width?: number | string;
 }
 
+export interface PageToolbarProps {
+  children: ReactNode;
+  onSave?: () => void;
+  saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  saveDisabled?: boolean;
+}
+
 export interface ToolbarSectionProps {
   icon?: ReactNode;
   label?: string;
   active?: boolean;
   onClick?: () => void;
-  /** Inline content shown on large screens beside the section trigger */
+  /** @deprecated inline content is no longer rendered; move content to dropdownContent */
   inlineContent?: ReactNode;
-  /** Dropdown content */
   dropdownContent?: ReactNode;
   dropdownOpen?: boolean;
   dropdownAlign?: 'left' | 'right';
