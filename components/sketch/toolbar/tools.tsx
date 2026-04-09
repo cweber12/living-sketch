@@ -1,8 +1,8 @@
 'use client';
 
 import type { ShapeTool } from '@/components/sketch/canvas/sketch-canvas';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
 import { DrillIcon } from '@/components/shared/icons/drill';
 
 const SHAPE_OPTIONS: { value: ShapeTool; label: string }[] = [

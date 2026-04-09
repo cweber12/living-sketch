@@ -1,6 +1,6 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { Flask2Icon } from '@/components/sketch/icons/flask-2';
 
 export const DEFAULT_COLOR_LIGHT = '#000000';

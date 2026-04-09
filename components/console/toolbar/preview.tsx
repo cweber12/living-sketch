@@ -1,6 +1,6 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { PreviewIcon } from '@/components/console/icons/preview-icon';
 
 interface PreviewSectionProps {

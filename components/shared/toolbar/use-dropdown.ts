@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-
-const MOBILE_BP = 1024;
+import { MOBILE_BP } from './constants';
 
 /**
  * Multi-dropdown manager.

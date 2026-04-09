@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useRef, useContext } from 'react';
-import { ToolbarCtx } from './toolbar-main';
+import { ToolbarCtx, SectionOrderCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import { ToolbarSectionProps } from './types';
 
-/* ── Inline SVG chevrons (avoid broken JSX attrs in chevron.tsx) ─── */
+/* â”€â”€ Inline SVG chevrons (avoid broken JSX attrs in chevron.tsx) â”€â”€â”€ */
 function ChevronDown() {
   return (
     <svg
@@ -48,7 +48,7 @@ function ChevronUp() {
   );
 }
 
-/* ── ToolbarSection ────────────────────────────────────────────────── */
+/* â”€â”€ ToolbarSection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export function ToolbarSection({
   icon,
   label,
@@ -70,9 +70,15 @@ export function ToolbarSection({
   const btnRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
   const { mode, isMobile } = useContext(ToolbarCtx);
+  const sectionOrderRef = useContext(SectionOrderCtx);
   const isSide = mode === 'side';
   const isOpen = dropdownOpen ?? false;
   const hasDropdown = !!dropdownContent;
+
+  /* Capture render-order index for CSS `order` in the shared dropdown row.
+     PageToolbar resets the counter each render; children increment in order. */
+  // eslint-disable-next-line react-hooks/refs
+  const dropdownOrder = sectionOrderRef.current++;
 
   /* Active = section open OR explicitly active OR primary */
   const isHighlighted = isOpen || active || primary;
@@ -92,12 +98,12 @@ export function ToolbarSection({
       return { backgroundColor: 'var(--accent)', color: 'var(--bg)' };
     }
     if (hovered) {
-      return { backgroundColor: 'var(--surface-hover)', color: 'var(--fg)' };
+      return { backgroundColor: 'var(--overlay-faint)', color: 'var(--fg)' };
     }
     return { backgroundColor: 'transparent', color: 'var(--fg-muted)' };
   };
 
-  /* ── Side-mode button ── */
+  /* â”€â”€ Side-mode button â”€â”€ */
   if (isSide) {
     return (
       <div className={`flex items-stretch w-full ${className}`}>
@@ -148,6 +154,7 @@ export function ToolbarSection({
             onClose={onDropdownClose}
             align="left"
             width={dropdownWidth}
+            order={dropdownOrder}
           >
             {dropdownContent}
           </DropdownPanel>
@@ -156,11 +163,9 @@ export function ToolbarSection({
     );
   }
 
-  /* ── Top / mobile mode button ── */
+  /* â”€â”€ Top / mobile mode button â”€â”€ */
   return (
-    <div
-      className={`flex items-stretch ${!isMobile ? 'flex-1' : 'flex-1'} ${className}`}
-    >
+    <div className={`flex items-stretch ${className}`}>
       <button
         ref={btnRef}
         onClick={onClick}
@@ -214,6 +219,7 @@ export function ToolbarSection({
           onClose={onDropdownClose}
           align={dropdownAlign}
           width={dropdownWidth}
+          order={dropdownOrder}
         >
           {dropdownContent}
         </DropdownPanel>

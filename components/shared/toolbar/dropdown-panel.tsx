@@ -10,13 +10,16 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { DropdownPanelProps } from './types';
+import { ToolbarCtx, DropdownRowCtx } from './toolbar-main';
 import {
-  ToolbarCtx,
   NAVBAR_H,
   TOOLBAR_H,
   TOOLBAR_W,
   TOOLBAR_H_MOBILE,
-} from './toolbar-main';
+  DROPDOWN_MIN_W,
+  DROPDOWN_MAX_W,
+  DROPDOWN_MIN_W_SIDE,
+} from './constants';
 
 /* ── DropdownPanel ─────────────────────────────────────────────────── */
 export function DropdownPanel({
@@ -26,8 +29,10 @@ export function DropdownPanel({
   children,
   align = 'left',
   width,
+  order,
 }: DropdownPanelProps) {
   const { mode, isMobile } = useContext(ToolbarCtx);
+  const dropdownRowEl = useContext(DropdownRowCtx);
   const panelRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ display: 'none' });
   const [mounted, setMounted] = useState(false);
@@ -35,8 +40,11 @@ export function DropdownPanel({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
+  /* Desktop top mode with shared dropdown row available */
+  const useSharedRow = !isMobile && mode === 'top' && !!dropdownRowEl;
+
   const measure = useCallback(() => {
-    if (!anchorRef.current) return;
+    if (useSharedRow || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
     const panelWidth = typeof width === 'number' ? width : 280;
 
@@ -58,15 +66,15 @@ export function DropdownPanel({
         position: 'fixed',
         top,
         left: TOOLBAR_W,
-        minWidth: 260,
-        maxWidth: typeof width === 'number' ? width : 360,
+        minWidth: DROPDOWN_MIN_W_SIDE,
+        maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
         maxHeight: `calc(100vh - ${top + 8}px)`,
         zIndex: 60,
         overflowY: 'auto',
       });
     } else {
-      /* ── Top mode: panel below the toolbar row ── */
+      /* ── Top mode fallback (no shared row) ── */
       const topOffset = NAVBAR_H + TOOLBAR_H;
       const left =
         align === 'right'
@@ -79,18 +87,18 @@ export function DropdownPanel({
         position: 'fixed',
         top: topOffset,
         left: Math.max(4, left),
-        minWidth: 220,
-        maxWidth: typeof width === 'number' ? width : 360,
+        minWidth: DROPDOWN_MIN_W,
+        maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
         maxHeight: `calc(100vh - ${topOffset + 8}px)`,
         zIndex: 60,
         overflowY: 'auto',
       });
     }
-  }, [anchorRef, align, width, mode, isMobile]);
+  }, [anchorRef, align, width, mode, isMobile, useSharedRow]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || useSharedRow) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     measure();
     const onResize = () => measure();
@@ -100,7 +108,7 @@ export function DropdownPanel({
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onResize, true);
     };
-  }, [open, measure]);
+  }, [open, measure, useSharedRow]);
 
   useEffect(() => {
     if (!open) return;
@@ -108,6 +116,11 @@ export function DropdownPanel({
       const t = e.target as Node;
       if (anchorRef.current?.contains(t)) return;
       if (panelRef.current?.contains(t)) return;
+      /* Don't close when clicking anywhere inside the toolbar system
+         (the bar, the shared dropdown row, or any other open panel). */
+      const el = t instanceof Element ? t : t.parentElement;
+      if (el?.closest?.('[data-toolbar]')) return;
+      if (el?.closest?.('[data-toolbar-panel]')) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => {
@@ -123,16 +136,38 @@ export function DropdownPanel({
 
   if (!mounted || !open) return null;
 
+  /* ── Desktop top mode: render inline inside the shared dropdown row ── */
+  if (useSharedRow) {
+    return createPortal(
+      <div
+        ref={panelRef}
+        data-toolbar-panel
+        style={{
+          order: order ?? 0,
+          minWidth: typeof width === 'number' ? width : DROPDOWN_MIN_W,
+          maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
+          maxHeight: `calc(100vh - ${NAVBAR_H + TOOLBAR_H + 16}px)`,
+          overflowY: 'auto',
+          borderRight: '1px solid var(--border)',
+        }}
+      >
+        <div className="p-3 flex flex-col gap-2">{children}</div>
+      </div>,
+      dropdownRowEl!,
+    );
+  }
+
+  /* ── Mobile / side / fallback: portal to document.body ── */
   const isMobilePanel = isMobile;
   const isSidePanel = !isMobile && mode === 'side';
 
   return createPortal(
     <div
       ref={panelRef}
+      data-toolbar-panel
       style={{
         ...style,
         backgroundColor: 'var(--overlay-faint)',
-        //border: '1px solid var(--border-strong)',
         borderRadius: isMobilePanel
           ? 0
           : isSidePanel

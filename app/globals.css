@@ -209,22 +209,6 @@ input[type='range']:hover::-webkit-slider-thumb {
     0 0 60px var(--accent-faint);
 }
 
-/* Pulsing glow for live-state indicators */
-.glow-pulse {
-  animation: glowPulse 2.2s ease-in-out infinite;
-}
-@keyframes glowPulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 6px var(--accent-glow);
-  }
-  50% {
-    opacity: 0.6;
-    box-shadow: 0 0 2px var(--accent-faint);
-  }
-}
-
 /* Brief 360° spin for side-flip icon transition */
 .side-flip {
   animation: sideFlip 0.35s ease-in-out;
@@ -238,22 +222,6 @@ input[type='range']:hover::-webkit-slider-thumb {
   }
   100% {
     transform: rotateY(360deg);
-  }
-}
-
-/* Segmented-control click ripple-glow */
-.seg-click-glow {
-  animation: segClickGlow 0.52s ease-out;
-}
-@keyframes segClickGlow {
-  0% {
-    box-shadow: 0 0 0 0 var(--accent-glow);
-  }
-  35% {
-    box-shadow: 0 0 0 5px var(--accent-glow);
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
   }
 }
 

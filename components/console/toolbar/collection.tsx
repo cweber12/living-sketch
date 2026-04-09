@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import type { FileEntry } from '@/lib/types';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { PersonFrontIcon } from '@/components/shared/icons/person-view';
 import { FilesIcon } from '@/components/console/icons/files-icon';

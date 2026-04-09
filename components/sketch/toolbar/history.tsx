@@ -1,6 +1,6 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { UndoIcon } from '@/components/shared/icons/undo';
 import { TrashIcon } from '@/components/shared/icons/trash';
 

@@ -1,0 +1,54 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Toolbar-specific styles
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Pulsing glow for toolbar active/live indicators */
+.glow-pulse {
+  animation: glowPulse 2.2s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 2px var(--accent-faint);
+  }
+}
+
+/* Segmented-control click ripple-glow */
+.seg-click-glow {
+  animation: segClickGlow 0.52s ease-out;
+}
+@keyframes segClickGlow {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  35% {
+    box-shadow: 0 0 0 5px var(--accent-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* ── Shared dropdown row (desktop top mode) ──────────────────────── */
+
+.toolbar-dropdown-row {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 39;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  background-color: var(--overlay-faint);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 0 0 6px 6px;
+}
+
+.toolbar-dropdown-row:empty {
+  display: none;
+}

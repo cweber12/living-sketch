@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
 import { PanelIcon } from '@/components/console/icons/panel';
 import { ShiftIcon } from '@/components/console/icons/shift-icon';
 import { ScaleIcon } from '@/components/console/icons/scale-icon';

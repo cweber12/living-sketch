@@ -1,8 +1,8 @@
 'use client';
 
 import type { Side } from '@/hooks/use-sketch-canvas-rig';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/ui/toolbar/segmented-control';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
 import { TableIcon } from '@/components/sketch/icons/table';
 import { PART_LABEL, PARTS_ORDER } from '@/components/sketch/sketch-constants';
 
@@ -55,7 +55,7 @@ export function LayoutSection({
             options={['front', 'back'] as Side[]}
             value={side}
             onChange={onSideChange}
-            labels={{ front: 'Front', back: 'Back' }}
+            labels={{ front: 'Face-Up', back: 'Face-Down' }}
           />
           <span
             className="text-[9px] uppercase tracking-widest mt-1"

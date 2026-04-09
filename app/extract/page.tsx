@@ -8,8 +8,8 @@ import { useLandmarksStore } from '@/lib/stores/landmarks-store';
 import {
   ToolbarLayout,
   PageToolbar,
-} from '@/components/shared/ui/toolbar/toolbar-main';
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+} from '@/components/shared/toolbar/toolbar-main';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';

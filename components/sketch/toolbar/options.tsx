@@ -1,6 +1,6 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/ui/toolbar/toolbar-section';
+import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { OptionsIcon } from '@/components/shared/icons/options';
 
 export const DEFAULT_BRUSH = 6;

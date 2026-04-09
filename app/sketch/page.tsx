@@ -11,8 +11,8 @@ import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
 import {
   ToolbarLayout,
   PageToolbar,
-} from '@/components/shared/ui/toolbar/toolbar-main';
-import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
+} from '@/components/shared/toolbar/toolbar-main';
+import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import { HistorySection } from '@/components/sketch/toolbar/history';
 import {

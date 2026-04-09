@@ -20,11 +20,11 @@ import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/console/canvas/animation-canvas';
 /* Toolbar components */
-import { useDropdown } from '@/components/shared/ui/toolbar/use-dropdown';
+import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
 import {
   PageToolbar,
   ToolbarLayout,
-} from '@/components/shared/ui/toolbar/toolbar-main';
+} from '@/components/shared/toolbar/toolbar-main';
 import { CollectionSection } from '@/components/console/toolbar/collection';
 import { ModifySection } from '@/components/console/toolbar/modify';
 import { PreviewSection } from '@/components/console/toolbar/preview';

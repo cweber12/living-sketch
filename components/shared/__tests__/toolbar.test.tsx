@@ -6,7 +6,7 @@ import {
   ToolbarSection,
   ToolbarSpacer,
   SegmentedControl,
-} from '@/components/shared/ui/toolbar';
+} from '@/components/shared/toolbar';
 
 // matchMedia is required by ToolbarLayout
 beforeAll(() => {
