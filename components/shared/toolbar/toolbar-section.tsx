@@ -98,7 +98,10 @@ export function ToolbarSection({
       return { backgroundColor: 'var(--accent)', color: 'var(--bg)' };
     }
     if (hovered) {
-      return { backgroundColor: 'var(--overlay-faint)', color: 'var(--fg)' };
+      return {
+        backgroundColor: 'var(--overlay-faint)',
+        color: 'var(--fg)',
+      };
     }
     return { backgroundColor: 'transparent', color: 'var(--fg-muted)' };
   };
@@ -152,6 +155,7 @@ export function ToolbarSection({
             anchorRef={btnRef}
             open={isOpen}
             onClose={onDropdownClose}
+            header={label}
             align="left"
             width={dropdownWidth}
             order={dropdownOrder}
@@ -190,12 +194,6 @@ export function ToolbarSection({
           ...buttonStyle(),
         }}
       >
-        {/* Layout: [chevron] [label] [icon] */}
-        {hasDropdown && (
-          <span className="leading-none shrink-0" aria-hidden="true">
-            {isOpen ? <ChevronUp /> : <ChevronDown />}
-          </span>
-        )}
         {label && (
           <span
             className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
@@ -217,6 +215,7 @@ export function ToolbarSection({
           anchorRef={btnRef}
           open={isOpen}
           onClose={onDropdownClose}
+          header={label}
           align={dropdownAlign}
           width={dropdownWidth}
           order={dropdownOrder}

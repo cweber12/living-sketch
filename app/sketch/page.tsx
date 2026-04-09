@@ -20,16 +20,12 @@ import {
   type ArmPose,
   type ViewMode,
 } from '@/components/sketch/toolbar/layout';
-import { ToolsSection } from '@/components/sketch/toolbar/tools';
 import {
-  OptionsSection,
+  ToolsSection,
   DEFAULT_BRUSH,
-} from '@/components/sketch/toolbar/options';
-import {
-  ColorSection,
   DEFAULT_COLOR_LIGHT,
   DEFAULT_COLOR_DARK,
-} from '@/components/sketch/toolbar/color';
+} from '@/components/sketch/toolbar/tools';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
@@ -549,6 +545,9 @@ export default function SketchPage() {
             onClearClose={() => close('clear')}
           />
           <LayoutSection
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onZoomReset={() => setZoom(1)}
             side={side}
             onSideChange={handleSideChange}
             viewMode={viewMode}
@@ -562,33 +561,19 @@ export default function SketchPage() {
             onClose={() => close('layout')}
           />
           <ToolsSection
+            color={color}
+            onColorChange={setColor}
+            onEraserOff={() => setIsEraser(false)}
+            usedColors={usedColors}
             tool={tool}
             onToolChange={setTool}
+            brushSize={brushSize}
+            onBrushSizeChange={setBrushSize}
             isEraser={isEraser}
             onIsEraserChange={setIsEraser}
             isOpen={isOpen('tools')}
             onToggle={() => toggle('tools')}
             onClose={() => close('tools')}
-          />
-          <OptionsSection
-            brushSize={brushSize}
-            onBrushSizeChange={setBrushSize}
-            isEraser={isEraser}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            onZoomReset={() => setZoom(1)}
-            isOpen={isOpen('options')}
-            onToggle={() => toggle('options')}
-            onClose={() => close('options')}
-          />
-          <ColorSection
-            color={color}
-            onColorChange={setColor}
-            onEraserOff={() => setIsEraser(false)}
-            usedColors={usedColors}
-            isOpen={isOpen('color')}
-            onToggle={() => toggle('color')}
-            onClose={() => close('color')}
           />
         </PageToolbar>
 

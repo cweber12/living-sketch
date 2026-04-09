@@ -24,14 +24,12 @@ export function HistorySection({
       {/* Undo */}
       <ToolbarSection
         icon={<UndoIcon />}
-        label="Undo"
         onClick={onUndo}
         title="Undo last stroke"
       />
       {/* Clear All */}
       <ToolbarSection
         icon={<TrashIcon />}
-        label="Clear"
         danger
         onClick={onClearToggle}
         dropdownOpen={isClearOpen}

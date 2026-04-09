@@ -10,6 +10,10 @@ export type ArmPose = 'up' | 'down';
 export type ViewMode = 'body' | 'single';
 
 interface LayoutSectionProps {
+  zoom: number;
+  onZoomChange: (v: number) => void;
+  onZoomReset: () => void;
+
   side: Side;
   onSideChange: (s: Side) => void;
   viewMode: ViewMode;
@@ -24,6 +28,9 @@ interface LayoutSectionProps {
 }
 
 export function LayoutSection({
+  zoom,
+  onZoomChange,
+  onZoomReset,
   side,
   onSideChange,
   viewMode,
@@ -45,6 +52,36 @@ export function LayoutSection({
       onDropdownClose={onClose}
       dropdownContent={
         <div className="flex flex-col gap-1.5">
+          <span
+            className="text-[9px] uppercase tracking-widest mt-1"
+            style={{ color: 'var(--fg-muted)' }}
+          >
+            Zoom
+          </span>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={0.5}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => onZoomChange(Number(e.target.value))}
+              className="flex-1 accent-accent"
+              title="Canvas zoom"
+            />
+            <span
+              className="text-[10px] tabular-nums shrink-0 w-8"
+              style={{ color: 'var(--fg-muted)' }}
+            >
+              {Math.round(zoom * 100)}%
+            </span>
+          </div>
+          <button
+            onClick={onZoomReset}
+            className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
+          >
+            Reset Zoom
+          </button>
           <span
             className="text-[9px] uppercase tracking-widest"
             style={{ color: 'var(--fg-muted)' }}

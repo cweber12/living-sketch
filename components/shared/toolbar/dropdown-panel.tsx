@@ -27,6 +27,7 @@ export function DropdownPanel({
   open,
   onClose,
   children,
+  header,
   align = 'left',
   width,
   order,
@@ -151,7 +152,20 @@ export function DropdownPanel({
           borderRight: '1px solid var(--border)',
         }}
       >
-        <div className="p-3 flex flex-col gap-2">{children}</div>
+        <div className="flex flex-col gap-2">
+          <span
+            className="py-1 pl-3 text-[9px] font-bold uppercase tracking-widest w-full"
+            style={{
+              color: 'var(--fg)',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            {header}
+          </span>
+          <div className="px-3" style={{ paddingBottom: 8 }}>
+            {children}
+          </div>
+        </div>
       </div>,
       dropdownRowEl!,
     );
