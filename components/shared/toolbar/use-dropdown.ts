@@ -3,12 +3,15 @@ import { MOBILE_BP } from './constants';
 
 /**
  * Multi-dropdown manager.
- * - Mobile (< 1024 px): only one dropdown open at a time (oldest evicted on overflow)
- * - Desktop: multiple dropdowns can be open simultaneously
+ * - Mobile (< 1024 px): one dropdown open at a time (FIFO)
+ * - Desktop: multiple dropdowns; FIFO eviction when viewport width is exhausted.
+ *   Max open count = floor(window.innerWidth / 240), minimum 2.
  */
 export function useDropdown() {
   const [openQueue, setOpenQueue] = useState<string[]>([]);
   const isMobileRef = useRef(false);
+  // Generous default before mount; updated by resize effect
+  const maxDesktopOpenRef = useRef(5);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
@@ -26,6 +29,18 @@ export function useDropdown() {
       );
   }, []);
 
+  useEffect(() => {
+    const update = () => {
+      maxDesktopOpenRef.current = Math.max(
+        2,
+        Math.floor(window.innerWidth / 240),
+      );
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   /** Returns true if the dropdown with the given id is currently open. */
   const isOpen = useCallback(
     (id: string) => openQueue.includes(id),
@@ -36,11 +51,13 @@ export function useDropdown() {
     setOpenQueue((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (isMobileRef.current) {
-        // Mobile: only one open at a time
+        // Mobile: only one open at a time (FIFO, max 1)
         return [id];
       }
-      // Desktop: allow all open simultaneously
-      return [...prev, id];
+      // Desktop: FIFO — evict oldest panels when at max
+      const next = [...prev, id];
+      const max = maxDesktopOpenRef.current;
+      return next.length > max ? next.slice(next.length - max) : next;
     });
   }, []);
 

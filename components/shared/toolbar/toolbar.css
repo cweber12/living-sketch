@@ -34,20 +34,9 @@
   }
 }
 
-/* ── Shared dropdown row (desktop top mode) ──────────────────────── */
+/* ── Button active press effect ─────────────────────────────────── */
 
-.toolbar-dropdown-row {
-  position: fixed;
-  left: 0;
-  z-index: 39;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background-color: var(--overlay-faint);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border-radius: 0 0 6px 6px;
-}
-
-.toolbar-dropdown-row:empty {
-  display: none;
+[data-toolbar] button:active:not(:disabled) {
+  transform: scale(0.96);
+  transition: transform 80ms ease;
 }

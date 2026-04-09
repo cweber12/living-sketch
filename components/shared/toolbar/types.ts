@@ -19,8 +19,6 @@ export interface DropdownPanelProps {
   header?: string;
   align?: 'left' | 'right';
   width?: number | string;
-  /** CSS flexbox order for shared dropdown row (desktop top mode) */
-  order?: number;
 }
 
 export interface PageToolbarProps {

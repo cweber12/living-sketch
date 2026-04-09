@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { DropdownPanelProps } from './types';
-import { ToolbarCtx, DropdownRowCtx } from './toolbar-main';
+import { ToolbarCtx } from './toolbar-main';
 import {
   NAVBAR_H,
   TOOLBAR_H,
@@ -30,10 +30,8 @@ export function DropdownPanel({
   header,
   align = 'left',
   width,
-  order,
 }: DropdownPanelProps) {
   const { mode, isMobile } = useContext(ToolbarCtx);
-  const dropdownRowEl = useContext(DropdownRowCtx);
   const panelRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ display: 'none' });
   const [mounted, setMounted] = useState(false);
@@ -41,13 +39,10 @@ export function DropdownPanel({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
-  /* Desktop top mode with shared dropdown row available */
-  const useSharedRow = !isMobile && mode === 'top' && !!dropdownRowEl;
-
   const measure = useCallback(() => {
-    if (useSharedRow || !anchorRef.current) return;
+    if (!anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const panelWidth = typeof width === 'number' ? width : 280;
+    const panelWidth = typeof width === 'number' ? width : DROPDOWN_MIN_W;
 
     if (isMobile) {
       /* ── Mobile: full-width panel above bottom toolbar ── */
@@ -75,19 +70,14 @@ export function DropdownPanel({
         overflowY: 'auto',
       });
     } else {
-      /* ── Top mode fallback (no shared row) ── */
+      /* ── Top mode: individually placed below the anchor button ── */
       const topOffset = NAVBAR_H + TOOLBAR_H;
       const left =
-        align === 'right'
-          ? Math.max(4, rect.right - panelWidth)
-          : Math.min(
-              rect.left,
-              Math.max(4, window.innerWidth - panelWidth - 4),
-            );
+        align === 'right' ? Math.max(0, rect.right - panelWidth) : rect.left;
       setStyle({
         position: 'fixed',
         top: topOffset,
-        left: Math.max(4, left),
+        left: Math.min(Math.max(0, left), window.innerWidth - panelWidth - 4),
         minWidth: DROPDOWN_MIN_W,
         maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
@@ -96,10 +86,10 @@ export function DropdownPanel({
         overflowY: 'auto',
       });
     }
-  }, [anchorRef, align, width, mode, isMobile, useSharedRow]);
+  }, [anchorRef, align, width, mode, isMobile]);
 
   useEffect(() => {
-    if (!open || useSharedRow) return;
+    if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     measure();
     const onResize = () => measure();
@@ -109,7 +99,7 @@ export function DropdownPanel({
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onResize, true);
     };
-  }, [open, measure, useSharedRow]);
+  }, [open, measure]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,8 +107,6 @@ export function DropdownPanel({
       const t = e.target as Node;
       if (anchorRef.current?.contains(t)) return;
       if (panelRef.current?.contains(t)) return;
-      /* Don't close when clicking anywhere inside the toolbar system
-         (the bar, the shared dropdown row, or any other open panel). */
       const el = t instanceof Element ? t : t.parentElement;
       if (el?.closest?.('[data-toolbar]')) return;
       if (el?.closest?.('[data-toolbar-panel]')) return;
@@ -137,43 +125,9 @@ export function DropdownPanel({
 
   if (!mounted || !open) return null;
 
-  /* ── Desktop top mode: render inline inside the shared dropdown row ── */
-  if (useSharedRow) {
-    return createPortal(
-      <div
-        ref={panelRef}
-        data-toolbar-panel
-        style={{
-          order: order ?? 0,
-          minWidth: typeof width === 'number' ? width : DROPDOWN_MIN_W,
-          maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
-          maxHeight: `calc(100vh - ${NAVBAR_H + TOOLBAR_H + 16}px)`,
-          overflowY: 'auto',
-          borderRight: '1px solid var(--border)',
-        }}
-      >
-        <div className="flex flex-col gap-2">
-          <span
-            className="py-1 pl-3 text-[9px] font-bold uppercase tracking-widest w-full"
-            style={{
-              color: 'var(--fg)',
-              borderBottom: '1px solid var(--border)',
-            }}
-          >
-            {header}
-          </span>
-          <div className="px-3" style={{ paddingBottom: 8 }}>
-            {children}
-          </div>
-        </div>
-      </div>,
-      dropdownRowEl!,
-    );
-  }
-
-  /* ── Mobile / side / fallback: portal to document.body ── */
   const isMobilePanel = isMobile;
   const isSidePanel = !isMobile && mode === 'side';
+  const isTopPanel = !isMobile && mode === 'top';
 
   return createPortal(
     <div
@@ -181,7 +135,9 @@ export function DropdownPanel({
       data-toolbar-panel
       style={{
         ...style,
-        backgroundColor: 'var(--overlay-faint)',
+        backgroundColor: 'var(--surface)',
+        border: `2px solid var(--border-strong)`,
+        borderTop: isTopPanel ? '2px solid var(--accent)' : undefined,
         borderRadius: isMobilePanel
           ? 0
           : isSidePanel
@@ -189,10 +145,38 @@ export function DropdownPanel({
             : '0 0 6px 6px',
         borderLeft: isMobilePanel ? 'none' : undefined,
         borderRight: isMobilePanel ? 'none' : undefined,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 20px var(--accent-glow)',
+        overflow: 'hidden',
       }}
     >
-      <div className="p-3 flex flex-col gap-2">{children}</div>
+      {header && (
+        <div
+          style={{
+            padding: '5px 12px',
+            backgroundColor: 'var(--surface-inset)',
+            borderBottom: '1px solid var(--border-strong)',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--fg-muted)',
+            }}
+          >
+            {header}
+          </span>
+        </div>
+      )}
+      <div
+        className="p-3 flex flex-col gap-2"
+        style={{ overflowY: 'auto', maxHeight: style.maxHeight }}
+      >
+        {children}
+      </div>
     </div>,
     document.body,
   );

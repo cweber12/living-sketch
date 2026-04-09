@@ -73,6 +73,21 @@ npm run test:coverage  # with coverage
 
 ## Git Workflow
 
+### Pre-implementation check (REQUIRED)
+
+Before starting any new implementation task, always check whether the user has already made changes since the last commit:
+
+```bash
+git status
+git diff --stat HEAD
+```
+
+- If there are **modified, deleted, or untracked files**: review them carefully, commit them with an accurate message, and push **before** writing any new code.
+- Do this every time — never assume the working tree is clean.
+- Never mix the user's existing work into a commit for a new implementation task.
+
+### Committing completed work
+
 After completing each task or set of related changes, always commit AND push:
 
 ```bash

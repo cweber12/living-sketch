@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useContext } from 'react';
-import { ToolbarCtx, SectionOrderCtx } from './toolbar-main';
+import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import { ToolbarSectionProps } from './types';
 
@@ -70,40 +70,63 @@ export function ToolbarSection({
   const btnRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
   const { mode, isMobile } = useContext(ToolbarCtx);
-  const sectionOrderRef = useContext(SectionOrderCtx);
   const isSide = mode === 'side';
   const isOpen = dropdownOpen ?? false;
   const hasDropdown = !!dropdownContent;
-
-  /* Capture render-order index for CSS `order` in the shared dropdown row.
-     PageToolbar resets the counter each render; children increment in order. */
-  // eslint-disable-next-line react-hooks/refs
-  const dropdownOrder = sectionOrderRef.current++;
 
   /* Active = section open OR explicitly active OR primary */
   const isHighlighted = isOpen || active || primary;
 
   /* Compute button styles */
   const buttonStyle = (): React.CSSProperties => {
+    const base: React.CSSProperties = {
+      transition:
+        'background-color 100ms ease, color 100ms ease, box-shadow 120ms ease',
+    };
     if (primary) {
-      return { backgroundColor: 'var(--accent)', color: 'var(--bg)' };
+      return {
+        ...base,
+        backgroundColor: 'var(--accent)',
+        color: 'var(--bg)',
+        boxShadow:
+          'inset 0 2px 8px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow)',
+      };
     }
     if (danger) {
       return {
-        backgroundColor: hovered ? 'var(--surface-hover)' : 'transparent',
+        ...base,
+        backgroundColor: hovered ? 'rgba(239,68,68,0.15)' : 'var(--surface)',
         color: 'var(--danger)',
+        boxShadow: hovered
+          ? '0 0 10px rgba(239,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.2)',
       };
     }
     if (isHighlighted) {
-      return { backgroundColor: 'var(--accent)', color: 'var(--bg)' };
+      return {
+        ...base,
+        backgroundColor: 'var(--accent)',
+        color: 'var(--bg)',
+        boxShadow:
+          'inset 0 2px 8px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow)',
+      };
     }
     if (hovered) {
       return {
-        backgroundColor: 'var(--overlay-faint)',
+        ...base,
+        backgroundColor: 'var(--surface-raised)',
         color: 'var(--fg)',
+        boxShadow:
+          '0 0 10px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.06)',
       };
     }
-    return { backgroundColor: 'transparent', color: 'var(--fg-muted)' };
+    return {
+      ...base,
+      backgroundColor: 'var(--surface)',
+      color: 'var(--fg-muted)',
+      boxShadow:
+        'inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.2)',
+    };
   };
 
   /* â”€â”€ Side-mode button â”€â”€ */
@@ -158,7 +181,6 @@ export function ToolbarSection({
             header={label}
             align="left"
             width={dropdownWidth}
-            order={dropdownOrder}
           >
             {dropdownContent}
           </DropdownPanel>
@@ -207,6 +229,7 @@ export function ToolbarSection({
             {icon}
           </span>
         )}
+        {hasDropdown && (isOpen ? <ChevronUp /> : <ChevronDown />)}
       </button>
 
       {/* Dropdown */}
@@ -218,7 +241,6 @@ export function ToolbarSection({
           header={label}
           align={dropdownAlign}
           width={dropdownWidth}
-          order={dropdownOrder}
         >
           {dropdownContent}
         </DropdownPanel>
