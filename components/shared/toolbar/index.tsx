@@ -1,6 +1,6 @@
 'use client';
 
-import './toolbar.css';
+import './styles.css';
 
 export { ToolbarCtx, ToolbarLayout, PageToolbar } from './toolbar-main';
 export * from './constants';

@@ -16,7 +16,6 @@ export interface DropdownPanelProps {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
-  header?: string;
   align?: 'left' | 'right';
   width?: number | string;
 }

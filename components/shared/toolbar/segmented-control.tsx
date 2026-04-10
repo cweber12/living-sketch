@@ -8,12 +8,14 @@ export function SegmentedControl<T extends string>({
   onChange,
   labels,
   dangerValue,
+  orientation = 'horizontal',
 }: {
   options: T[];
   value: T;
   onChange: (v: T) => void;
   labels?: Partial<Record<T, ReactNode>>;
   dangerValue?: T;
+  orientation?: 'horizontal' | 'vertical';
 }) {
   const [hoveredOption, setHoveredOption] = useState<T | null>(null);
   const [flashOption, setFlashOption] = useState<T | null>(null);
@@ -26,9 +28,9 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div
-      className="flex rounded overflow-hidden"
+      className={`flex rounded overflow-hidden ${orientation === 'vertical' ? 'flex-col' : ''}`}
       style={{
-        //border: '1px solid var(--border)',
+        border: '1px solid var(--border)',
         backgroundColor: 'var(--surface-raised)',
       }}
     >
@@ -44,7 +46,7 @@ export function SegmentedControl<T extends string>({
             onClick={() => handleClick(o)}
             onMouseEnter={() => setHoveredOption(o)}
             onMouseLeave={() => setHoveredOption(null)}
-            className={`flex-1 py-1 px-3 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none${isFlash ? ' seg-click-glow' : ''}`}
+            className={`flex-1 py-1 px-2 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none${isFlash ? ' seg-click-glow' : ''}`}
             style={{
               cursor: 'pointer',
               ...(isDanger

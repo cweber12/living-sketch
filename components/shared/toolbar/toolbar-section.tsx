@@ -95,11 +95,10 @@ export function ToolbarSection({
     if (danger) {
       return {
         ...base,
-        backgroundColor: hovered ? 'rgba(239,68,68,0.15)' : 'var(--surface)',
-        color: 'var(--danger)',
+        color: hovered ? 'var(--danger)' : 'var(--fg-muted)',
         boxShadow: hovered
           ? '0 0 10px rgba(239,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.2)',
+          : '',
       };
     }
     if (isHighlighted) {
@@ -129,7 +128,7 @@ export function ToolbarSection({
     };
   };
 
-  /* â”€â”€ Side-mode button â”€â”€ */
+  /* Side-mode button */
   if (isSide) {
     return (
       <div className={`flex items-stretch w-full ${className}`}>
@@ -178,7 +177,6 @@ export function ToolbarSection({
             anchorRef={btnRef}
             open={isOpen}
             onClose={onDropdownClose}
-            header={label}
             align="left"
             width={dropdownWidth}
           >
@@ -189,9 +187,9 @@ export function ToolbarSection({
     );
   }
 
-  /* â”€â”€ Top / mobile mode button â”€â”€ */
+  /* Top / mobile mode button */
   return (
-    <div className={`flex items-stretch ${className}`}>
+    <div className={`flex items-stretch w-full ${className}`}>
       <button
         ref={btnRef}
         onClick={onClick}
@@ -229,7 +227,6 @@ export function ToolbarSection({
             {icon}
           </span>
         )}
-        {hasDropdown && (isOpen ? <ChevronUp /> : <ChevronDown />)}
       </button>
 
       {/* Dropdown */}
@@ -238,7 +235,6 @@ export function ToolbarSection({
           anchorRef={btnRef}
           open={isOpen}
           onClose={onDropdownClose}
-          header={label}
           align={dropdownAlign}
           width={dropdownWidth}
         >

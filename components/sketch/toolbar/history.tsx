@@ -42,10 +42,6 @@ export function HistorySection({
                 onClearClose();
               }}
               className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
-              style={{
-                backgroundColor: 'var(--danger)',
-                color: '#fff',
-              }}
             >
               Clear All
             </button>

@@ -38,8 +38,13 @@
   --overlay: rgba(24, 19, 9, 0.64);
   --overlay-faint: rgba(24, 19, 9, 0.24);
   --bulb-dark: #ffc200; /* glowing filament bulb (dark mode) */
-  --bulb-med: #ffd242; /* glowing filament bulb (med) */
-  --bulb-light: #ffe286; /* glowing filament bulb (light mode) */
+  --bulb-med: #ffe284; /* glowing filament bulb (med) */
+  --bulb-glow: rgba(
+    255,
+    236,
+    175,
+    0.28
+  ); /* glowing filament bulb (light mode) */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,8 +64,8 @@
     --accent-active: #22c55e; /* pressed / active                         */
     --accent-faint: rgba(74, 222, 128, 0.1);
     --accent-glow: rgba(74, 222, 128, 0.22);
-    --danger: #f87171; /* chemical red                             */
-    --danger-hover: #fca5a5;
+    --danger: #8a2b24; /* blood-vial red */
+    --danger-hover: #6f211c;
     --danger-muted: rgba(248, 113, 113, 0.12);
     --signal: #fbbf24; /* amber warning signal                     */
     --signal-faint: rgba(251, 191, 36, 0.1);

@@ -27,7 +27,7 @@ export const SECTION_SIDE_PADDING = '6px 4px 4px';
 export const SECTION_SIDE_LABEL_SIZE = 8;
 
 /* ── Dropdown panel sizing ── */
-export const DROPDOWN_MIN_W = 220;
+export const DROPDOWN_MIN_W = 120;
 export const DROPDOWN_MAX_W = 360;
 export const DROPDOWN_MIN_W_SIDE = 260;
 

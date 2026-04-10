@@ -4,6 +4,7 @@ import type { Side } from '@/hooks/use-sketch-canvas-rig';
 import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
 import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
 import { TableIcon } from '@/components/sketch/icons/table';
+import { HeadIcon } from '@/components/sketch/icons/head';
 import { PART_LABEL, PARTS_ORDER } from '@/components/sketch/sketch-constants';
 
 export type ArmPose = 'up' | 'down';
@@ -82,18 +83,23 @@ export function LayoutSection({
           >
             Reset Zoom
           </button>
-          <span
-            className="text-[9px] uppercase tracking-widest"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Side
-          </span>
-          <SegmentedControl
-            options={['front', 'back'] as Side[]}
-            value={side}
-            onChange={onSideChange}
-            labels={{ front: 'Face-Up', back: 'Face-Down' }}
-          />
+
+          <div className="flex items-center gap-3 text-nowrap">
+            <SegmentedControl
+              options={['front', 'back'] as Side[]}
+              value={side}
+              onChange={onSideChange}
+              labels={{ front: 'Face Up', back: 'Face Down' }}
+            />
+            <div
+              className={`flex h-full p-0 items-center rotate-90 ${side === 'back' ? 'scale-x-[-1]' : ''}`}
+              style={{
+                color: 'var(--fg-muted)',
+              }}
+            >
+              <HeadIcon size={24} />
+            </div>
+          </div>
           <span
             className="text-[9px] uppercase tracking-widest mt-1"
             style={{ color: 'var(--fg-muted)' }}
@@ -124,18 +130,22 @@ export function LayoutSection({
               ))}
             </select>
           )}
-          <span
-            className="text-[9px] uppercase tracking-widest mt-1"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Arm Orientation
-          </span>
-          <SegmentedControl
-            options={['up', 'down'] as ArmPose[]}
-            value={armPose}
-            onChange={onArmPoseChange}
-            labels={{ up: 'Up', down: 'Down' }}
-          />
+          {viewMode !== 'single' && (
+            <>
+              <span
+                className="text-[9px] uppercase tracking-widest mt-1"
+                style={{ color: 'var(--fg-muted)' }}
+              >
+                Arm Orientation
+              </span>
+              <SegmentedControl
+                options={['up', 'down'] as ArmPose[]}
+                value={armPose}
+                onChange={onArmPoseChange}
+                labels={{ up: 'Up', down: 'Down' }}
+              />
+            </>
+          )}
         </div>
       }
     />

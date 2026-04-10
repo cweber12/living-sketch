@@ -27,7 +27,6 @@ export function DropdownPanel({
   open,
   onClose,
   children,
-  header,
   align = 'left',
   width,
 }: DropdownPanelProps) {
@@ -136,41 +135,18 @@ export function DropdownPanel({
       style={{
         ...style,
         backgroundColor: 'var(--surface)',
-        border: `2px solid var(--border-strong)`,
-        borderTop: isTopPanel ? '2px solid var(--accent)' : undefined,
+        borderBottom: `1px solid var(--border-strong)`,
+        borderLeft: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
+        borderRight: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
         borderRadius: isMobilePanel
           ? 0
           : isSidePanel
             ? '0 6px 6px 0'
             : '0 0 6px 6px',
-        borderLeft: isMobilePanel ? 'none' : undefined,
-        borderRight: isMobilePanel ? 'none' : undefined,
         boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 20px var(--accent-glow)',
         overflow: 'hidden',
       }}
     >
-      {header && (
-        <div
-          style={{
-            padding: '5px 12px',
-            backgroundColor: 'var(--surface-inset)',
-            borderBottom: '1px solid var(--border-strong)',
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: 'var(--fg-muted)',
-            }}
-          >
-            {header}
-          </span>
-        </div>
-      )}
       <div
         className="p-3 flex flex-col gap-2"
         style={{ overflowY: 'auto', maxHeight: style.maxHeight }}

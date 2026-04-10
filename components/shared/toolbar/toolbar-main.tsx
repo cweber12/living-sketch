@@ -199,7 +199,7 @@ export function PageToolbar({
                     backgroundColor:
                       saveStatus === 'error'
                         ? 'var(--danger)'
-                        : 'var(--accent)',
+                        : 'var(--accent-active)',
                     border: 'none',
                     borderTop: '2px solid var(--border-strong)',
                     cursor: saveDisabled ? 'not-allowed' : 'pointer',
@@ -378,8 +378,8 @@ export function PageToolbar({
           overflow: 'hidden',
           transition: 'height 200ms ease',
           backgroundColor: 'var(--surface-inset)',
-          borderBottom: isBottom ? undefined : '2px solid var(--accent)',
-          borderTop: isBottom ? '2px solid var(--accent)' : undefined,
+          borderBottom: isBottom ? undefined : '2px solid var(--border)',
+          borderTop: isBottom ? '2px solid var(--border)' : undefined,
           boxShadow: isBottom
             ? '0 -4px 24px var(--accent-glow)'
             : '0 4px 24px var(--accent-glow)',
@@ -402,44 +402,50 @@ export function PageToolbar({
             overflowX: isBottom ? 'auto' : undefined,
           }}
         >
+          {/* Save button */}
+          {onSave && (
+            <div className="flex ml-2 mr-2 mb-1.5 mt-1.5 shrink-0">
+              <button
+                onClick={onSave}
+                disabled={saveDisabled}
+                title="Save"
+                aria-label="Save"
+                style={{
+                  padding: '0px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textTransform: 'uppercase',
+                  gap: 6,
+                  color: 'var(--surface-inset)',
+                  backgroundColor:
+                    saveStatus === 'error' ? 'var(--danger)' : 'var(--accent)',
+                  border: '1px solid var(--border)',
+                  boxShadow:
+                    saveStatus === 'error'
+                      ? '0 0 8px var(--danger)'
+                      : '0 0 8px var(--accent-glow)',
+                  borderRadius: 8,
+                  cursor: saveDisabled ? 'not-allowed' : 'pointer',
+                  opacity: saveDisabled ? 0.5 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                <FridgeIcon size="16px" />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>
+                  {saveStatus === 'saving'
+                    ? 'Saving…'
+                    : saveStatus === 'saved'
+                      ? 'Saved'
+                      : saveStatus === 'error'
+                        ? 'Error'
+                        : 'Save'}
+                </span>
+              </button>
+            </div>
+          )}
           {children}
         </div>
-
-        {/* Save button */}
-        {onSave && (
-          <button
-            onClick={onSave}
-            disabled={saveDisabled}
-            title="Save"
-            aria-label="Save"
-            style={{
-              padding: '0 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              color: 'var(--bg)',
-              backgroundColor:
-                saveStatus === 'error' ? 'var(--danger)' : 'var(--accent)',
-              border: 'none',
-              borderLeft: '2px solid var(--border-strong)',
-              cursor: saveDisabled ? 'not-allowed' : 'pointer',
-              opacity: saveDisabled ? 0.5 : 1,
-              flexShrink: 0,
-            }}
-          >
-            <FridgeIcon size="16px" />
-            <span style={{ fontSize: 11, fontWeight: 600 }}>
-              {saveStatus === 'saving'
-                ? 'SavingÃ¢â‚¬Â¦'
-                : saveStatus === 'saved'
-                  ? 'Saved'
-                  : saveStatus === 'error'
-                    ? 'Error'
-                    : 'Save'}
-            </span>
-          </button>
-        )}
 
         {/* Desktop-only: collapse + sidebar controls */}
         {!isBottom && (
