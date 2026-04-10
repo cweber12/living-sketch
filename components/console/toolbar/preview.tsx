@@ -1,65 +1,166 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { PreviewIcon } from '@/components/console/icons/preview-icon';
 
-interface PreviewSectionProps {
+/* Inline mini-icons */
+const ColorIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" />
+  </svg>
+);
+
+const ZoomIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <line x1="11" y1="8" x2="11" y2="14" />
+    <line x1="8" y1="11" x2="14" y2="11" />
+  </svg>
+);
+
+interface DisplaySectionProps {
   bgColor: string;
   onBgColorChange: (c: string) => void;
   scale: number;
   onScaleChange: (v: number) => void;
-  isOpen: boolean;
+  expanded: boolean;
   onToggle: () => void;
-  onClose: () => void;
+  bgDropdownOpen: boolean;
+  onBgDropdownToggle: () => void;
+  onBgDropdownClose: () => void;
+  zoomDropdownOpen: boolean;
+  onZoomDropdownToggle: () => void;
+  onZoomDropdownClose: () => void;
 }
 
-export function PreviewSection({
+export function DisplaySection({
   bgColor,
   onBgColorChange,
   scale,
   onScaleChange,
-  isOpen,
+  expanded,
   onToggle,
-  onClose,
-}: PreviewSectionProps) {
+  bgDropdownOpen,
+  onBgDropdownToggle,
+  onBgDropdownClose,
+  zoomDropdownOpen,
+  onZoomDropdownToggle,
+  onZoomDropdownClose,
+}: DisplaySectionProps) {
   return (
-    <ToolbarSection
-      icon={<PreviewIcon />}
-      label="Preview"
-      onClick={onToggle}
-      dropdownOpen={isOpen}
-      onDropdownClose={onClose}
-      dropdownContent={
-        <div className="flex flex-col gap-2 w-full">
-          <label className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest">
-            <span>Background</span>
+    <ToolbarGroup
+      icon={<PreviewIcon size={14} />}
+      label="Display"
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <ActionIcon
+        icon={<ColorIcon />}
+        label="Background"
+        onClick={onBgDropdownToggle}
+        dropdownOpen={bgDropdownOpen}
+        onDropdownClose={onBgDropdownClose}
+        dropdownWidth={140}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '4px 0',
+            }}
+          >
             <input
               type="color"
               value={bgColor}
               onChange={(e) => onBgColorChange(e.target.value)}
-              className="h-5 w-8 cursor-pointer rounded border border-neutral-300 bg-transparent p-0 dark:border-neutral-600"
+              style={{
+                width: 32,
+                height: 24,
+                cursor: 'pointer',
+                borderRadius: 4,
+                backgroundColor: 'transparent',
+                padding: 0,
+                border: 'none',
+              }}
               title="Canvas background colour"
+              aria-label="Canvas background colour"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-xs uppercase tracking-widest">
-            <div className="flex items-center justify-between">
-              <span>Size</span>
-              <span className="font-mono text-[10px]">
+            <span
+              style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--fg-muted)',
+              }}
+            >
+              {bgColor}
+            </span>
+          </div>
+        }
+      />
+      <ActionIcon
+        icon={<ZoomIcon />}
+        label="Zoom"
+        onClick={onZoomDropdownToggle}
+        dropdownOpen={zoomDropdownOpen}
+        onDropdownClose={onZoomDropdownClose}
+        dropdownWidth={160}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '4px 0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="range"
+                min={0.25}
+                max={2}
+                step={0.05}
+                value={scale}
+                onChange={(e) => onScaleChange(parseFloat(e.target.value))}
+                className="flex-1 accent-accent"
+                title="Preview scale"
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: 'var(--fg-muted)',
+                  width: 32,
+                  textAlign: 'right',
+                }}
+              >
                 {Math.round(scale * 100)}%
               </span>
             </div>
-            <input
-              type="range"
-              min="0.25"
-              max="2"
-              step="0.05"
-              value={scale}
-              onChange={(e) => onScaleChange(parseFloat(e.target.value))}
-              className="w-full accent-accent"
-            />
-          </label>
-        </div>
-      }
-    />
+          </div>
+        }
+      />
+    </ToolbarGroup>
   );
 }

@@ -23,6 +23,8 @@ export interface DropdownPanelProps {
 export interface PageToolbarProps {
   children: ReactNode;
   onSave?: () => void;
+  onUndo?: () => void;
+  onClearAll?: () => void;
   saveStatus?: 'idle' | 'saving' | 'saved' | 'error';
   saveDisabled?: boolean;
 }

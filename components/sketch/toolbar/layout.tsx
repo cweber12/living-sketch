@@ -1,8 +1,7 @@
 'use client';
 
 import type { Side } from '@/hooks/use-sketch-canvas-rig';
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
+import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { TableIcon } from '@/components/sketch/icons/table';
 import { HeadIcon } from '@/components/sketch/icons/head';
 import { PART_LABEL, PARTS_ORDER } from '@/components/sketch/sketch-constants';
@@ -10,11 +9,89 @@ import { PART_LABEL, PARTS_ORDER } from '@/components/sketch/sketch-constants';
 export type ArmPose = 'up' | 'down';
 export type ViewMode = 'body' | 'single';
 
+/* ── Mini icons ─────────────────────────────────────────────────────── */
+
+const ArmsUpIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="5" r="2" />
+    <line x1="12" y1="7" x2="12" y2="16" />
+    <line x1="12" y1="16" x2="8" y2="22" />
+    <line x1="12" y1="16" x2="16" y2="22" />
+    <line x1="12" y1="10" x2="5" y2="5" />
+    <line x1="12" y1="10" x2="19" y2="5" />
+  </svg>
+);
+
+const ArmsDownIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="5" r="2" />
+    <line x1="12" y1="7" x2="12" y2="16" />
+    <line x1="12" y1="16" x2="8" y2="22" />
+    <line x1="12" y1="16" x2="16" y2="22" />
+    <line x1="12" y1="10" x2="6" y2="16" />
+    <line x1="12" y1="10" x2="18" y2="16" />
+  </svg>
+);
+
+const SawIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="9" />
+    <line x1="2" y1="12" x2="5" y2="12" />
+    <line x1="19" y1="12" x2="22" y2="12" />
+    <line x1="12" y1="2" x2="12" y2="5" />
+    <line x1="12" y1="19" x2="12" y2="22" />
+  </svg>
+);
+
+const ZoomIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <line x1="11" y1="8" x2="11" y2="14" />
+    <line x1="8" y1="11" x2="14" y2="11" />
+  </svg>
+);
+
 interface LayoutSectionProps {
   zoom: number;
   onZoomChange: (v: number) => void;
   onZoomReset: () => void;
-
   side: Side;
   onSideChange: (s: Side) => void;
   viewMode: ViewMode;
@@ -23,9 +100,14 @@ interface LayoutSectionProps {
   onFocusIdxChange: (i: number) => void;
   armPose: ArmPose;
   onArmPoseChange: (p: ArmPose) => void;
-  isOpen: boolean;
+  expanded: boolean;
   onToggle: () => void;
-  onClose: () => void;
+  partsDropdownOpen: boolean;
+  onPartsDropdownToggle: () => void;
+  onPartsDropdownClose: () => void;
+  zoomDropdownOpen: boolean;
+  onZoomDropdownToggle: () => void;
+  onZoomDropdownClose: () => void;
 }
 
 export function LayoutSection({
@@ -40,114 +122,184 @@ export function LayoutSection({
   onFocusIdxChange,
   armPose,
   onArmPoseChange,
-  isOpen,
+  expanded,
   onToggle,
-  onClose,
+  partsDropdownOpen,
+  onPartsDropdownToggle,
+  onPartsDropdownClose,
+  zoomDropdownOpen,
+  onZoomDropdownToggle,
+  onZoomDropdownClose,
 }: LayoutSectionProps) {
-  return (
-    <ToolbarSection
-      icon={<TableIcon />}
-      label="Layout"
-      onClick={onToggle}
-      dropdownOpen={isOpen}
-      onDropdownClose={onClose}
-      dropdownContent={
-        <div className="flex flex-col gap-1.5">
-          <span
-            className="text-[9px] uppercase tracking-widest mt-1"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Zoom
-          </span>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              min={0.5}
-              max={3}
-              step={0.1}
-              value={zoom}
-              onChange={(e) => onZoomChange(Number(e.target.value))}
-              className="flex-1 accent-accent"
-              title="Canvas zoom"
-            />
-            <span
-              className="text-[10px] tabular-nums shrink-0 w-8"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              {Math.round(zoom * 100)}%
-            </span>
-          </div>
-          <button
-            onClick={onZoomReset}
-            className="btn-ghost w-full rounded py-1 text-[10px] uppercase tracking-widest"
-          >
-            Reset Zoom
-          </button>
+  const isSingle = viewMode === 'single';
 
-          <div className="flex items-center gap-3 text-nowrap">
-            <SegmentedControl
-              options={['front', 'back'] as Side[]}
-              value={side}
-              onChange={onSideChange}
-              labels={{ front: 'Face Up', back: 'Face Down' }}
-            />
-            <div
-              className={`flex h-full p-0 items-center rotate-90 ${side === 'back' ? 'scale-x-[-1]' : ''}`}
-              style={{
-                color: 'var(--fg-muted)',
-              }}
-            >
-              <HeadIcon size={24} />
-            </div>
-          </div>
-          <span
-            className="text-[9px] uppercase tracking-widest mt-1"
-            style={{ color: 'var(--fg-muted)' }}
-          >
-            Body
+  return (
+    <ToolbarGroup
+      icon={<TableIcon size={14} />}
+      label="Layout"
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      {/* Face Up */}
+      <ActionIcon
+        icon={
+          <span style={{ display: 'flex', transform: 'rotate(90deg)' }}>
+            <HeadIcon size={14} />
           </span>
-          <SegmentedControl
-            options={['body', 'single'] as ViewMode[]}
-            value={viewMode}
-            onChange={onViewModeChange}
-            labels={{ body: 'Full', single: 'Parts' }}
-          />
-          {viewMode === 'single' && (
-            <select
-              value={focusIdx}
-              onChange={(e) => onFocusIdxChange(Number(e.target.value))}
-              className="w-full rounded px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
-              style={{
-                backgroundColor: 'var(--bg)',
-                color: 'var(--fg)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              {PARTS_ORDER.map((p, i) => (
-                <option key={p} value={i}>
-                  {PART_LABEL[p]}
-                </option>
-              ))}
-            </select>
-          )}
-          {viewMode !== 'single' && (
-            <>
-              <span
-                className="text-[9px] uppercase tracking-widest mt-1"
-                style={{ color: 'var(--fg-muted)' }}
+        }
+        label="Face Up"
+        active={side === 'front'}
+        onClick={() => onSideChange('front')}
+      />
+      {/* Face Down */}
+      <ActionIcon
+        icon={
+          <span
+            style={{ display: 'flex', transform: 'rotate(90deg) scaleX(-1)' }}
+          >
+            <HeadIcon size={14} />
+          </span>
+        }
+        label="Face Down"
+        active={side === 'back'}
+        onClick={() => onSideChange('back')}
+      />
+      {/* Arms Up */}
+      <ActionIcon
+        icon={<ArmsUpIcon />}
+        label="Arms Up"
+        active={armPose === 'up'}
+        disabled={isSingle}
+        onClick={() => onArmPoseChange('up')}
+      />
+      {/* Arms Down */}
+      <ActionIcon
+        icon={<ArmsDownIcon />}
+        label="Arms Down"
+        active={armPose === 'down'}
+        disabled={isSingle}
+        onClick={() => onArmPoseChange('down')}
+      />
+      {/* Parts Mode */}
+      <ActionIcon
+        icon={<SawIcon />}
+        label="Parts Mode"
+        active={isSingle}
+        onClick={() => {
+          const newMode = isSingle ? 'body' : 'single';
+          onViewModeChange(newMode);
+          if (newMode === 'single') onPartsDropdownToggle();
+        }}
+        dropdownOpen={isSingle && partsDropdownOpen}
+        onDropdownClose={onPartsDropdownClose}
+        dropdownWidth={180}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              padding: '4px 0',
+            }}
+          >
+            {PARTS_ORDER.map((part, i) => (
+              <button
+                key={part}
+                onClick={() => {
+                  onFocusIdxChange(i);
+                  onPartsDropdownClose();
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 8px',
+                  border: 'none',
+                  background: focusIdx === i ? 'var(--accent)' : 'none',
+                  color: focusIdx === i ? 'var(--bg)' : 'var(--fg)',
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  width: '100%',
+                  borderRadius: 2,
+                  transition: 'background-color 100ms ease',
+                }}
+                aria-label={PART_LABEL[part]}
               >
-                Arm Orientation
-              </span>
-              <SegmentedControl
-                options={['up', 'down'] as ArmPose[]}
-                value={armPose}
-                onChange={onArmPoseChange}
-                labels={{ up: 'Up', down: 'Down' }}
+                {PART_LABEL[part]}
+              </button>
+            ))}
+          </div>
+        }
+      />
+      {/* Zoom */}
+      <ActionIcon
+        icon={<ZoomIcon />}
+        label="Zoom"
+        onClick={onZoomDropdownToggle}
+        dropdownOpen={zoomDropdownOpen}
+        onDropdownClose={onZoomDropdownClose}
+        dropdownWidth={180}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '4px 0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="range"
+                min={0.5}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => onZoomChange(Number(e.target.value))}
+                className="flex-1 accent-accent"
+                title="Canvas zoom"
               />
-            </>
-          )}
-        </div>
-      }
-    />
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--fg-muted)',
+                  width: 32,
+                  textAlign: 'right',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                onZoomReset();
+                onZoomDropdownClose();
+              }}
+              style={{
+                padding: '4px 8px',
+                border: '1px solid var(--border)',
+                background: 'none',
+                color: 'var(--fg-muted)',
+                cursor: 'pointer',
+                fontSize: 10,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                borderRadius: 3,
+                width: '100%',
+                transition: 'background-color 100ms ease',
+              }}
+              aria-label="Reset Zoom"
+            >
+              Reset Zoom
+            </button>
+          </div>
+        }
+      />
+    </ToolbarGroup>
   );
 }

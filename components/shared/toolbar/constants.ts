@@ -13,7 +13,7 @@ export const TOOLBAR_W = 56;
 export const TOOLBAR_H_MOBILE = 56;
 
 /** Breakpoint below which the toolbar uses mobile layout (px) */
-export const MOBILE_BP = 1024;
+export const MOBILE_BP = 768;
 
 /* ── Section button sizing ── */
 export const SECTION_PADDING = '4px 10px';

@@ -10,11 +10,16 @@ import {
 } from 'react';
 import { ToolbarMode, ToolbarCtxValue, PageToolbarProps } from './types';
 import { FridgeIcon } from '@/components/shared/icons/fridge';
+import { OptionsIcon } from '@/components/shared/icons/options';
+import { UndoIcon } from '@/components/shared/icons/undo';
+import { TrashIcon } from '@/components/shared/icons/trash';
+import { DropdownPanel } from './dropdown-panel';
 import {
   NAVBAR_H,
   TOOLBAR_H,
   TOOLBAR_W,
   TOOLBAR_H_MOBILE,
+  MOBILE_BP,
   EXPAND_TAB_W,
   EXPAND_TAB_H,
   EXPAND_TAB_SIDE_W,
@@ -39,7 +44,7 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
  * Wrap PageToolbar + page content inside ToolbarLayout.
  * PageToolbar is position:fixed; ToolbarLayout pads the content area to
  * account for the toolbar's occupied space.
- * On mobile (< 1024 px) the toolbar is always bottom-anchored.
+ * On mobile (< 768 px) the toolbar is always bottom-anchored.
  */
 export function ToolbarLayout({
   children,
@@ -65,7 +70,7 @@ export function ToolbarLayout({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1023px)');
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BP - 1}px)`);
     const handler = (e: MediaQueryListEvent | MediaQueryList) =>
       setIsMobile(e.matches);
     handler(mq);
@@ -145,6 +150,8 @@ export function ToolbarLayout({
 export function PageToolbar({
   children,
   onSave,
+  onUndo,
+  onClearAll,
   saveStatus = 'idle',
   saveDisabled,
 }: PageToolbarProps) {
@@ -156,6 +163,9 @@ export function PageToolbar({
     setPreferSide,
     setCollapsed,
   } = useContext(ToolbarCtx);
+
+  const optionsBtnRef = useRef<HTMLButtonElement>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   /* ── Side mode ── */
   if (mode === 'side') {
@@ -180,48 +190,51 @@ export function PageToolbar({
         >
           {!collapsed && (
             <div className="flex flex-col h-full">
+              {/* Options button — top of sidebar */}
+              <button
+                ref={optionsBtnRef}
+                onClick={() => setOptionsOpen((v) => !v)}
+                title="Options"
+                aria-label="Options"
+                aria-expanded={optionsOpen}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  padding: '6px 4px',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  width: '100%',
+                  backgroundColor: optionsOpen
+                    ? 'var(--surface-raised)'
+                    : 'transparent',
+                  color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
+                  transition: 'background-color 100ms ease',
+                }}
+              >
+                <OptionsIcon size={16} />
+              </button>
+              <DropdownPanel
+                anchorRef={optionsBtnRef}
+                open={optionsOpen}
+                onClose={() => setOptionsOpen(false)}
+                width={160}
+              >
+                <OptionsMenu
+                  onSave={onSave}
+                  saveStatus={saveStatus}
+                  saveDisabled={saveDisabled}
+                  onUndo={onUndo}
+                  onClearAll={onClearAll}
+                  onClose={() => setOptionsOpen(false)}
+                />
+              </DropdownPanel>
               <div className="flex flex-col flex-1 overflow-y-auto">
                 {children}
               </div>
-              {onSave && (
-                <button
-                  onClick={onSave}
-                  disabled={saveDisabled}
-                  title="Save"
-                  aria-label="Save"
-                  style={{
-                    height: 44,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    color: 'var(--bg)',
-                    backgroundColor:
-                      saveStatus === 'error'
-                        ? 'var(--danger)'
-                        : 'var(--accent-active)',
-                    border: 'none',
-                    borderTop: '2px solid var(--border-strong)',
-                    cursor: saveDisabled ? 'not-allowed' : 'pointer',
-                    opacity: saveDisabled ? 0.5 : 1,
-                    width: '100%',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    flexDirection: 'column',
-                  }}
-                >
-                  <FridgeIcon size="18px" />
-                  <span style={{ fontSize: 9, lineHeight: 1 }}>
-                    {saveStatus === 'saving'
-                      ? 'Saving'
-                      : saveStatus === 'saved'
-                        ? 'Saved'
-                        : saveStatus === 'error'
-                          ? 'Error'
-                          : 'Save'}
-                  </span>
-                </button>
-              )}
               <button
                 onClick={() => setCollapsed(true)}
                 title="Collapse toolbar"
@@ -392,7 +405,7 @@ export function PageToolbar({
             : undefined,
         }}
       >
-        {/* Sections Ã¢â‚¬â€ compact flex-start row on desktop, scrollable on mobile */}
+        {/* Options + Sections */}
         <div
           style={{
             display: 'flex',
@@ -400,50 +413,50 @@ export function PageToolbar({
             alignItems: 'stretch',
             overflow: isBottom ? undefined : 'hidden',
             overflowX: isBottom ? 'auto' : undefined,
+            flex: 1,
           }}
         >
-          {/* Save button */}
-          {onSave && (
-            <div className="flex ml-2 mr-2 mb-1.5 mt-1.5 shrink-0">
-              <button
-                onClick={onSave}
-                disabled={saveDisabled}
-                title="Save"
-                aria-label="Save"
-                style={{
-                  padding: '0px 24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textTransform: 'uppercase',
-                  gap: 6,
-                  color: 'var(--surface-inset)',
-                  backgroundColor:
-                    saveStatus === 'error' ? 'var(--danger)' : 'var(--accent)',
-                  border: '1px solid var(--border)',
-                  boxShadow:
-                    saveStatus === 'error'
-                      ? '0 0 8px var(--danger)'
-                      : '0 0 8px var(--accent-glow)',
-                  borderRadius: 8,
-                  cursor: saveDisabled ? 'not-allowed' : 'pointer',
-                  opacity: saveDisabled ? 0.5 : 1,
-                  flexShrink: 0,
-                }}
-              >
-                <FridgeIcon size="16px" />
-                <span style={{ fontSize: 11, fontWeight: 600 }}>
-                  {saveStatus === 'saving'
-                    ? 'Saving…'
-                    : saveStatus === 'saved'
-                      ? 'Saved'
-                      : saveStatus === 'error'
-                        ? 'Error'
-                        : 'Save'}
-                </span>
-              </button>
-            </div>
-          )}
+          {/* Options button */}
+          <button
+            ref={optionsBtnRef}
+            onClick={() => setOptionsOpen((v) => !v)}
+            title="Options"
+            aria-label="Options"
+            aria-expanded={optionsOpen}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              padding: isMobile ? '4px 12px' : '4px 10px',
+              border: 'none',
+              borderRight: '1px solid var(--border)',
+              cursor: 'pointer',
+              flexShrink: 0,
+              backgroundColor: optionsOpen
+                ? 'var(--surface-raised)'
+                : 'transparent',
+              color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
+              transition: 'background-color 100ms ease',
+            }}
+          >
+            <OptionsIcon size={16} />
+          </button>
+          <DropdownPanel
+            anchorRef={optionsBtnRef}
+            open={optionsOpen}
+            onClose={() => setOptionsOpen(false)}
+            width={160}
+          >
+            <OptionsMenu
+              onSave={onSave}
+              saveStatus={saveStatus}
+              saveDisabled={saveDisabled}
+              onUndo={onUndo}
+              onClearAll={onClearAll}
+              onClose={() => setOptionsOpen(false)}
+            />
+          </DropdownPanel>
           {children}
         </div>
 
@@ -634,5 +647,160 @@ export function PageToolbar({
         </button>
       )}
     </>
+  );
+}
+
+/* ── OptionsMenu (used inside the Options DropdownPanel) ──────────── */
+
+function OptionsMenu({
+  onSave,
+  saveStatus,
+  saveDisabled,
+  onUndo,
+  onClearAll,
+  onClose,
+}: {
+  onSave?: () => void;
+  saveStatus: string;
+  saveDisabled?: boolean;
+  onUndo?: () => void;
+  onClearAll?: () => void;
+  onClose: () => void;
+}) {
+  const statusLabel =
+    saveStatus === 'saving'
+      ? 'Saving…'
+      : saveStatus === 'saved'
+        ? 'Saved'
+        : saveStatus === 'error'
+          ? 'Error'
+          : 'Save';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        padding: '4px 0',
+      }}
+    >
+      {/* Save */}
+      {onSave && (
+        <button
+          onClick={() => {
+            onSave();
+            onClose();
+          }}
+          disabled={saveDisabled}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 10px',
+            border: 'none',
+            background: 'none',
+            cursor: saveDisabled ? 'default' : 'pointer',
+            color: saveDisabled ? 'var(--fg-muted)' : 'var(--fg)',
+            opacity: saveDisabled ? 0.5 : 1,
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            width: '100%',
+            borderRadius: 3,
+            transition: 'background-color 100ms ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!saveDisabled)
+              e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Save"
+          aria-label="Save"
+        >
+          <FridgeIcon size="14" />
+          {statusLabel}
+        </button>
+      )}
+
+      {/* Undo */}
+      {onUndo && (
+        <button
+          onClick={() => {
+            onUndo();
+            onClose();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 10px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--fg)',
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            width: '100%',
+            borderRadius: 3,
+            transition: 'background-color 100ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Undo"
+          aria-label="Undo"
+        >
+          <UndoIcon size="14" />
+          Undo
+        </button>
+      )}
+
+      {/* Clear All */}
+      {onClearAll && (
+        <button
+          onClick={() => {
+            onClearAll();
+            onClose();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 10px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            color: 'var(--danger)',
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            width: '100%',
+            borderRadius: 3,
+            transition: 'background-color 100ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Clear All"
+          aria-label="Clear All"
+        >
+          <TrashIcon size={14} />
+          Clear All
+        </button>
+      )}
+    </div>
   );
 }

@@ -1,16 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import type { FileEntry } from '@/lib/types';
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
+import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { PersonFrontIcon } from '@/components/shared/icons/person-view';
 import { FilesIcon } from '@/components/console/icons/files-icon';
 import FileList from '@/components/console/controls/file-list';
 
 function formatFileTimestamp(name: string): string {
-  // ISO-like: "2026-03-31T13-16-35-194Z" or "capture-2026-03-31T05-36-51-828Z.json"
   const isoFixed = name
     .replace(/^capture-/, '')
     .replace(/\.json$/, '')
@@ -35,9 +32,14 @@ interface CollectionSectionProps {
   svgFile: string | null;
   onSvgSelect: (f: FileEntry) => void;
   onSvgDeselect: () => void;
-  isOpen: boolean;
+  expanded: boolean;
   onToggle: () => void;
-  onClose: () => void;
+  activityDropdownOpen: boolean;
+  onActivityDropdownToggle: () => void;
+  onActivityDropdownClose: () => void;
+  creationsDropdownOpen: boolean;
+  onCreationsDropdownToggle: () => void;
+  onCreationsDropdownClose: () => void;
 }
 
 export function CollectionSection({
@@ -47,68 +49,68 @@ export function CollectionSection({
   svgFile,
   onSvgSelect,
   onSvgDeselect,
-  isOpen,
+  expanded,
   onToggle,
-  onClose,
+  activityDropdownOpen,
+  onActivityDropdownToggle,
+  onActivityDropdownClose,
+  creationsDropdownOpen,
+  onCreationsDropdownToggle,
+  onCreationsDropdownClose,
 }: CollectionSectionProps) {
-  const [fileView, setFileView] = useState<'activity' | 'creations'>(
-    'activity',
-  );
-
   return (
-    <ToolbarSection
-      icon={<FilesIcon />}
+    <ToolbarGroup
+      icon={<FilesIcon size={14} />}
       label="Collection"
-      onClick={onToggle}
-      dropdownOpen={isOpen}
-      onDropdownClose={onClose}
-      dropdownWidth={300}
-      dropdownContent={
-        <div className="flex flex-col gap-2 w-full">
-          <SegmentedControl
-            options={['activity', 'creations'] as const}
-            value={fileView}
-            onChange={setFileView}
-            labels={{
-              activity: (
-                <span className="flex items-center justify-center gap-1">
-                  <BrainIcon />
-                  Extractions
-                </span>
-              ),
-              creations: (
-                <span className="flex items-center justify-center gap-1">
-                  <PersonFrontIcon size={10} />
-                  Creations
-                </span>
-              ),
-            }}
-          />
-          <div className="overflow-y-auto max-h-[40vh]">
-            {fileView === 'activity' ? (
-              <FileList
-                bucket="landmarks"
-                selected={landmarkFile}
-                onSelect={onLandmarkSelect}
-                formatLabel={(name) => formatFileTimestamp(name)}
-                onDelete={(f) => {
-                  if (landmarkFile === f.key) onLandmarkDeselect();
-                }}
-              />
-            ) : (
-              <FileList
-                bucket="svgs"
-                selected={svgFile}
-                onSelect={onSvgSelect}
-                formatLabel={(name) => formatFileTimestamp(name)}
-                onDelete={(f) => {
-                  if (svgFile === f.key) onSvgDeselect();
-                }}
-              />
-            )}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <ActionIcon
+        icon={<BrainIcon />}
+        label="Activity"
+        labeledButton
+        onClick={onActivityDropdownToggle}
+        active={activityDropdownOpen}
+        dropdownOpen={activityDropdownOpen}
+        onDropdownClose={onActivityDropdownClose}
+        dropdownWidth={280}
+        dropdownContent={
+          <div style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+            <FileList
+              bucket="landmarks"
+              selected={landmarkFile}
+              onSelect={onLandmarkSelect}
+              formatLabel={(name) => formatFileTimestamp(name)}
+              onDelete={(f) => {
+                if (landmarkFile === f.key) onLandmarkDeselect();
+              }}
+            />
           </div>
-        </div>
-      }
-    />
+        }
+      />
+      <ActionIcon
+        icon={<PersonFrontIcon size={10} />}
+        label="Creations"
+        labeledButton
+        onClick={onCreationsDropdownToggle}
+        active={creationsDropdownOpen}
+        dropdownOpen={creationsDropdownOpen}
+        onDropdownClose={onCreationsDropdownClose}
+        dropdownWidth={280}
+        dropdownContent={
+          <div style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+            <FileList
+              bucket="svgs"
+              selected={svgFile}
+              onSelect={onSvgSelect}
+              formatLabel={(name) => formatFileTimestamp(name)}
+              onDelete={(f) => {
+                if (svgFile === f.key) onSvgDeselect();
+              }}
+            />
+          </div>
+        }
+      />
+    </ToolbarGroup>
   );
 }

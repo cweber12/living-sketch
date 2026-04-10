@@ -21,13 +21,14 @@ import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/console/canvas/animation-canvas';
 /* Toolbar components */
 import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
+import { useSectionExpand } from '@/components/shared/toolbar/use-section-expand';
 import {
   PageToolbar,
   ToolbarLayout,
 } from '@/components/shared/toolbar/toolbar-main';
 import { CollectionSection } from '@/components/console/toolbar/collection';
 import { ModifySection } from '@/components/console/toolbar/modify';
-import { PreviewSection } from '@/components/console/toolbar/preview';
+import { DisplaySection } from '@/components/console/toolbar/preview';
 
 const CANVAS_W = 640;
 const CANVAS_H = 480;
@@ -48,6 +49,11 @@ export default function ConsolePage() {
   >('idle');
   const [showAnchors, setShowAnchors] = useState(false);
   const { isOpen, toggle, close } = useDropdown();
+  const { isExpanded, toggle: toggleSection } = useSectionExpand([
+    'collection',
+    'modifications',
+    'display',
+  ]);
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
 
@@ -224,25 +230,40 @@ export default function ConsolePage() {
             svgFile={svgFile}
             onSvgSelect={loadSvgs}
             onSvgDeselect={() => setSvgFile(null)}
-            isOpen={isOpen('files')}
-            onToggle={() => toggle('files')}
-            onClose={() => close('files')}
+            expanded={isExpanded('collection')}
+            onToggle={() => toggleSection('collection')}
+            activityDropdownOpen={isOpen('activity')}
+            onActivityDropdownToggle={() => toggle('activity')}
+            onActivityDropdownClose={() => close('activity')}
+            creationsDropdownOpen={isOpen('creations')}
+            onCreationsDropdownToggle={() => toggle('creations')}
+            onCreationsDropdownClose={() => close('creations')}
           />
           <ModifySection
             showAnchors={showAnchors}
             onShowAnchorsChange={setShowAnchors}
-            isOpen={isOpen('tools')}
-            onToggle={() => toggle('tools')}
-            onClose={() => close('tools')}
+            expanded={isExpanded('modifications')}
+            onToggle={() => toggleSection('modifications')}
+            shiftDropdownOpen={isOpen('shift')}
+            onShiftDropdownToggle={() => toggle('shift')}
+            onShiftDropdownClose={() => close('shift')}
+            scaleDropdownOpen={isOpen('scale')}
+            onScaleDropdownToggle={() => toggle('scale')}
+            onScaleDropdownClose={() => close('scale')}
           />
-          <PreviewSection
+          <DisplaySection
             bgColor={previewBgColor}
             onBgColorChange={setPreviewBgColor}
             scale={previewScale}
             onScaleChange={setPreviewScale}
-            isOpen={isOpen('preview')}
-            onToggle={() => toggle('preview')}
-            onClose={() => close('preview')}
+            expanded={isExpanded('display')}
+            onToggle={() => toggleSection('display')}
+            bgDropdownOpen={isOpen('bg')}
+            onBgDropdownToggle={() => toggle('bg')}
+            onBgDropdownClose={() => close('bg')}
+            zoomDropdownOpen={isOpen('displayZoom')}
+            onZoomDropdownToggle={() => toggle('displayZoom')}
+            onZoomDropdownClose={() => close('displayZoom')}
           />
         </PageToolbar>
 

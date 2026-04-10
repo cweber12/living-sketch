@@ -5,49 +5,6 @@ import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import { ToolbarSectionProps } from './types';
 
-/* â”€â”€ Inline SVG chevrons (avoid broken JSX attrs in chevron.tsx) â”€â”€â”€ */
-function ChevronDown() {
-  return (
-    <svg
-      data-testid="toolbar-section-chevron"
-      width="9"
-      height="9"
-      viewBox="0 0 10 10"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M2 3.5L5 6.5L8 3.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ChevronUp() {
-  return (
-    <svg
-      data-testid="toolbar-section-chevron"
-      width="9"
-      height="9"
-      viewBox="0 0 10 10"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M8 6.5L5 3.5L2 6.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 /* â”€â”€ ToolbarSection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export function ToolbarSection({
   icon,

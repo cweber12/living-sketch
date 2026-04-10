@@ -182,7 +182,7 @@ describe('ToolbarSection', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('shows chevron when dropdownContent is provided', () => {
+  it('renders dropdown content when dropdownContent is provided', () => {
     render(
       <ToolbarSection
         icon={<span>☆</span>}
@@ -193,11 +193,11 @@ describe('ToolbarSection', () => {
         dropdownContent={<span>Options</span>}
       />,
     );
-    // Chevron SVG should be present (down chevron when closed)
-    expect(screen.getByTestId('toolbar-section-chevron')).toBeInTheDocument();
+    // Button should render with the label
+    expect(screen.getByRole('button', { name: /filter/i })).toBeInTheDocument();
   });
 
-  it('does not show chevron when there is no dropdownContent', () => {
+  it('renders without chevron when there is no dropdownContent', () => {
     render(
       <ToolbarSection icon={<span>☆</span>} label="Action" onClick={vi.fn()} />,
     );

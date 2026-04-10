@@ -13,14 +13,18 @@ import {
   PageToolbar,
 } from '@/components/shared/toolbar/toolbar-main';
 import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
+import { useSectionExpand } from '@/components/shared/toolbar/use-section-expand';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
-import { HistorySection } from '@/components/sketch/toolbar/history';
 import {
   LayoutSection,
   type ArmPose,
   type ViewMode,
 } from '@/components/sketch/toolbar/layout';
-import { ToolsSection, DEFAULT_BRUSH } from '@/components/sketch/toolbar/tools';
+import {
+  ToolsSection,
+  ShapesSection,
+  DEFAULT_BRUSH,
+} from '@/components/sketch/toolbar/tools';
 import {
   ColorSection,
   DEFAULT_COLOR_LIGHT,
@@ -117,6 +121,12 @@ export default function SketchPage() {
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
   const { isOpen, toggle, close } = useDropdown();
+  const { isExpanded, toggle: toggleSection } = useSectionExpand([
+    'tools',
+    'shapes',
+    'color',
+    'layout',
+  ]);
   const [zoom, setZoom] = useState(() =>
     // On mobile, start zoomed in so head+torso fill the initial viewport
     typeof window !== 'undefined' && window.innerWidth < MOBILE_BP ? 1.5 : 1,
@@ -534,16 +544,11 @@ export default function SketchPage() {
         {/* â”€â”€ Unified toolbar â”€â”€ */}
         <PageToolbar
           onSave={handleSave}
+          onUndo={handleUndo}
+          onClearAll={clearAll}
           saveStatus={saveStatus}
           saveDisabled={saveStatus === 'saving'}
         >
-          <HistorySection
-            onUndo={handleUndo}
-            onClearAll={clearAll}
-            isClearOpen={isOpen('clear')}
-            onClearToggle={() => toggle('clear')}
-            onClearClose={() => close('clear')}
-          />
           <ToolsSection
             tool={tool}
             onToolChange={setTool}
@@ -551,18 +556,33 @@ export default function SketchPage() {
             onBrushSizeChange={setBrushSize}
             isEraser={isEraser}
             onIsEraserChange={setIsEraser}
-            isOpen={isOpen('tools')}
-            onToggle={() => toggle('tools')}
-            onClose={() => close('tools')}
+            expanded={isExpanded('tools')}
+            onToggle={() => toggleSection('tools')}
+            brushDropdownOpen={isOpen('brush')}
+            onBrushDropdownToggle={() => toggle('brush')}
+            onBrushDropdownClose={() => close('brush')}
+          />
+          <ShapesSection
+            tool={tool}
+            onToolChange={setTool}
+            isEraser={isEraser}
+            onIsEraserChange={setIsEraser}
+            expanded={isExpanded('shapes')}
+            onToggle={() => toggleSection('shapes')}
           />
           <ColorSection
             color={color}
             onColorChange={setColor}
             usedColors={usedColors}
             onEraserOff={() => setIsEraser(false)}
-            isOpen={isOpen('color')}
-            onToggle={() => toggle('color')}
-            onClose={() => close('color')}
+            expanded={isExpanded('color')}
+            onToggle={() => toggleSection('color')}
+            pickerDropdownOpen={isOpen('colorPicker')}
+            onPickerDropdownToggle={() => toggle('colorPicker')}
+            onPickerDropdownClose={() => close('colorPicker')}
+            overflowDropdownOpen={isOpen('colorOverflow')}
+            onOverflowDropdownToggle={() => toggle('colorOverflow')}
+            onOverflowDropdownClose={() => close('colorOverflow')}
           />
           <LayoutSection
             zoom={zoom}
@@ -576,9 +596,14 @@ export default function SketchPage() {
             onFocusIdxChange={setFocusIdx}
             armPose={armPose}
             onArmPoseChange={handleArmPoseChange}
-            isOpen={isOpen('layout')}
-            onToggle={() => toggle('layout')}
-            onClose={() => close('layout')}
+            expanded={isExpanded('layout')}
+            onToggle={() => toggleSection('layout')}
+            partsDropdownOpen={isOpen('parts')}
+            onPartsDropdownToggle={() => toggle('parts')}
+            onPartsDropdownClose={() => close('parts')}
+            zoomDropdownOpen={isOpen('zoom')}
+            onZoomDropdownToggle={() => toggle('zoom')}
+            onZoomDropdownClose={() => close('zoom')}
           />
         </PageToolbar>
 

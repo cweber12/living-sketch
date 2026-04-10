@@ -1,19 +1,60 @@
 'use client';
 
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { useContext } from 'react';
+import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
+import { ToolbarCtx } from '@/components/shared/toolbar/toolbar-main';
 import { Flask2Icon } from '@/components/sketch/icons/flask-2';
 
 export const DEFAULT_COLOR_LIGHT = '#000000';
 export const DEFAULT_COLOR_DARK = '#ffffff';
+
+/* Inline color-picker icon */
+const ColorPickerIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" />
+  </svg>
+);
+
+/* Chevron icon for overflow */
+const ChevronDownIcon = () => (
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 10 6"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+  >
+    <path d="M1 1l4 4 4-4" />
+  </svg>
+);
+
+const MAX_VISIBLE_SWATCHES = 6;
 
 interface ColorSectionProps {
   color: string;
   onColorChange: (c: string) => void;
   onEraserOff: () => void;
   usedColors: string[];
-  isOpen: boolean;
+  expanded: boolean;
   onToggle: () => void;
-  onClose: () => void;
+  pickerDropdownOpen: boolean;
+  onPickerDropdownToggle: () => void;
+  onPickerDropdownClose: () => void;
+  overflowDropdownOpen: boolean;
+  onOverflowDropdownToggle: () => void;
+  onOverflowDropdownClose: () => void;
 }
 
 export function ColorSection({
@@ -21,91 +62,134 @@ export function ColorSection({
   onColorChange,
   onEraserOff,
   usedColors,
-  isOpen,
+  expanded,
   onToggle,
-  onClose,
+  pickerDropdownOpen,
+  onPickerDropdownToggle,
+  onPickerDropdownClose,
+  overflowDropdownOpen,
+  onOverflowDropdownToggle,
+  onOverflowDropdownClose,
 }: ColorSectionProps) {
+  const { isMobile } = useContext(ToolbarCtx);
+  const visibleSwatches = usedColors.slice(0, MAX_VISIBLE_SWATCHES);
+  const overflowSwatches = usedColors.slice(MAX_VISIBLE_SWATCHES);
+
   return (
-    <ToolbarSection
-      icon={<Flask2Icon />}
+    <ToolbarGroup
+      icon={<Flask2Icon size={14} />}
       label="Color"
-      onClick={onToggle}
-      dropdownOpen={isOpen}
-      onDropdownClose={onClose}
-      dropdownContent={
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => {
-                onColorChange(e.target.value);
-                onEraserOff();
-              }}
-              onMouseEnter={(e) => {
-                const input = e.currentTarget;
-                input.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                const input = e.currentTarget;
-                input.style.opacity = '0.7';
-              }}
-              className="transition-opacity duration-150 focus-visible:outline-none"
-              style={{
-                width: 48,
-                height: 24,
-                cursor: 'pointer',
-                borderRadius: 8,
-                backgroundColor: 'transparent',
-                padding: 0,
-              }}
-              aria-label="Stroke color"
-            />
-            <span
-              className="text-[10px] uppercase tracking-widest"
-              style={{ color: 'var(--fg-muted)' }}
-            >
-              {color}
-            </span>
-          </div>
-          {usedColors.length > 0 && (
-            <>
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <ActionIcon
+        icon={<ColorPickerIcon />}
+        label="Color Picker"
+        onClick={onPickerDropdownToggle}
+        dropdownOpen={pickerDropdownOpen}
+        onDropdownClose={onPickerDropdownClose}
+        dropdownWidth={160}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '4px 0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => {
+                  onColorChange(e.target.value);
+                  onEraserOff();
+                }}
+                style={{
+                  width: 48,
+                  height: 24,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                  backgroundColor: 'transparent',
+                  padding: 0,
+                  border: 'none',
+                }}
+                aria-label="Stroke color"
+              />
               <span
-                className="text-[9px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
+                style={{
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'var(--fg-muted)',
+                }}
               >
-                Recent
+                {color}
               </span>
-              <div className="flex flex-wrap gap-1.5">
-                {usedColors.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => {
-                      onColorChange(c);
-                      onEraserOff();
-                    }}
-                    title={c}
-                    className="rounded transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    style={{
-                      width: 20,
-                      height: 20,
-                      padding: 0,
-                      background: 'none',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--fg-muted)',
-                    }}
-                  >
-                    <Flask2Icon size={18} secondaryColor={c} />
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      }
-    />
+            </div>
+          </div>
+        }
+      />
+      {/* Recent color swatches */}
+      {visibleSwatches.map((c) => (
+        <ActionIcon
+          key={c}
+          icon={<Flask2Icon size={isMobile ? 16 : 14} secondaryColor={c} />}
+          label={c}
+          onClick={() => {
+            onColorChange(c);
+            onEraserOff();
+          }}
+        />
+      ))}
+      {/* Overflow chevron */}
+      {overflowSwatches.length > 0 && (
+        <ActionIcon
+          icon={<ChevronDownIcon />}
+          label="More colors"
+          onClick={onOverflowDropdownToggle}
+          dropdownOpen={overflowDropdownOpen}
+          onDropdownClose={onOverflowDropdownClose}
+          dropdownWidth={140}
+          dropdownContent={
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 4,
+                padding: '4px 0',
+              }}
+            >
+              {overflowSwatches.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => {
+                    onColorChange(c);
+                    onEraserOff();
+                    onOverflowDropdownClose();
+                  }}
+                  title={c}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    padding: 0,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  aria-label={c}
+                >
+                  <Flask2Icon size={20} secondaryColor={c} />
+                </button>
+              ))}
+            </div>
+          }
+        />
+      )}
+    </ToolbarGroup>
   );
 }

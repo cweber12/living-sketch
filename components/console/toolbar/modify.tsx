@@ -1,84 +1,83 @@
 'use client';
 
-import { useState } from 'react';
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
-import { SegmentedControl } from '@/components/shared/toolbar/segmented-control';
+import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { PanelIcon } from '@/components/console/icons/panel';
 import { ShiftIcon } from '@/components/console/icons/shift-icon';
 import { ScaleIcon } from '@/components/console/icons/scale-icon';
 import ShiftControls from '@/components/console/controls/shift-controls';
 import ScaleControls from '@/components/console/controls/scale-controls';
 
+/* Anchor/joints icon */
+const JointsIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <circle cx="12" cy="12" r="3" />
+    <circle cx="12" cy="12" r="8" strokeDasharray="2 3" />
+  </svg>
+);
+
 interface ModifySectionProps {
   showAnchors: boolean;
   onShowAnchorsChange: (v: boolean) => void;
-  isOpen: boolean;
+  expanded: boolean;
   onToggle: () => void;
-  onClose: () => void;
+  shiftDropdownOpen: boolean;
+  onShiftDropdownToggle: () => void;
+  onShiftDropdownClose: () => void;
+  scaleDropdownOpen: boolean;
+  onScaleDropdownToggle: () => void;
+  onScaleDropdownClose: () => void;
 }
 
 export function ModifySection({
   showAnchors,
   onShowAnchorsChange,
-  isOpen,
+  expanded,
   onToggle,
-  onClose,
+  shiftDropdownOpen,
+  onShiftDropdownToggle,
+  onShiftDropdownClose,
+  scaleDropdownOpen,
+  onScaleDropdownToggle,
+  onScaleDropdownClose,
 }: ModifySectionProps) {
-  const [toolsPanel, setToolsPanel] = useState<'shift' | 'scale'>('shift');
-
   return (
-    <ToolbarSection
-      icon={<PanelIcon />}
-      label="Modify"
-      onClick={onToggle}
-      dropdownOpen={isOpen}
-      onDropdownClose={onClose}
-      dropdownContent={
-        <div className="flex flex-col gap-2 w-full">
-          {/* SegmentedControl + Show Joints inline */}
-          <div className="flex items-center gap-2">
-            <SegmentedControl
-              options={['shift', 'scale'] as const}
-              value={toolsPanel}
-              onChange={setToolsPanel}
-              labels={{
-                shift: (
-                  <span className="flex items-center gap-1">
-                    <ShiftIcon /> Shift
-                  </span>
-                ),
-                scale: (
-                  <span className="flex items-center gap-1">
-                    <ScaleIcon /> Scale
-                  </span>
-                ),
-              }}
-            />
-            <button
-              onClick={() => onShowAnchorsChange(!showAnchors)}
-              title={showAnchors ? 'Hide Joints' : 'Show Joints'}
-              aria-label={showAnchors ? 'Hide Joints' : 'Show Joints'}
-              style={{
-                padding: '3px 7px',
-                border: '1px solid var(--border)',
-                borderRadius: 4,
-                backgroundColor: showAnchors
-                  ? 'transparent'
-                  : 'var(--surface-raised)',
-                color: showAnchors ? 'var(--accent)' : 'var(--fg-muted)',
-                cursor: 'pointer',
-                fontSize: 13,
-                lineHeight: 1,
-                flexShrink: 0,
-              }}
-            >
-              ⊙
-            </button>
-          </div>
-          {toolsPanel === 'shift' && <ShiftControls />}
-          {toolsPanel === 'scale' && <ScaleControls />}
-        </div>
-      }
-    />
+    <ToolbarGroup
+      icon={<PanelIcon size={14} />}
+      label="Modifications"
+      expanded={expanded}
+      onToggle={onToggle}
+    >
+      <ActionIcon
+        icon={<ShiftIcon size={14} />}
+        label="Shift Joints"
+        onClick={onShiftDropdownToggle}
+        dropdownOpen={shiftDropdownOpen}
+        onDropdownClose={onShiftDropdownClose}
+        dropdownWidth={260}
+        dropdownContent={<ShiftControls />}
+      />
+      <ActionIcon
+        icon={<ScaleIcon size={14} />}
+        label="Scale Parts"
+        onClick={onScaleDropdownToggle}
+        dropdownOpen={scaleDropdownOpen}
+        onDropdownClose={onScaleDropdownClose}
+        dropdownWidth={260}
+        dropdownContent={<ScaleControls />}
+      />
+      <ActionIcon
+        icon={<JointsIcon />}
+        label="Show Joints"
+        active={showAnchors}
+        onClick={() => onShowAnchorsChange(!showAnchors)}
+      />
+    </ToolbarGroup>
   );
 }
