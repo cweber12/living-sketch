@@ -38,7 +38,8 @@ import {
   PART_PROPORTIONS,
   PARTS_ORDER,
 } from '@/components/sketch/sketch-constants';
-
+import { PrevIcon, NextIcon } from '@/components/shared/icons/navigate';
+import { CloseIcon } from '@/components/shared/icons/close';
 const SESSION_STATE_KEY = 'sketch-page-state';
 
 const DEFAULT_CANVAS_SIZE = 110;
@@ -541,7 +542,7 @@ export default function SketchPage() {
   return (
     <main className="flex flex-1 w-full overflow-hidden">
       <ToolbarLayout>
-        {/* â”€â”€ Unified toolbar â”€â”€ */}
+        {/* Unified toolbar */}
         <PageToolbar
           onSave={handleSave}
           onUndo={handleUndo}
@@ -550,6 +551,9 @@ export default function SketchPage() {
           saveDisabled={saveStatus === 'saving'}
         >
           <ToolsSection
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onZoomReset={() => setZoom(1)}
             tool={tool}
             onToolChange={setTool}
             brushSize={brushSize}
@@ -561,6 +565,9 @@ export default function SketchPage() {
             brushDropdownOpen={isOpen('brush')}
             onBrushDropdownToggle={() => toggle('brush')}
             onBrushDropdownClose={() => close('brush')}
+            zoomDropdownOpen={isOpen('zoom')}
+            onZoomDropdownToggle={() => toggle('zoom')}
+            onZoomDropdownClose={() => close('zoom')}
           />
           <ShapesSection
             tool={tool}
@@ -601,15 +608,12 @@ export default function SketchPage() {
             partsDropdownOpen={isOpen('parts')}
             onPartsDropdownToggle={() => toggle('parts')}
             onPartsDropdownClose={() => close('parts')}
-            zoomDropdownOpen={isOpen('zoom')}
-            onZoomDropdownToggle={() => toggle('zoom')}
-            onZoomDropdownClose={() => close('zoom')}
           />
         </PageToolbar>
 
-        {/* â”€â”€ Canvas area â”€â”€ */}
+        {/* CANVAS AREA */}
         <div className="flex flex-col flex-1 overflow-hidden relative">
-          {/* â”€â”€ BODY MODE â”€â”€ */}
+          {/* BODY MODE */}
           <div
             className={
               viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
@@ -635,7 +639,7 @@ export default function SketchPage() {
             </div>
           </div>
 
-          {/* â”€â”€ SINGLE-PART MODE â”€â”€ */}
+          {/* SINGLE-PART MODE */}
           {viewMode === 'single' && (
             <>
               {/* Responsive single-part layout:
@@ -644,7 +648,7 @@ export default function SketchPage() {
               <div className="flex-1 flex flex-col items-stretch min-h-0 py-3">
                 {/* Canvas row */}
                 <div className="flex-1 flex items-center justify-center gap-2 px-0 md:px-2 min-h-0">
-                  {/* Prev â€“ large screens only */}
+                  {/* Prev : large screens only */}
                   <button
                     onClick={goPrev}
                     className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -655,7 +659,7 @@ export default function SketchPage() {
                     }}
                     aria-label="Previous part"
                   >
-                    â—€
+                    <PrevIcon />
                   </button>
 
                   <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0 w-full">
@@ -663,7 +667,7 @@ export default function SketchPage() {
                       className="text-[10px] font-bold uppercase tracking-widest shrink-0"
                       style={{ color: 'var(--accent)' }}
                     >
-                      {PART_LABEL[focusPart]} Â· {side}
+                      {PART_LABEL[focusPart]} | {side}
                     </p>
                     <div
                       style={{
@@ -711,7 +715,7 @@ export default function SketchPage() {
                     </p>
                   </div>
 
-                  {/* Next â€“ large screens only */}
+                  {/* Next : large screens only */}
                   <button
                     onClick={goNext}
                     className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -720,13 +724,12 @@ export default function SketchPage() {
                       border: '1px solid var(--border)',
                       color: 'var(--fg)',
                     }}
-                    aria-label="Next part"
                   >
-                    â–¶
+                    <NextIcon />
                   </button>
                 </div>
 
-                {/* Mobile nav buttons â€“ below canvas */}
+                {/* Mobile nav buttons below canvas */}
                 <div className="flex md:hidden justify-between items-center px-6 pb-1 shrink-0 gap-4">
                   <button
                     onClick={goPrev}
@@ -738,10 +741,7 @@ export default function SketchPage() {
                     }}
                     aria-label="Previous part"
                   >
-                    â—€{' '}
-                    <span className="text-[11px] font-semibold uppercase tracking-widest">
-                      Prev
-                    </span>
+                    <PrevIcon />
                   </button>
                   <button
                     onClick={goNext}
@@ -753,10 +753,7 @@ export default function SketchPage() {
                     }}
                     aria-label="Next part"
                   >
-                    <span className="text-[11px] font-semibold uppercase tracking-widest">
-                      Next
-                    </span>{' '}
-                    â–¶
+                    <NextIcon />
                   </button>
                 </div>
               </div>
@@ -765,9 +762,9 @@ export default function SketchPage() {
             </>
           )}
 
-          {/* â”€â”€ Copy-front overlay (subsequent back visits) â”€â”€ */}
+          {/* Copy-front overlay (subsequent back visits) */}
           {side === 'back' && showCopyFront && (
-            <div className="absolute top-2 left-1.5 right-0 flex justify-start z-10 pointer-events-none">
+            <div className="absolute top-3 left-2 right-0 flex justify-start z-10 pointer-events-none">
               <div
                 className="flex items-center gap-1.5 rounded-full px-3 py-1 pointer-events-auto"
                 style={{
@@ -787,7 +784,7 @@ export default function SketchPage() {
                   }}
                   aria-label="Dismiss copy front"
                 >
-                  âœ•
+                  <CloseIcon />
                 </button>
                 <button
                   onClick={() => {

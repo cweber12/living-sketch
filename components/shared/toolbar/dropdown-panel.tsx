@@ -13,7 +13,6 @@ import { DropdownPanelProps } from './types';
 import { ToolbarCtx } from './toolbar-main';
 import {
   NAVBAR_H,
-  TOOLBAR_H,
   TOOLBAR_W,
   TOOLBAR_H_MOBILE,
   DROPDOWN_MIN_W,
@@ -47,7 +46,7 @@ export function DropdownPanel({
       /* ── Mobile: full-width panel above bottom toolbar ── */
       setStyle({
         position: 'fixed',
-        bottom: TOOLBAR_H_MOBILE,
+        bottom: TOOLBAR_H_MOBILE + 2,
         left: 0,
         right: 0,
         maxHeight: '65vh',
@@ -60,7 +59,7 @@ export function DropdownPanel({
       setStyle({
         position: 'fixed',
         top,
-        left: TOOLBAR_W,
+        left: TOOLBAR_W + 2,
         minWidth: DROPDOWN_MIN_W_SIDE,
         maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
@@ -69,8 +68,8 @@ export function DropdownPanel({
         overflowY: 'auto',
       });
     } else {
-      /* ── Top mode: individually placed below the anchor button ── */
-      const topOffset = NAVBAR_H + TOOLBAR_H;
+      /* ── Top mode: placed below the anchor button ── */
+      const topOffset = rect.bottom + 2;
       const left =
         align === 'right' ? Math.max(0, rect.right - panelWidth) : rect.left;
       setStyle({
@@ -143,12 +142,17 @@ export function DropdownPanel({
             ? '0 6px 6px 0'
             : '0 0 6px 6px',
         boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 20px var(--accent-glow)',
-        overflow: 'hidden',
+        // Don't use overflow:hidden — it clips range input thumbs.
+        // Let the inner scroll container handle vertical overflow.
       }}
     >
       <div
         className="p-3 flex flex-col gap-2"
-        style={{ overflowY: 'auto', maxHeight: style.maxHeight }}
+        style={{
+          overflowY: 'auto',
+          maxHeight: style.maxHeight,
+          boxSizing: 'border-box',
+        }}
       >
         {children}
       </div>

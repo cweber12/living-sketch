@@ -9,6 +9,9 @@ export interface ToolbarCtxValue {
   disableAutoCollapse: boolean;
   setPreferSide: (v: boolean) => void;
   setCollapsed: (v: boolean) => void;
+  /** DOM node above the bottom toolbar for portaling mobile expanded content */
+  mobileExpandSlot: HTMLDivElement | null;
+  setMobileExpandSlot: (el: HTMLDivElement | null) => void;
 }
 
 export interface DropdownPanelProps {

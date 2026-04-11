@@ -37,6 +37,8 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
   disableAutoCollapse: false,
   setPreferSide: () => {},
   setCollapsed: () => {},
+  mobileExpandSlot: null,
+  setMobileExpandSlot: () => {},
 });
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ ToolbarLayout Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -64,6 +66,8 @@ export function ToolbarLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [mobileExpandSlot, setMobileExpandSlot] =
+    useState<HTMLDivElement | null>(null);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
@@ -104,6 +108,8 @@ export function ToolbarLayout({
         disableAutoCollapse,
         setPreferSide,
         setCollapsed,
+        mobileExpandSlot,
+        setMobileExpandSlot,
       }}
     >
       {/* Content area Ã¢â‚¬â€ padded to avoid being covered by fixed toolbar */}
@@ -134,11 +140,23 @@ export function PageToolbar({
     disableAutoCollapse,
     setPreferSide,
     setCollapsed,
+    setMobileExpandSlot,
   } = useContext(ToolbarCtx);
 
   const optionsBtnRef = useRef<HTMLButtonElement>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const mobileSlotRef = useRef<HTMLDivElement>(null);
+
+  // Register the mobile expand slot div in context when in mobile mode
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileExpandSlot(null);
+      return;
+    }
+    setMobileExpandSlot(mobileSlotRef.current);
+    return () => setMobileExpandSlot(null);
+  }, [isMobile, setMobileExpandSlot]);
 
   // Drag-down on the bottom toolbar collapses it (mobile only)
   useEffect(() => {
@@ -189,7 +207,7 @@ export function PageToolbar({
             transition: 'width 200ms ease',
             backgroundColor: 'var(--surface)',
             borderRight: '2px solid var(--accent)',
-            boxShadow: '4px 0 24px var(--accent-glow)',
+            //boxShadow: '4px 0 24px var(--accent-glow)',
           }}
         >
           {!collapsed && (
@@ -383,6 +401,19 @@ export function PageToolbar({
 
   return (
     <>
+      {/* Mobile expand slot — portaled action-icon panels render here, above the toolbar */}
+      {isBottom && (
+        <div
+          ref={mobileSlotRef}
+          style={{
+            position: 'fixed',
+            bottom: TOOLBAR_H_MOBILE,
+            left: 0,
+            right: 0,
+            zIndex: 41,
+          }}
+        />
+      )}
       <div
         ref={toolbarRef}
         data-toolbar
@@ -403,9 +434,9 @@ export function PageToolbar({
           backgroundColor: 'var(--surface-inset)',
           borderBottom: isBottom ? undefined : '2px solid var(--border)',
           borderTop: isBottom ? '2px solid var(--border)' : undefined,
-          boxShadow: isBottom
-            ? '0 -4px 24px var(--accent-glow)'
-            : '0 4px 24px var(--accent-glow)',
+          //boxShadow: isBottom
+          //  ? '0 -4px 24px var(--accent-glow)'
+          //  : '0 4px 24px var(--accent-glow)',
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'stretch',
@@ -423,7 +454,7 @@ export function PageToolbar({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 4,
-            padding: isMobile ? '4px 12px' : '4px 10px',
+            padding: isMobile ? '4px 18px' : '4px 14px',
             border: 'none',
             borderRight: '1px solid var(--border)',
             cursor: 'pointer',
@@ -452,17 +483,14 @@ export function PageToolbar({
             onClose={() => setOptionsOpen(false)}
           />
         </DropdownPanel>
-        {/* Scrollable toolbar sections */}
+        {/* Toolbar sections */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'stretch',
             flex: 1,
-            overflowX: isBottom ? 'auto' : 'hidden',
-            paddingBottom: isBottom
-              ? 'env(safe-area-inset-bottom, 0px)'
-              : undefined,
+            overflow: 'hidden',
           }}
         >
           {children}
@@ -798,9 +826,9 @@ function OptionsMenu({
             gap: 8,
             padding: '6px 10px',
             border: 'none',
-            background: 'none',
+            background: clearPending ? 'var(--danger)' : 'none',
             cursor: 'pointer',
-            color: 'var(--danger)',
+            color: clearPending ? 'var(--fg)' : 'var(--danger)',
             fontSize: 11,
             fontWeight: 600,
             textTransform: 'uppercase',
@@ -819,7 +847,7 @@ function OptionsMenu({
           aria-label={clearPending ? 'Confirm Clear?' : 'Clear All'}
         >
           <TrashIcon size={14} />
-          {clearPending ? 'Confirm Clear?' : 'Clear All'}
+          {clearPending ? 'Confirm' : 'Clear All'}
         </button>
       )}
     </div>

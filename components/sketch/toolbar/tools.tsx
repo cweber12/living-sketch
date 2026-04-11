@@ -3,6 +3,7 @@
 import type { ShapeTool } from '@/components/sketch/canvas/sketch-canvas';
 import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { DrillIcon } from '@/components/shared/icons/drill';
+import { ZoomIcon } from '@/components/shared/icons/zoom';
 
 export const DEFAULT_BRUSH = 6;
 export const DEFAULT_COLOR_LIGHT = '#000000';
@@ -152,9 +153,18 @@ interface ToolsSectionProps {
   brushDropdownOpen: boolean;
   onBrushDropdownToggle: () => void;
   onBrushDropdownClose: () => void;
+  zoom: number;
+  onZoomChange: (v: number) => void;
+  onZoomReset: () => void;
+  zoomDropdownOpen: boolean;
+  onZoomDropdownToggle: () => void;
+  onZoomDropdownClose: () => void;
 }
 
 export function ToolsSection({
+  zoom,
+  onZoomChange,
+  onZoomReset,
   brushSize,
   onBrushSizeChange,
   isEraser,
@@ -164,6 +174,9 @@ export function ToolsSection({
   brushDropdownOpen,
   onBrushDropdownToggle,
   onBrushDropdownClose,
+  zoomDropdownOpen,
+  onZoomDropdownToggle,
+  onZoomDropdownClose,
 }: ToolsSectionProps) {
   return (
     <ToolbarGroup
@@ -172,6 +185,72 @@ export function ToolsSection({
       expanded={expanded}
       onToggle={onToggle}
     >
+      {/* Zoom */}
+      <ActionIcon
+        icon={<ZoomIcon />}
+        label="Zoom"
+        onClick={onZoomDropdownToggle}
+        dropdownOpen={zoomDropdownOpen}
+        onDropdownClose={onZoomDropdownClose}
+        dropdownWidth={180}
+        dropdownContent={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              padding: '4px 0',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="range"
+                min={0.5}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => onZoomChange(Number(e.target.value))}
+                className="flex-1 accent-accent"
+                title="Canvas zoom"
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--fg-muted)',
+                  width: 32,
+                  textAlign: 'right',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {Math.round(zoom * 100)}%
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                onZoomReset();
+                onZoomDropdownClose();
+              }}
+              style={{
+                padding: '4px 8px',
+                border: '1px solid var(--border)',
+                background: 'none',
+                color: 'var(--fg-muted)',
+                cursor: 'pointer',
+                fontSize: 10,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                borderRadius: 3,
+                width: '100%',
+                transition: 'background-color 100ms ease',
+              }}
+              aria-label="Reset Zoom"
+            >
+              Reset Zoom
+            </button>
+          </div>
+        }
+      />
       <ActionIcon
         icon={<PenMiniIcon />}
         label="Sketch"

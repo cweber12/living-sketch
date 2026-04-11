@@ -50,14 +50,8 @@ export function useDropdown() {
   const toggle = useCallback((id: string) => {
     setOpenQueue((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (isMobileRef.current) {
-        // Mobile: only one open at a time (FIFO, max 1)
-        return [id];
-      }
-      // Desktop: FIFO — evict oldest panels when at max
-      const next = [...prev, id];
-      const max = maxDesktopOpenRef.current;
-      return next.length > max ? next.slice(next.length - max) : next;
+      // Always single open at a time
+      return [id];
     });
   }, []);
 

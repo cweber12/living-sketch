@@ -8,6 +8,7 @@ import {
   type ReactNode,
   type CSSProperties,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import {
@@ -18,6 +19,7 @@ import {
   SECTION_LABEL_SIZE_MOBILE,
   SECTION_SIDE_PADDING,
   SECTION_SIDE_LABEL_SIZE,
+  TOOLBAR_W,
 } from './constants';
 
 /* ── ActionIcon ─────────────────────────────────────────────────────── */
@@ -76,10 +78,16 @@ export function ActionIcon({
         ? 'auto'
         : ACTION_ICON_MIN,
     minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
-    borderRadius: 3,
+    //borderRadius: 3,
     position: 'relative' as const,
     transition:
-      'background-color 100ms ease, color 100ms ease, box-shadow 120ms ease',
+      'background-color 100ms ease, color 100ms ease, box-shadow 120ms ease, transform 100ms ease',
+    transform:
+      active || isOpen
+        ? 'scale(1.18)'
+        : hovered && !disabled
+          ? 'scale(1.1)'
+          : 'scale(1)',
     ...(danger && active
       ? {
           backgroundColor: 'var(--danger)',
@@ -88,22 +96,14 @@ export function ActionIcon({
         }
       : active || isOpen
         ? {
-            backgroundColor: 'var(--surface-inset)',
             color: 'var(--accent)',
-
-            borderBottom: isSide ? 'none' : '2px solid var(--accent)',
-            borderRight: isSide ? '1px solid var(--accent)' : 'none',
           }
         : hovered && !disabled
           ? {
-              backgroundColor: 'var(--surface-raised)',
               color: danger ? 'var(--danger)' : 'var(--fg)',
-              boxShadow: danger
-                ? '0 0 8px rgba(138,43,36,0.3)'
-                : '0 0 8px var(--accent-glow)',
             }
           : {
-              color: danger ? 'var(--fg-muted)' : 'var(--fg-muted)',
+              color: danger ? 'var(--fg-muted)' : 'var(--fg-muted-gray)',
             }),
   };
 
@@ -125,7 +125,7 @@ export function ActionIcon({
           setHovered(false);
           setShowTooltip(false);
         }}
-        className="toolbar-action-btn focus-visible:outline-none"
+        className="toolbar-action-btn"
         style={style}
       >
         <span className="leading-none shrink-0" aria-hidden="true">
@@ -197,15 +197,11 @@ function Tooltip({
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     whiteSpace: 'nowrap',
-    color: 'var(--fg)',
-    backgroundColor: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 3,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+    color: 'var(--accent)',
     ...(isSide
       ? {
           top: rect.top + rect.height / 2 - 12,
-          left: rect.right + 6,
+          left: TOOLBAR_W + 6,
         }
       : {
           top: rect.bottom + 4,
@@ -250,7 +246,7 @@ export function SectionLabel({
     width: isTopExpanded || isSide ? '100%' : 'auto',
     background: expanded || hovered ? 'var(--surface-raised)' : 'transparent',
     color: expanded || hovered ? 'var(--fg)' : 'var(--fg-muted)',
-    boxShadow: expanded && !isSide ? 'inset 0 -2px 0 var(--accent)' : undefined,
+    borderBottom: isTopExpanded ? '1px solid var(--border)' : 'none',
   };
 
   return (
@@ -325,7 +321,7 @@ export function ActionIconsRow({ expanded, children }: ActionIconsRowProps) {
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'stretch',
-              gap: isMobile ? 2 : 1,
+              gap: isMobile ? 2 : 4,
             }
       }
     >
@@ -356,15 +352,17 @@ export function ToolbarGroup({
   onToggle,
   children,
 }: ToolbarGroupProps) {
-  const { mode } = useContext(ToolbarCtx);
+  const { mode, isMobile, mobileExpandSlot } = useContext(ToolbarCtx);
   const isSide = mode === 'side';
+  // In mobile: stay row (expanded icons go to portal above toolbar)
+  const isColumn = !isMobile && (isSide || expanded);
 
   return (
     <div
       data-toolbar-group
       style={{
         display: 'flex',
-        flexDirection: isSide || expanded ? 'column' : 'row',
+        flexDirection: isColumn ? 'column' : 'row',
         alignItems: 'stretch',
         borderBottom: isSide ? 'none' : '1px solid var(--border)',
         borderRight: isSide ? '1px solid var(--border)' : 'none',
@@ -376,7 +374,73 @@ export function ToolbarGroup({
         expanded={expanded}
         onToggle={onToggle}
       />
-      <ActionIconsRow expanded={expanded}>{children}</ActionIconsRow>
+      {/* Desktop: inline action icons */}
+      {!isMobile && (
+        <ActionIconsRow expanded={expanded}>{children}</ActionIconsRow>
+      )}
+      {/* Mobile: portal action icons into the slot above the toolbar */}
+      {isMobile &&
+        expanded &&
+        mobileExpandSlot != null &&
+        createPortal(
+          <div
+            style={{
+              width: '100%',
+              backgroundColor: 'var(--surface-inset)',
+              borderTop: '2px solid var(--border)',
+              boxShadow: '0 -4px 24px rgba(0,0,0,0.28)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Minimize tab on the upper edge */}
+            <button
+              onClick={onToggle}
+              aria-label="Collapse section"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: 28,
+                border: 'none',
+                borderBottom: '1px solid var(--border)',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--fg-muted)',
+                flexShrink: 0,
+              }}
+            >
+              <svg
+                width="20"
+                height="12"
+                viewBox="0 0 20 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 2l8 8 8-8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {/* Action icons */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'stretch',
+                padding: '4px',
+              }}
+            >
+              {children}
+            </div>
+          </div>,
+          mobileExpandSlot,
+        )}
     </div>
   );
 }

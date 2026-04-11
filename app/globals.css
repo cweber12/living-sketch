@@ -24,7 +24,7 @@
 
   --fg: #131108; /* deep near-black brown/olive */
   --fg-muted: #4e4d2b; /* murky olive text */
-
+  --fg-muted-gray: #7a7a7a; /* neutral gray text */
   --accent: #89af00; /* vivid reagent green */
   --accent-hover: #374600; /* darker hover green */
   --accent-active: #5e7411; /* pressed / active */
@@ -58,7 +58,8 @@
     --border: #1e301e; /* default border — dark green              */
     --border-strong: #2c482c; /* prominent border                         */
     --fg: #e4f0e4; /* clinical off-white, slight green tint    */
-    --fg-muted: #5e875e; /* muted green text                         */
+    --fg-muted: #5e875e; /* muted green text */
+    --fg-muted-gray: #7a857a; /* muted gray text */
     --accent: #4ade80; /* luminous reagent green — bio-electric     */
     --accent-hover: #86efac; /* brighter on hover                        */
     --accent-active: #22c55e; /* pressed / active                         */
