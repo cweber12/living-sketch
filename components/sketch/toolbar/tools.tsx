@@ -167,7 +167,7 @@ export function ToolsSection({
 }: ToolsSectionProps) {
   return (
     <ToolbarGroup
-      icon={<DrillIcon size={14} />}
+      icon={<DrillIcon />}
       label="Tools"
       expanded={expanded}
       onToggle={onToggle}

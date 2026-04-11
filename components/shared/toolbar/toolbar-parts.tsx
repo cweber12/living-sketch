@@ -75,10 +75,11 @@ export function ActionIcon({
         }
       : active || isOpen
         ? {
-            backgroundColor: 'var(--accent)',
-            color: 'var(--bg)',
-            boxShadow:
-              'inset 0 2px 6px rgba(0,0,0,0.25), 0 0 14px var(--accent-glow)',
+            backgroundColor: 'var(--surface-inset)',
+            color: 'var(--accent)',
+
+            borderBottom: isSide ? 'none' : '2px solid var(--accent)',
+            borderRight: isSide ? '1px solid var(--accent)' : 'none',
           }
         : hovered && !disabled
           ? {
@@ -239,18 +240,23 @@ export function SectionLabel({
     ...(expanded
       ? {
           backgroundColor: 'var(--surface-raised)',
-          color: 'var(--fg)',
+          color: 'var(--accent)',
           boxShadow: 'inset 0 -2px 0 var(--accent)',
         }
       : hovered
         ? {
             backgroundColor: 'var(--surface-raised)',
-            color: 'var(--fg)',
+            color: 'var(--accent)',
           }
-        : {
-            backgroundColor: 'transparent',
-            color: 'var(--fg-muted)',
-          }),
+        : hovered
+          ? {
+              backgroundColor: 'var(--surface-raised)',
+              color: 'var(--accent)',
+            }
+          : {
+              backgroundColor: 'transparent',
+              color: 'var(--fg)',
+            }),
   };
 
   return (
@@ -264,26 +270,29 @@ export function SectionLabel({
       className="focus-visible:outline-none shrink-0"
       style={style}
     >
-      <span className="leading-none shrink-0" aria-hidden="true">
-        {icon}
-      </span>
-      <span
-        style={{
-          fontSize: isSide ? 7 : isMobile ? 9 : 8,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          whiteSpace: 'nowrap',
-          ...(isSide
-            ? {
-                writingMode: 'vertical-lr',
-                textOrientation: 'mixed',
-              }
-            : {}),
-        }}
-      >
-        {label}
-      </span>
+      {isMobile ? (
+        <span className="leading-none shrink-0" aria-hidden="true">
+          {icon}
+        </span>
+      ) : (
+        <span
+          style={{
+            fontSize: isSide ? 7 : isMobile ? 9 : 8,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            whiteSpace: 'nowrap',
+            ...(isSide
+              ? {
+                  writingMode: 'vertical-lr',
+                  textOrientation: 'mixed',
+                }
+              : {}),
+          }}
+        >
+          {label}
+        </span>
+      )}
     </button>
   );
 }
@@ -347,8 +356,8 @@ export function ToolbarGroup({
         display: 'flex',
         flexDirection: isSide ? 'column' : 'row',
         alignItems: 'stretch',
-        borderRight: isSide ? 'none' : '1px solid var(--border)',
-        borderBottom: isSide ? '1px solid var(--border)' : 'none',
+        borderBottom: isSide ? 'none' : '1px solid var(--border)',
+        borderRight: isSide ? '1px solid var(--border)' : 'none',
       }}
     >
       <SectionLabel
