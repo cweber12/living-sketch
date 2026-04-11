@@ -85,14 +85,11 @@ const sections = [
 
 export default function DocsPage() {
   return (
-    <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 overflow-y-auto">
-      <h1
-        className="text-2xl font-display font-bold uppercase tracking-widest mb-6"
-        style={{ color: 'var(--fg)' }}
-      >
+    <main className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-4 py-8 sm:px-6">
+      <h1 className="font-display text-foreground mb-6 text-2xl font-bold tracking-widest uppercase">
         Documentation
       </h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--fg-muted)' }}>
+      <p className="text-muted mb-8 text-sm">
         Living Sketch is a pose-driven animation app. Draw SVG body-part
         sketches, capture pose landmarks from video, and animate skeletons in
         real time.
@@ -100,18 +97,14 @@ export default function DocsPage() {
 
       {sections.map((section) => (
         <section key={section.title} className="mb-8">
-          <h2
-            className="text-base font-display font-bold uppercase tracking-widest mb-3"
-            style={{ color: 'var(--accent)' }}
-          >
+          <h2 className="font-display text-accent mb-3 text-base font-bold tracking-widest uppercase">
             {section.title}
           </h2>
-          <ul className="list-disc list-inside flex flex-col gap-1.5">
+          <ul className="flex list-inside list-disc flex-col gap-1.5">
             {section.items.map((item) => (
               <li
                 key={item}
-                className="text-sm leading-relaxed"
-                style={{ color: 'var(--fg)' }}
+                className="text-foreground text-sm leading-relaxed"
               >
                 {item}
               </li>
@@ -120,11 +113,8 @@ export default function DocsPage() {
         </section>
       ))}
 
-      <hr className="my-8" style={{ borderColor: 'var(--border)' }} />
-      <p
-        className="text-xs uppercase tracking-widest"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <hr className="border-edge my-8" />
+      <p className="text-muted text-xs tracking-widest uppercase">
         Last updated automatically by agent workflow.
       </p>
     </main>

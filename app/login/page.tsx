@@ -19,26 +19,19 @@ export default async function LoginPage({
         }}
       />
 
-      <div className="card-themed w-full max-w-sm rounded-xl p-8 space-y-6">
+      <div className="card-themed w-full max-w-sm space-y-6 rounded-xl p-8">
         {/* Header */}
-        <div className="text-center space-y-1">
+        <div className="space-y-1 text-center">
           <Link
             href="/"
-            className="font-display font-bold uppercase text-sm tracking-[0.3em] block mb-4 transition-opacity hover:opacity-70"
-            style={{ color: 'var(--accent)' }}
+            className="font-display text-accent mb-4 block text-sm font-bold tracking-[0.3em] uppercase transition-opacity hover:opacity-70"
           >
             Living Sketch
           </Link>
-          <h1
-            className="font-display font-bold uppercase tracking-widest text-2xl"
-            style={{ color: 'var(--fg)' }}
-          >
+          <h1 className="font-display text-foreground text-2xl font-bold tracking-widest uppercase">
             Sign In
           </h1>
-          <p
-            className="text-xs tracking-wide"
-            style={{ color: 'var(--fg-muted)' }}
-          >
+          <p className="text-muted text-xs tracking-wide">
             The laboratory awaits
           </p>
         </div>
@@ -58,8 +51,7 @@ export default async function LoginPage({
           <div>
             <label
               htmlFor="email"
-              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
-              style={{ color: 'var(--fg-muted)' }}
+              className="text-muted mb-1.5 block text-xs font-semibold tracking-widest uppercase"
             >
               Email
             </label>
@@ -77,8 +69,7 @@ export default async function LoginPage({
           <div>
             <label
               htmlFor="password"
-              className="block text-xs font-semibold uppercase tracking-widest mb-1.5"
-              style={{ color: 'var(--fg-muted)' }}
+              className="text-muted mb-1.5 block text-xs font-semibold tracking-widest uppercase"
             >
               Password
             </label>
@@ -95,7 +86,7 @@ export default async function LoginPage({
 
           <button
             type="submit"
-            className="btn-primary w-full rounded py-3 text-xs uppercase tracking-widest mt-2"
+            className="btn-primary mt-2 w-full rounded py-3 text-xs tracking-widest uppercase"
           >
             Enter
           </button>
@@ -103,15 +94,11 @@ export default async function LoginPage({
 
         <div className="divider-accent" />
 
-        <p
-          className="text-center text-xs tracking-wide"
-          style={{ color: 'var(--fg-muted)' }}
-        >
+        <p className="text-muted text-center text-xs tracking-wide">
           No account?{' '}
           <Link
             href="/register"
-            className="font-semibold transition-opacity hover:opacity-70"
-            style={{ color: 'var(--accent)' }}
+            className="text-accent font-semibold transition-opacity hover:opacity-70"
           >
             Create one
           </Link>

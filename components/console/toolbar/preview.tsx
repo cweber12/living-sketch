@@ -143,7 +143,7 @@ export function DisplaySection({
                 step={0.05}
                 value={scale}
                 onChange={(e) => onScaleChange(parseFloat(e.target.value))}
-                className="flex-1 accent-accent"
+                className="accent-accent flex-1"
                 title="Preview scale"
               />
               <span

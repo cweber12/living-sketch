@@ -8,6 +8,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
+import { cn } from '@/lib/cn';
 import { ToolbarMode, ToolbarCtxValue, PageToolbarProps } from './types';
 import { FridgeIcon } from '@/components/shared/icons/fridge';
 import { OptionsIcon } from '@/components/shared/icons/options';
@@ -114,7 +115,10 @@ export function ToolbarLayout({
     >
       {/* Content area Ã¢â‚¬â€ padded to avoid being covered by fixed toolbar */}
       <div
-        className={`flex flex-col flex-1 w-full overflow-hidden transition-all duration-200 ${className}`}
+        className={cn(
+          'flex w-full flex-1 flex-col overflow-hidden transition-all duration-200',
+          className,
+        )}
         style={contentStyle}
       >
         {/* Filter out PageToolbar children so they can be portalled */}
@@ -211,7 +215,7 @@ export function PageToolbar({
           }}
         >
           {!collapsed && (
-            <div className="flex flex-col h-full">
+            <div className="flex h-full flex-col">
               {/* Options button — top of sidebar */}
               <button
                 ref={optionsBtnRef}
@@ -254,7 +258,7 @@ export function PageToolbar({
                   onClose={() => setOptionsOpen(false)}
                 />
               </DropdownPanel>
-              <div className="flex flex-col flex-1 overflow-y-auto">
+              <div className="flex flex-1 flex-col overflow-y-auto">
                 {children}
               </div>
               <button
@@ -498,7 +502,7 @@ export function PageToolbar({
 
         {/* Desktop-only: collapse + sidebar controls */}
         {!isBottom && (
-          <div className="flex items-stretch ml-auto shrink-0">
+          <div className="ml-auto flex shrink-0 items-stretch">
             <button
               onClick={() => setPreferSide(true)}
               title="Switch to sidebar"

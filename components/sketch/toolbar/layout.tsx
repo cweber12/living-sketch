@@ -6,6 +6,10 @@ import { TableIcon } from '@/components/sketch/icons/table';
 import { HeadIcon } from '@/components/sketch/icons/head';
 import { PART_LABEL, PARTS_ORDER } from '@/components/sketch/sketch-constants';
 import { CleaverIcon } from '@/components/shared/icons/cleaver';
+import {
+  PersonArmsUpIcon,
+  PersonArmsDownIcon,
+} from '@/components/shared/icons/person';
 export type ArmPose = 'up' | 'down';
 export type ViewMode = 'body' | 'single';
 
@@ -97,7 +101,7 @@ export function LayoutSection({
       {/* Face Up */}
       <ActionIcon
         icon={
-          <span style={{ display: 'flex', transform: 'rotate(90deg)' }}>
+          <span className="flex rotate-90">
             <HeadIcon size={14} />
           </span>
         }
@@ -108,9 +112,7 @@ export function LayoutSection({
       {/* Face Down */}
       <ActionIcon
         icon={
-          <span
-            style={{ display: 'flex', transform: 'rotate(90deg) scaleX(-1)' }}
-          >
+          <span className="flex -scale-x-100 rotate-90">
             <HeadIcon size={14} />
           </span>
         }
@@ -120,7 +122,7 @@ export function LayoutSection({
       />
       {/* Arms Up */}
       <ActionIcon
-        icon={<ArmsUpIcon />}
+        icon={<PersonArmsUpIcon />}
         label="Arms Up"
         active={armPose === 'up'}
         disabled={isSingle}
@@ -128,7 +130,7 @@ export function LayoutSection({
       />
       {/* Arms Down */}
       <ActionIcon
-        icon={<ArmsDownIcon />}
+        icon={<PersonArmsDownIcon />}
         label="Arms Down"
         active={armPose === 'down'}
         disabled={isSingle}

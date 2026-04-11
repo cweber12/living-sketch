@@ -69,7 +69,7 @@ export function DropdownPanel({
       });
     } else {
       /* ── Top mode: placed below the anchor button ── */
-      const topOffset = rect.bottom + 2;
+      const topOffset = rect.bottom;
       const left =
         align === 'right' ? Math.max(0, rect.right - panelWidth) : rect.left;
       setStyle({
@@ -132,7 +132,7 @@ export function DropdownPanel({
       data-toolbar-panel
       style={{
         ...style,
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'var(--overlay)',
         borderBottom: `1px solid var(--border-strong)`,
         borderLeft: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
         borderRight: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
@@ -141,13 +141,10 @@ export function DropdownPanel({
           : isSidePanel
             ? '0 6px 6px 0'
             : '0 0 6px 6px',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 20px var(--accent-glow)',
-        // Don't use overflow:hidden — it clips range input thumbs.
-        // Let the inner scroll container handle vertical overflow.
       }}
     >
       <div
-        className="p-3 flex flex-col gap-2"
+        className="flex flex-col gap-2 p-3"
         style={{
           overflowY: 'auto',
           maxHeight: style.maxHeight,

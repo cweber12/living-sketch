@@ -90,106 +90,129 @@ export function ColorSection({
         onDropdownClose={onPickerDropdownClose}
         dropdownWidth={160}
         dropdownContent={
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 6,
-              padding: '4px 0',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => {
-                  onColorChange(e.target.value);
-                  onEraserOff();
-                }}
-                style={{
-                  width: 48,
-                  height: 24,
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                  backgroundColor: 'transparent',
-                  padding: 0,
-                  border: 'none',
-                }}
-                aria-label="Stroke color"
-              />
-              <span
-                style={{
-                  fontSize: 10,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: 'var(--fg-muted)',
-                }}
-              >
-                {color}
-              </span>
+          <>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '4px 0',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => {
+                    onColorChange(e.target.value);
+                    onEraserOff();
+                  }}
+                  style={{
+                    width: 48,
+                    height: 32,
+                    cursor: 'pointer',
+                    borderRadius: 8,
+                    backgroundColor: 'transparent',
+                    padding: 0,
+                    border: 'none',
+                  }}
+                  aria-label="Stroke color"
+                />
+                <span
+                  style={{
+                    fontSize: 10,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--fg)',
+                  }}
+                >
+                  {color}
+                </span>
+              </div>
             </div>
-          </div>
-        }
-      />
-      {/* Recent color swatches */}
-      {visibleSwatches.map((c) => (
-        <ActionIcon
-          key={c}
-          icon={<Flask2Icon size={isMobile ? 16 : 14} secondaryColor={c} />}
-          label={c}
-          onClick={() => {
-            onColorChange(c);
-            onEraserOff();
-          }}
-        />
-      ))}
-      {/* Overflow chevron */}
-      {overflowSwatches.length > 0 && (
-        <ActionIcon
-          icon={<ChevronDownIcon />}
-          label="More colors"
-          onClick={onOverflowDropdownToggle}
-          dropdownOpen={overflowDropdownOpen}
-          onDropdownClose={onOverflowDropdownClose}
-          dropdownWidth={140}
-          dropdownContent={
+            {/* Recently used colors */}
+            <span
+              style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--fg)',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              Recent
+            </span>
             <div
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
                 gap: 4,
-                padding: '4px 0',
+                marginTop: 4,
               }}
             >
-              {overflowSwatches.map((c) => (
-                <button
+              {visibleSwatches.map((c) => (
+                <ActionIcon
                   key={c}
+                  icon={
+                    <Flask2Icon size={isMobile ? 16 : 14} secondaryColor={c} />
+                  }
+                  label={c}
                   onClick={() => {
                     onColorChange(c);
                     onEraserOff();
-                    onOverflowDropdownClose();
                   }}
-                  title={c}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    padding: 0,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  aria-label={c}
-                >
-                  <Flask2Icon size={20} secondaryColor={c} />
-                </button>
+                />
               ))}
             </div>
-          }
-        />
-      )}
+            {/* Overflow chevron */}
+            {overflowSwatches.length > 0 && (
+              <ActionIcon
+                icon={<ChevronDownIcon />}
+                label="More colors"
+                onClick={onOverflowDropdownToggle}
+                dropdownOpen={overflowDropdownOpen}
+                onDropdownClose={onOverflowDropdownClose}
+                dropdownWidth={140}
+                dropdownContent={
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 4,
+                      padding: '4px 0',
+                    }}
+                  >
+                    {overflowSwatches.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => {
+                          onColorChange(c);
+                          onEraserOff();
+                          onOverflowDropdownClose();
+                        }}
+                        title={c}
+                        style={{
+                          width: 24,
+                          height: 24,
+                          padding: 0,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        aria-label={c}
+                      >
+                        <Flask2Icon size={20} secondaryColor={c} />
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
+            )}
+          </>
+        }
+      />
     </ToolbarGroup>
   );
 }

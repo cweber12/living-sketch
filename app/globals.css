@@ -24,7 +24,6 @@
 
   --fg: #131108; /* deep near-black brown/olive */
   --fg-muted: #4e4d2b; /* murky olive text */
-  --fg-muted-gray: #7a7a7a; /* neutral gray text */
   --accent: #89af00; /* vivid reagent green */
   --accent-hover: #374600; /* darker hover green */
   --accent-active: #5e7411; /* pressed / active */
@@ -37,14 +36,6 @@
   --signal-faint: rgba(168, 116, 24, 0.16);
   --overlay: rgba(24, 19, 9, 0.64);
   --overlay-faint: rgba(24, 19, 9, 0.24);
-  --bulb-dark: #ffc200; /* glowing filament bulb (dark mode) */
-  --bulb-med: #ffe284; /* glowing filament bulb (med) */
-  --bulb-glow: rgba(
-    255,
-    236,
-    175,
-    0.28
-  ); /* glowing filament bulb (light mode) */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,7 +50,6 @@
     --border-strong: #2c482c; /* prominent border                         */
     --fg: #e4f0e4; /* clinical off-white, slight green tint    */
     --fg-muted: #5e875e; /* muted green text */
-    --fg-muted-gray: #7a857a; /* muted gray text */
     --accent: #4ade80; /* luminous reagent green — bio-electric     */
     --accent-hover: #86efac; /* brighter on hover                        */
     --accent-active: #22c55e; /* pressed / active                         */
@@ -72,9 +62,6 @@
     --signal-faint: rgba(251, 191, 36, 0.1);
     --overlay: rgba(0, 0, 0, 0.72);
     --overlay-faint: rgba(0, 0, 0, 0.32);
-    --bulb-dark: #ffc200; /* glowing filament bulb (dark mode) */
-    --bulb-med: #ffd242; /* glowing filament bulb (med) */
-    --bulb-light: #ffe286; /* glowing filament bulb (light mode) */
   }
 }
 
@@ -91,13 +78,21 @@
   --color-muted: var(--fg-muted);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-faint: var(--accent-faint);
   --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-muted: var(--danger-muted);
   --color-signal: var(--signal);
+  --color-signal-faint: var(--signal-faint);
   --color-overlay: var(--overlay);
   --color-overlay-faint: var(--overlay-faint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-space-grotesk);
+  --text-2xs: 11px;
+  --text-3xs: 10px;
+  --text-4xs: 9px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -115,22 +110,6 @@ body {
 .font-display {
   font-family: var(--font-space-grotesk, var(--font-geist-sans), sans-serif);
   letter-spacing: 0.03em;
-}
-
-/* ── Monospace data / readout text ──────────────────────────────────────── */
-.font-data {
-  font-family: var(--font-geist-mono, 'Courier New', monospace);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-}
-
-/* ── Overline label: small-caps uppercase tracking ──────────────────────── */
-.label-overline {
-  font-size: 0.625rem; /* 10px */
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -215,22 +194,6 @@ input[type='range']:hover::-webkit-slider-thumb {
     0 0 60px var(--accent-faint);
 }
 
-/* Brief 360° spin for side-flip icon transition */
-.side-flip {
-  animation: sideFlip 0.35s ease-in-out;
-}
-@keyframes sideFlip {
-  0% {
-    transform: rotateY(0deg);
-  }
-  50% {
-    transform: rotateY(180deg);
-  }
-  100% {
-    transform: rotateY(360deg);
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    Cards
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -296,25 +259,6 @@ input[type='range']:hover::-webkit-slider-thumb {
   transform: scale(0.97);
 }
 
-/* Danger */
-.btn-danger {
-  background-color: var(--danger);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  transition:
-    background-color 140ms ease,
-    box-shadow 140ms ease,
-    transform 80ms ease;
-}
-.btn-danger:hover:not(:disabled) {
-  background-color: var(--danger-hover);
-  box-shadow: 0 0 16px var(--danger-muted);
-}
-.btn-danger:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    Inputs
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -337,22 +281,6 @@ input[type='range']:hover::-webkit-slider-thumb {
   box-shadow: 0 0 0 2px var(--accent-faint);
 }
 
-/* Native select styled to match inputs */
-.select-themed {
-  background-color: var(--surface-inset);
-  border: 1px solid var(--border);
-  color: var(--fg);
-  cursor: pointer;
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
-}
-.select-themed:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-faint);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    Status / alert chips
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -369,81 +297,9 @@ input[type='range']:hover::-webkit-slider-thumb {
   color: var(--accent);
 }
 
-/* Inline badge pill */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-}
-.badge-accent {
-  color: var(--accent);
-  background-color: var(--accent-faint);
-}
-.badge-danger {
-  color: var(--danger);
-  background-color: var(--danger-muted);
-}
-.badge-signal {
-  color: var(--signal);
-  background-color: var(--signal-faint);
-}
-.badge-muted {
-  color: var(--fg-muted);
-  border-color: var(--border);
-  background-color: var(--surface-raised);
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
-   Color swatch input
+   Layout utilities
    ═══════════════════════════════════════════════════════════════════════════ */
-
-.color-swatch {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 1.875rem;
-  height: 1.875rem;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  cursor: pointer;
-  background: none;
-  flex-shrink: 0;
-  transition: border-color 140ms ease;
-}
-.color-swatch:hover {
-  border-color: var(--border-strong);
-}
-.color-swatch::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-.color-swatch::-webkit-color-swatch {
-  border: none;
-  border-radius: 2px;
-}
-.color-swatch::-moz-color-swatch {
-  border: none;
-  border-radius: 2px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Structural layout utilities
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Hero background: subtle circuit-lab grid */
-.hero-grid {
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(to right, var(--border) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: center center;
-}
 
 /* Accent divider line */
 .divider-accent {
@@ -455,22 +311,4 @@ input[type='range']:hover::-webkit-slider-thumb {
     transparent
   );
   opacity: 0.45;
-}
-
-/* Panel data row — monospace readout inside toolbar/panel */
-.panel-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
-  font-size: 0.625rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
-.panel-row strong {
-  font-family: var(--font-geist-mono, monospace);
-  font-variant-numeric: tabular-nums;
-  color: var(--fg);
 }

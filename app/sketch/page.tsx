@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -45,7 +45,7 @@ const SESSION_STATE_KEY = 'sketch-page-state';
 const DEFAULT_CANVAS_SIZE = 110;
 const MOBILE_BP = 1024;
 
-/* â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Page ────────────────────────────────────────────────────────── */
 
 /** Rotate a square data-URL image 90 degrees CW (+90) or CCW (-90) */
 function rotateSquareDataURL(
@@ -203,7 +203,7 @@ export default function SketchPage() {
   }, []);
 
   // Persist page state to sessionStorage whenever relevant values change.
-  // armPose is intentionally excluded â€” it must always reflect the actual device
+  // armPose is intentionally excluded — it must always reflect the actual device
   // orientation on load, not a stale persisted value.
   useEffect(() => {
     try {
@@ -227,7 +227,7 @@ export default function SketchPage() {
 
   // After hydration: correct arm pose to match the actual device orientation.
   // armPose initialises as 'up' (SSR-safe); this effect fixes it on the client.
-  // We intentionally don't canvas-rotate here â€” canvases are still loading from
+  // We intentionally don't canvas-rotate here — canvases are still loading from
   // session at this point. The existing orientation-change listener handles
   // subsequent rotations.
 
@@ -281,7 +281,7 @@ export default function SketchPage() {
 
   /**
    * Change arm pose: rotate arm/hand canvases to match new orientation.
-   * Front: L-arms CCW (-90Â°), R-arms CW (+90Â°) going to arms-down.
+   * Front: L-arms CCW (-90°), R-arms CW (+90°) going to arms-down.
    * Reverse for going back to arms-up.
    */
   const handleArmPoseChange = useCallback(
@@ -387,7 +387,7 @@ export default function SketchPage() {
       // the API would return HTTP 200 with an empty paths array.
       if (!json.paths?.length)
         throw new Error(
-          'No images saved â€” canvas export may not be supported on this browser.',
+          'No images saved — canvas export may not be supported on this browser.',
         );
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -411,7 +411,7 @@ export default function SketchPage() {
     if (idx >= 0) setFocusIdx(idx);
   }, []);
 
-  /* â”€â”€ Grid sizing â”€â”€ */
+  /* ── Grid sizing ── */
   const u = DEFAULT_CANVAS_SIZE;
   const armsUp = effectiveArms === 'up';
   const gridTemplate = armsUp ? GRID_ARMS_UP : GRID_ARMS_DOWN;
@@ -464,27 +464,17 @@ export default function SketchPage() {
         .map((v) => `${Math.round(v)}px`)
         .join(' ');
 
-  /* â”€â”€ Render helpers â”€â”€ */
+  /* ── Render helpers ── */
   const activeTool = isEraser ? 'pen' : tool;
 
   function renderCanvas(s: Side, part: BodyPartName) {
     return (
       <div
         key={`${s}-${part}`}
+        className="border-edge bg-surface relative h-full w-full overflow-hidden rounded-md border"
         style={{
           gridArea: GRID_AREA[part],
-          // Use visibility instead of display:none so the grid cell holds its
-          // size even when the canvas is hidden. Both front+back cells occupy
-          // the same grid area; the active one is visible, the other invisible.
           visibility: s === side ? 'visible' : 'hidden',
-          // Explicit 100% so the canvas fills the grid track area correctly.
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          borderRadius: '6px',
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          backgroundColor: 'var(--surface)',
         }}
       >
         <SketchCanvas
@@ -498,19 +488,13 @@ export default function SketchPage() {
           onStrokeStart={handleStrokeStart}
           onStrokeEnd={handleStrokeEnd}
         />
-        {/* L / R shoulder â†’ torso-edge indicators */}
+        {/* L / R shoulder → torso-edge indicators */}
         {part === 'torso' && (
           <>
-            <span
-              className="absolute top-1/3 left-1 text-[11px] font-bold tracking-widest pointer-events-none select-none"
-              style={{ color: 'var(--fg-muted)', opacity: 0.45 }}
-            >
+            <span className="text-2xs text-muted pointer-events-none absolute top-1/3 left-1 font-bold tracking-widest opacity-45 select-none">
               {s === 'front' ? 'R' : 'L'}
             </span>
-            <span
-              className="absolute top-1/3 right-1 text-[11px] font-bold tracking-widest pointer-events-none select-none"
-              style={{ color: 'var(--fg-muted)', opacity: 0.45 }}
-            >
+            <span className="text-2xs text-muted pointer-events-none absolute top-1/3 right-1 font-bold tracking-widest opacity-45 select-none">
               {s === 'front' ? 'L' : 'R'}
             </span>
           </>
@@ -521,7 +505,7 @@ export default function SketchPage() {
 
   const focusProps = PART_PROPORTIONS[focusPart];
 
-  // In armsDown mode, arm/hand parts are rotated 90Â° â€” swap aspect ratio
+  // In armsDown mode, arm/hand parts are rotated 90° — swap aspect ratio
   const ARM_PART_SET = new Set<BodyPartName>([
     'leftUpperArm',
     'leftLowerArm',
@@ -531,16 +515,16 @@ export default function SketchPage() {
     'rightHand',
   ]);
   // When arms are in T-pose (up), arm canvases are landscape; flip the aspect ratio.
-  // When arms are down (mobile), canvases are portrait â€” use PART_PROPORTIONS directly.
+  // When arms are down (mobile), canvases are portrait — use PART_PROPORTIONS directly.
   const effectiveFocusProps =
     ARM_PART_SET.has(focusPart) && effectiveArms === 'up'
       ? { w: focusProps.h, h: focusProps.w }
       : focusProps;
 
-  /* â”€â”€ Toolbar content â”€â”€ */
+  /* ── Toolbar content ── */
 
   return (
-    <main className="flex flex-1 w-full overflow-hidden">
+    <main className="flex w-full flex-1 overflow-hidden">
       <ToolbarLayout>
         {/* Unified toolbar */}
         <PageToolbar
@@ -612,16 +596,16 @@ export default function SketchPage() {
         </PageToolbar>
 
         {/* CANVAS AREA */}
-        <div className="flex flex-col flex-1 overflow-hidden relative">
+        <div className="relative flex flex-1 flex-col overflow-hidden">
           {/* BODY MODE */}
           <div
             className={
-              viewMode === 'single' ? 'hidden' : 'flex-1 flex flex-col min-h-0'
+              viewMode === 'single' ? 'hidden' : 'flex min-h-0 flex-1 flex-col'
             }
           >
             <div className="flex-1 overflow-auto">
               {/* min-w-max + flex justify-center: centers grid when it fits; allows scroll in both axes when zoomed */}
-              <div className="min-w-max flex justify-center px-2 sm:px-4 py-3">
+              <div className="flex min-w-max justify-center px-2 py-3 sm:px-4">
                 <div
                   style={{
                     display: 'grid',
@@ -643,55 +627,36 @@ export default function SketchPage() {
           {viewMode === 'single' && (
             <>
               {/* Responsive single-part layout:
-                  mobile (< md) â€“ full-width canvas, nav buttons below
-                  desktop (md+) â€“ â—€ canvas â–¶ side-by-side               */}
-              <div className="flex-1 flex flex-col items-stretch min-h-0 py-3">
+                  mobile (< md) – full-width canvas, nav buttons below
+                  desktop (md+) – ◀ canvas ▶ side-by-side               */}
+              <div className="flex min-h-0 flex-1 flex-col items-stretch py-3">
                 {/* Canvas row */}
-                <div className="flex-1 flex items-center justify-center gap-2 px-0 md:px-2 min-h-0">
+                <div className="flex min-h-0 flex-1 items-center justify-center gap-2 px-0 md:px-2">
                   {/* Prev : large screens only */}
                   <button
                     onClick={goPrev}
-                    className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--fg)',
-                    }}
+                    className="focus-visible:ring-accent bg-surface border-edge text-foreground ml-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95 md:flex"
                     aria-label="Previous part"
                   >
                     <PrevIcon />
                   </button>
 
-                  <div className="flex flex-col items-center gap-1 flex-1 min-w-0 min-h-0 w-full">
-                    <p
-                      className="text-[10px] font-bold uppercase tracking-widest shrink-0"
-                      style={{ color: 'var(--accent)' }}
-                    >
+                  <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center gap-1">
+                    <p className="text-3xs text-accent shrink-0 font-bold tracking-widest uppercase">
                       {PART_LABEL[focusPart]} | {side}
                     </p>
                     <div
+                      className="border-edge bg-surface relative max-h-[55vh] w-full max-w-[min(96vw,380px)] origin-top overflow-hidden rounded-[10px] border"
                       style={{
-                        maxWidth: 'min(96vw, 380px)',
-                        maxHeight: '55vh',
                         aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
-                        width: '100%',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                        border: '1px solid var(--border)',
-                        backgroundColor: 'var(--surface)',
-                        position: 'relative',
                         transform: `scale(${zoom})`,
-                        transformOrigin: 'top center',
                       }}
                     >
                       {(['front', 'back'] as Side[]).map((s) => (
                         <div
                           key={`single-${s}-${focusPart}`}
-                          style={{
-                            display: s === side ? 'block' : 'none',
-                            width: '100%',
-                            height: '100%',
-                          }}
+                          className="h-full w-full"
+                          style={{ display: s === side ? 'block' : 'none' }}
                         >
                           <SketchCanvas
                             side={s}
@@ -707,10 +672,7 @@ export default function SketchPage() {
                         </div>
                       ))}
                     </div>
-                    <p
-                      className="text-[10px] shrink-0"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
+                    <p className="text-3xs text-muted shrink-0">
                       {focusIdx + 1} / {PARTS_ORDER.length}
                     </p>
                   </div>
@@ -718,39 +680,24 @@ export default function SketchPage() {
                   {/* Next : large screens only */}
                   <button
                     onClick={goNext}
-                    className="hidden md:flex shrink-0 w-9 h-9 items-center justify-center rounded-full text-sm transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--fg)',
-                    }}
+                    className="focus-visible:ring-accent bg-surface border-edge text-foreground mr-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95 md:flex"
                   >
                     <NextIcon />
                   </button>
                 </div>
 
                 {/* Mobile nav buttons below canvas */}
-                <div className="flex md:hidden justify-between items-center px-6 pb-1 shrink-0 gap-4">
+                <div className="flex shrink-0 items-center justify-between gap-4 px-6 pb-1 md:hidden">
                   <button
                     onClick={goPrev}
-                    className="flex-1 h-11 flex items-center justify-center rounded-lg text-sm gap-1.5 transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--fg)',
-                    }}
+                    className="focus-visible:ring-accent bg-surface border-edge text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
                     aria-label="Previous part"
                   >
                     <PrevIcon />
                   </button>
                   <button
                     onClick={goNext}
-                    className="flex-1 h-11 flex items-center justify-center rounded-lg text-sm gap-1.5 transition-all hover:brightness-125 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--fg)',
-                    }}
+                    className="focus-visible:ring-accent bg-surface border-edge text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
                     aria-label="Next part"
                   >
                     <NextIcon />
@@ -764,24 +711,11 @@ export default function SketchPage() {
 
           {/* Copy-front overlay (subsequent back visits) */}
           {side === 'back' && showCopyFront && (
-            <div className="absolute top-3 left-2 right-0 flex justify-start z-10 pointer-events-none">
-              <div
-                className="flex items-center gap-1.5 rounded-full px-3 py-1 pointer-events-auto"
-                style={{
-                  backgroundColor: 'var(--surface-raised)',
-                  border: '1px solid var(--border-strong)',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
-                }}
-              >
+            <div className="pointer-events-none absolute top-3 right-0 left-2 z-10 flex justify-start">
+              <div className="bg-surface-raised border-edge-strong pointer-events-auto flex items-center gap-1.5 rounded-full border px-3 py-1 shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
                 <button
                   onClick={() => setShowCopyFront(false)}
-                  className="text-[10px] transition-colors"
-                  style={{
-                    color: 'var(--fg-muted)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
+                  className="text-3xs text-muted cursor-pointer border-none bg-transparent transition-colors"
                   aria-label="Dismiss copy front"
                 >
                   <CloseIcon />
@@ -794,13 +728,7 @@ export default function SketchPage() {
                     }
                     setShowCopyFront(false);
                   }}
-                  className="text-[10px] font-bold uppercase tracking-widest transition-colors"
-                  style={{
-                    color: 'var(--accent)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
+                  className="text-3xs text-accent cursor-pointer border-none bg-transparent font-bold tracking-widest uppercase transition-colors"
                 >
                   Copy Front
                 </button>

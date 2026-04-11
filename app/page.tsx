@@ -2,54 +2,44 @@ import Link from 'next/link';
 
 export default async function Home() {
   return (
-    <main className="flex flex-col flex-1">
+    <main className="flex flex-1 flex-col">
       {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center text-center px-6 py-24 min-h-[88vh]">
-        <div className="flex flex-col items-center gap-8 max-w-4xl">
+      <section className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 py-24 text-center">
+        <div className="flex max-w-4xl flex-col items-center gap-8">
           {/* Overline */}
-          <p
-            className="text-xs font-bold tracking-[0.35em] uppercase"
-            style={{ color: 'var(--accent)' }}
-          >
+          <p className="text-accent text-xs font-bold tracking-[0.35em] uppercase">
             Reanimation Studio
           </p>
 
           {/* Main headline */}
           <h1
-            className="font-display font-bold uppercase leading-none glow-accent"
-            style={{
-              fontSize: 'clamp(3rem, 12vw, 9rem)',
-              color: 'var(--fg)',
-              letterSpacing: '0.06em',
-            }}
+            className="font-display glow-accent text-foreground leading-none font-bold tracking-[0.06em] uppercase"
+            style={{ fontSize: 'clamp(3rem, 12vw, 9rem)' }}
           >
-            It&apos;s <span style={{ color: 'var(--accent)' }}>Alive.</span>
+            It&apos;s <span className="text-accent">Alive.</span>
           </h1>
 
           {/* Divider */}
           <div className="divider-accent w-48" />
 
           {/* Sub-copy */}
-          <p
-            className="text-lg sm:text-xl max-w-lg leading-relaxed"
-            style={{ color: 'var(--fg-muted)' }}
-          >
+          <p className="text-muted max-w-lg text-lg leading-relaxed sm:text-xl">
             Draw the parts. Extract the motion.
             <br />
-            Watch your creation <em style={{ color: 'var(--fg)' }}>wake.</em>
+            Watch your creation <em className="text-foreground">wake.</em>
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/sketch"
-              className="btn-primary rounded px-8 py-3 text-sm uppercase tracking-widest"
+              className="btn-primary rounded px-8 py-3 text-sm tracking-widest uppercase"
             >
               Enter the Lab
             </Link>
             <Link
               href="/console"
-              className="btn-ghost rounded px-8 py-3 text-sm uppercase tracking-widest font-semibold"
+              className="btn-ghost rounded px-8 py-3 text-sm font-semibold tracking-widest uppercase"
             >
               View Animations
             </Link>
@@ -61,38 +51,29 @@ export default async function Home() {
       <div className="divider-accent mx-12" />
 
       {/* ── Feature cards ───────────────────────────────────────────── */}
-      <section className="px-6 py-24 max-w-6xl mx-auto w-full">
+      <section className="mx-auto w-full max-w-6xl px-6 py-24">
         <header className="mb-16 text-center">
-          <p
-            className="text-xs font-bold tracking-[0.35em] uppercase mb-3"
-            style={{ color: 'var(--accent)' }}
-          >
+          <p className="text-accent mb-3 text-xs font-bold tracking-[0.35em] uppercase">
             The Process
           </p>
           <h2
-            className="font-display font-bold uppercase"
-            style={{
-              fontSize: 'clamp(1.5rem, 5vw, 3rem)',
-              color: 'var(--fg)',
-              letterSpacing: '0.08em',
-            }}
+            className="font-display text-foreground font-bold tracking-[0.08em] uppercase"
+            style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
           >
             How the Resurrection Works
           </h2>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Card 1 – Sketch */}
           <Link
             href="/sketch"
-            className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
+            className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div
-              className="w-14 h-14 flex items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--accent-faint)' }}
-            >
+            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
               {/* Flask / laboratory icon */}
               <svg
+                className="text-accent"
                 width="28"
                 height="28"
                 viewBox="0 0 28 28"
@@ -105,57 +86,26 @@ export default async function Home() {
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={{ color: 'var(--accent)' }}
                 />
-                <circle
-                  cx="12"
-                  cy="19"
-                  r="1.2"
-                  fill="currentColor"
-                  style={{ color: 'var(--accent)' }}
-                />
-                <circle
-                  cx="16"
-                  cy="17"
-                  r="0.9"
-                  fill="currentColor"
-                  style={{ color: 'var(--accent)' }}
-                />
-                <circle
-                  cx="18"
-                  cy="20"
-                  r="1.1"
-                  fill="currentColor"
-                  style={{ color: 'var(--accent)' }}
-                />
+                <circle cx="12" cy="19" r="1.2" fill="currentColor" />
+                <circle cx="16" cy="17" r="0.9" fill="currentColor" />
+                <circle cx="18" cy="20" r="1.1" fill="currentColor" />
               </svg>
             </div>
             <div>
-              <p
-                className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
-                style={{ color: 'var(--accent)' }}
-              >
+              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
                 I — Sketch
               </p>
-              <h3
-                className="font-display font-bold uppercase text-xl mb-3"
-                style={{ color: 'var(--fg)' }}
-              >
+              <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
                 The Laboratory
               </h3>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: 'var(--fg-muted)' }}
-              >
+              <p className="text-muted text-sm leading-relaxed">
                 Assemble your creature part by part. Draw each body segment on
                 its own canvas — head, torso, limbs — then export as SVG for
                 later use.
               </p>
             </div>
-            <span
-              className="mt-auto text-xs font-semibold tracking-widest uppercase group-hover:translate-x-1 transition-transform inline-flex items-center gap-1"
-              style={{ color: 'var(--accent)' }}
-            >
+            <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
               Open Canvas →
             </span>
           </Link>
@@ -163,33 +113,24 @@ export default async function Home() {
           {/* Card 2 – Extract */}
           <Link
             href="/extract"
-            className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
+            className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div
-              className="w-14 h-14 flex items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--accent-faint)' }}
-            >
+            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
               {/* Signal / pose-capture icon */}
               <svg
+                className="text-accent"
                 width="28"
                 height="28"
                 viewBox="0 0 28 28"
                 fill="none"
                 aria-hidden="true"
               >
-                <circle
-                  cx="14"
-                  cy="14"
-                  r="3"
-                  fill="currentColor"
-                  style={{ color: 'var(--accent)' }}
-                />
+                <circle cx="14" cy="14" r="3" fill="currentColor" />
                 <path
                   d="M6.5 21.5a10.5 10.5 0 0115 0M9.5 18.5a6 6 0 019 0"
                   stroke="currentColor"
                   strokeWidth="1.8"
                   strokeLinecap="round"
-                  style={{ color: 'var(--accent)' }}
                 />
                 <path
                   d="M14 11V6M14 6l-2 2M14 6l2 2"
@@ -197,35 +138,22 @@ export default async function Home() {
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={{ color: 'var(--accent)' }}
                 />
               </svg>
             </div>
             <div>
-              <p
-                className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
-                style={{ color: 'var(--accent)' }}
-              >
+              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
                 II — Extract
               </p>
-              <h3
-                className="font-display font-bold uppercase text-xl mb-3"
-                style={{ color: 'var(--fg)' }}
-              >
+              <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
                 The Ritual
               </h3>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: 'var(--fg-muted)' }}
-              >
+              <p className="text-muted text-sm leading-relaxed">
                 Harness pose landmarks from a webcam or uploaded video. The
                 bones obey. Landmark frames are recorded and saved for playback.
               </p>
             </div>
-            <span
-              className="mt-auto text-xs font-semibold tracking-widest uppercase group-hover:translate-x-1 transition-transform inline-flex items-center gap-1"
-              style={{ color: 'var(--accent)' }}
-            >
+            <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
               Start Extract →
             </span>
           </Link>
@@ -233,14 +161,12 @@ export default async function Home() {
           {/* Card 3 – Console */}
           <Link
             href="/console"
-            className="card-themed rounded-xl p-8 flex flex-col gap-5 group"
+            className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div
-              className="w-14 h-14 flex items-center justify-center rounded-lg"
-              style={{ backgroundColor: 'var(--accent-faint)' }}
-            >
+            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
               {/* Lightning bolt / awakening icon */}
               <svg
+                className="text-accent"
                 width="28"
                 height="28"
                 viewBox="0 0 28 28"
@@ -254,35 +180,22 @@ export default async function Home() {
                   strokeWidth="1.4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={{ color: 'var(--accent)' }}
                 />
               </svg>
             </div>
             <div>
-              <p
-                className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
-                style={{ color: 'var(--accent)' }}
-              >
+              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
                 III — Re-Animate
               </p>
-              <h3
-                className="font-display font-bold uppercase text-xl mb-3"
-                style={{ color: 'var(--fg)' }}
-              >
+              <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
                 The Awakening
               </h3>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: 'var(--fg-muted)' }}
-              >
+              <p className="text-muted text-sm leading-relaxed">
                 Fuse your sketches with captured motion. Adjust anchors. Scale
                 each limb. Your creation rises — animated and alive.
               </p>
             </div>
-            <span
-              className="mt-auto text-xs font-semibold tracking-widest uppercase group-hover:translate-x-1 transition-transform inline-flex items-center gap-1"
-              style={{ color: 'var(--accent)' }}
-            >
+            <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
               Open Console →
             </span>
           </Link>
@@ -290,33 +203,24 @@ export default async function Home() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer
-        className="border-t px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs tracking-wider"
-        style={{
-          borderColor: 'var(--border)',
-          color: 'var(--fg-muted)',
-        }}
-      >
+      <footer className="border-edge text-muted flex flex-col items-center justify-between gap-4 border-t px-6 py-8 text-xs tracking-wider sm:flex-row">
         <span>
-          <span
-            className="font-display font-bold uppercase"
-            style={{ color: 'var(--accent)' }}
-          >
+          <span className="font-display text-accent font-bold uppercase">
             Living Sketch
           </span>{' '}
           — Pose-Driven Animation Studio
         </span>
         <nav className="flex gap-6 uppercase">
-          <Link href="/sketch" className="hover:opacity-80 transition-opacity">
+          <Link href="/sketch" className="transition-opacity hover:opacity-80">
             Sketch
           </Link>
-          <Link href="/extract" className="hover:opacity-80 transition-opacity">
+          <Link href="/extract" className="transition-opacity hover:opacity-80">
             Extract
           </Link>
-          <Link href="/console" className="hover:opacity-80 transition-opacity">
+          <Link href="/console" className="transition-opacity hover:opacity-80">
             Console
           </Link>
-          <Link href="/docs" className="hover:opacity-80 transition-opacity">
+          <Link href="/docs" className="transition-opacity hover:opacity-80">
             Docs
           </Link>
         </nav>

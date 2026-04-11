@@ -285,7 +285,7 @@ export function SketchCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
-      className="w-full h-full block touch-none"
+      className="block h-full w-full touch-none"
       style={{
         cursor: makeBrushCursor(brushSize, color, isEraser),
         backgroundColor: 'transparent',

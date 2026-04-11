@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/cn';
 
 /* ── SegmentedControl ──────────────────────────────────────────────── */
 export function SegmentedControl<T extends string>({
@@ -28,11 +29,10 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div
-      className={`flex rounded overflow-hidden ${orientation === 'vertical' ? 'flex-col' : ''}`}
-      style={{
-        border: '1px solid var(--border)',
-        backgroundColor: 'var(--surface-raised)',
-      }}
+      className={cn(
+        'border-edge bg-surface-raised flex overflow-hidden rounded border',
+        orientation === 'vertical' && 'flex-col',
+      )}
     >
       {options.map((o, i) => {
         const active = o === value;
@@ -46,7 +46,10 @@ export function SegmentedControl<T extends string>({
             onClick={() => handleClick(o)}
             onMouseEnter={() => setHoveredOption(o)}
             onMouseLeave={() => setHoveredOption(null)}
-            className={`flex-1 py-1 px-2 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150 focus-visible:outline-none${isFlash ? ' seg-click-glow' : ''}`}
+            className={cn(
+              'text-2xs flex-1 px-2 py-1 font-semibold tracking-widest uppercase transition-all duration-150 focus-visible:outline-none',
+              isFlash && 'seg-click-glow',
+            )}
             style={{
               cursor: 'pointer',
               ...(isDanger

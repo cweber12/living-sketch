@@ -60,10 +60,7 @@ export default function FileList({
 
   if (loading) {
     return (
-      <div
-        className="py-2 text-center text-[11px] uppercase tracking-widest"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <div className="text-2xs text-muted py-2 text-center tracking-widest uppercase">
         Loading…
       </div>
     );
@@ -71,10 +68,7 @@ export default function FileList({
 
   if (files.length === 0) {
     return (
-      <div
-        className="py-2 text-center text-[11px] uppercase tracking-widest"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <div className="text-2xs text-muted py-2 text-center tracking-widest uppercase">
         No saved files
       </div>
     );
@@ -89,7 +83,7 @@ export default function FileList({
           <li key={f.key} className="flex items-center gap-1">
             <button
               onClick={() => onSelect(f)}
-              className="flex-1 rounded px-2 py-1 text-left text-[11px] transition-colors truncate"
+              className="text-2xs flex-1 truncate rounded px-2 py-1 text-left transition-colors"
               style={{
                 backgroundColor: isSelected
                   ? 'var(--accent)'
@@ -103,8 +97,7 @@ export default function FileList({
             <button
               onClick={() => handleDelete(f)}
               disabled={deleting === f.key}
-              className="rounded p-1 transition-colors disabled:opacity-40"
-              style={{ color: 'var(--fg-muted)' }}
+              className="text-muted rounded p-1 transition-colors disabled:opacity-40"
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.color =
                   'var(--danger)';

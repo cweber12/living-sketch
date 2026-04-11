@@ -4,6 +4,7 @@ import { useState, useRef, useContext } from 'react';
 import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import { ToolbarSectionProps } from './types';
+import { cn } from '@/lib/cn';
 import {
   SECTION_PADDING,
   SECTION_PADDING_MOBILE,
@@ -94,7 +95,7 @@ export function ToolbarSection({
   /* Side-mode button */
   if (isSide) {
     return (
-      <div className={`flex items-stretch w-full ${className}`}>
+      <div className={cn('flex w-full items-stretch', className)}>
         <button
           ref={btnRef}
           onClick={onClick}
@@ -105,7 +106,10 @@ export function ToolbarSection({
           aria-expanded={hasDropdown ? isOpen : undefined}
           onMouseEnter={() => !disabled && setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className={`flex flex-col items-center justify-center gap-1 w-full transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
+          className={cn(
+            'flex w-full flex-col items-center justify-center gap-1 transition-all duration-150 focus-visible:outline-none',
+            glow && 'glow-pulse',
+          )}
           style={{
             padding: '6px 4px 4px',
             border: 'none',
@@ -117,13 +121,13 @@ export function ToolbarSection({
           }}
         >
           {icon && (
-            <span className="leading-none shrink-0" aria-hidden="true">
+            <span className="shrink-0 leading-none" aria-hidden="true">
               {icon}
             </span>
           )}
           {label && (
             <span
-              className="font-bold uppercase leading-tight whitespace-nowrap"
+              className="leading-tight font-bold whitespace-nowrap uppercase"
               style={{
                 writingMode: 'vertical-lr',
                 textOrientation: 'mixed',
@@ -152,7 +156,7 @@ export function ToolbarSection({
 
   /* Top / mobile mode button */
   return (
-    <div className={`flex items-stretch w-full ${className}`}>
+    <div className={cn('flex w-full items-stretch', className)}>
       <button
         ref={btnRef}
         onClick={onClick}
@@ -163,7 +167,10 @@ export function ToolbarSection({
         aria-expanded={hasDropdown ? isOpen : undefined}
         onMouseEnter={() => !disabled && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`flex items-center justify-center transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
+        className={cn(
+          'flex items-center justify-center transition-all duration-150 focus-visible:outline-none',
+          glow && 'glow-pulse',
+        )}
         style={{
           padding: isMobile ? SECTION_PADDING_MOBILE : SECTION_PADDING,
           minWidth: isMobile ? SECTION_MIN_W_MOBILE : 'auto',
@@ -179,14 +186,14 @@ export function ToolbarSection({
       >
         {label && (
           <span
-            className="font-bold uppercase tracking-widest leading-tight whitespace-nowrap transition-colors duration-150"
+            className="leading-tight font-bold tracking-widest whitespace-nowrap uppercase transition-colors duration-150"
             style={{ fontSize: isMobile ? 9 : 8 }}
           >
             {label}
           </span>
         )}
         {icon && (
-          <span className="leading-none shrink-0" aria-hidden="true">
+          <span className="shrink-0 leading-none" aria-hidden="true">
             {icon}
           </span>
         )}

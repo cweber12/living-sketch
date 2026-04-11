@@ -31,12 +31,12 @@ export default function ShiftControls() {
 
   return (
     <div className="flex flex-col gap-3 rounded-lg p-3">
-      <div className="flex flex-row overflow-x-auto gap-1 pb-1">
+      <div className="flex flex-row gap-1 overflow-x-auto pb-1">
         {PARTS.map((p) => (
           <button
             key={p.id}
             onClick={() => setSelected(p.id)}
-            className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors shrink-0"
+            className="text-2xs shrink-0 rounded px-2 py-1 font-semibold tracking-wide uppercase transition-colors"
             style={{
               backgroundColor:
                 selected === p.id ? 'var(--accent)' : 'var(--surface-inset)',
@@ -49,10 +49,7 @@ export default function ShiftControls() {
         ))}
       </div>
 
-      <label
-        className="flex items-center gap-2 text-[11px]"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <label className="text-2xs text-muted flex items-center gap-2">
         <span className="w-4">X</span>
         <input
           type="range"
@@ -65,10 +62,7 @@ export default function ShiftControls() {
         />
       </label>
 
-      <label
-        className="flex items-center gap-2 text-[11px]"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <label className="text-2xs text-muted flex items-center gap-2">
         <span className="w-4">Y</span>
         <input
           type="range"

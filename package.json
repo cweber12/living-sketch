@@ -19,10 +19,12 @@
     "@mediapipe/tasks-vision": "^0.10.34",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.0",
+    "clsx": "^2.1.1",
     "next": "16.2.1",
     "perfect-freehand": "^1.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -40,6 +42,7 @@
     "jsdom": "^29.0.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.2"

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -80,7 +80,7 @@ export default function ExtractPage() {
         }
       }
     } catch {
-      // permissions API not supported â€” proceed with getUserMedia
+      // permissions API not supported — proceed with getUserMedia
     }
 
     try {
@@ -121,7 +121,7 @@ export default function ExtractPage() {
     };
   }, []);
 
-  /* â”€â”€ Track actual video dimensions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Track actual video dimensions ─────────────────────────────── */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -137,9 +137,9 @@ export default function ExtractPage() {
       video.removeEventListener('loadedmetadata', updateDims);
       video.removeEventListener('resize', updateDims);
     };
-  }, []); // once â€” video element DOM node is stable
+  }, []); // once — video element DOM node is stable
 
-  /* â”€â”€ File upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── File upload ────────────────────────────────────────────────── */
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -164,7 +164,7 @@ export default function ExtractPage() {
     [],
   );
 
-  /* â”€â”€ Detection controls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Detection controls ─────────────────────────────────────────── */
   const handleStart = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
@@ -205,7 +205,7 @@ export default function ExtractPage() {
     if (source === 'browse') videoRef.current?.pause();
   }, [stop, source]);
 
-  /* â”€â”€ Upload landmarks to Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Upload landmarks to Supabase ───────────────────────────────── */
   const handleUpload = useCallback(async () => {
     if (frames.length === 0) return;
     setUploadStatus('uploading');
@@ -230,7 +230,7 @@ export default function ExtractPage() {
   const handleReExtract = useCallback(() => {
     window.location.reload();
   }, []);
-  /* â”€â”€ Video ended event (stop detection automatically) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Video ended event (stop detection automatically) ───────────── */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -241,7 +241,7 @@ export default function ExtractPage() {
     return () => video.removeEventListener('ended', onEnded);
   }, [isDetecting, handleStop]);
 
-  /* â”€â”€ Derived â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Derived ────────────────────────────────────────────────────── */
   const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
 
   // Phase-based toolbar state machine
@@ -257,7 +257,7 @@ export default function ExtractPage() {
   const showToolbar =
     webcamReady || videoReady || isDetecting || captureComplete;
 
-  // Smoothed, filtered frames for preview â€” computed once after capture completes
+  // Smoothed, filtered frames for preview — computed once after capture completes
   const smoothedBaseFrames = useMemo(() => {
     if (!captureComplete || frames.length === 0) return frames;
     return smoothLandmarkFrames(filterAndInterpolateFrames(frames));
@@ -275,7 +275,7 @@ export default function ExtractPage() {
   const videoW = videoDims.w || dimensions.width || 640;
   const videoH = videoDims.h || dimensions.height || 480;
 
-  /* â”€â”€ Animated skeleton preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── Animated skeleton preview ──────────────────────────────────── */
   useEffect(() => {
     if (!captureComplete || smoothedBaseFrames.length === 0) {
       cancelAnimationFrame(previewRafRef.current);
@@ -299,13 +299,13 @@ export default function ExtractPage() {
   }, [captureComplete, smoothedBaseFrames]);
 
   return (
-    <main className="flex flex-1 w-full overflow-hidden">
+    <main className="flex w-full flex-1 overflow-hidden">
       {/*
        * disableAutoCollapse: touch-scroll should not collapse the toolbar here.
        * noToolbar: no bottom padding when toolbar is hidden (source-select phase).
        */}
       <ToolbarLayout disableAutoCollapse noToolbar={!showToolbar}>
-        {/* â”€â”€ Phase-based toolbar â”€â”€ */}
+        {/* ── Phase-based toolbar ── */}
         {showToolbar && (
           <PageToolbar
             onSave={extractPhase === 'complete' ? handleUpload : undefined}
@@ -320,16 +320,9 @@ export default function ExtractPage() {
             }
             saveDisabled={!canUpload}
           >
-            {/* Phase: ready â€” Extract only, centered */}
+            {/* Phase: ready — Extract only, centered */}
             {extractPhase === 'ready' && (
-              <div
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'stretch',
-                }}
-              >
+              <div className="flex flex-1 items-stretch justify-center">
                 <ToolbarSection
                   icon={<CircularSawIcon />}
                   label="Extract"
@@ -342,11 +335,11 @@ export default function ExtractPage() {
               </div>
             )}
 
-            {/* Phase: detecting â€” Stop + inline Status */}
+            {/* Phase: detecting — Stop + inline Status */}
             {extractPhase === 'detecting' && (
               <>
                 <ToolbarSection
-                  icon={<span>â– </span>}
+                  icon={<span>■</span>}
                   label="Stop"
                   danger
                   onClick={handleStop}
@@ -360,7 +353,7 @@ export default function ExtractPage() {
               </>
             )}
 
-            {/* Phase: complete â€” Re-Extract + Save */}
+            {/* Phase: complete — Re-Extract + Save */}
             {extractPhase === 'complete' && (
               <ToolbarSection
                 icon={<CircularSawIcon />}
@@ -372,96 +365,66 @@ export default function ExtractPage() {
           </PageToolbar>
         )}
 
-        {/* â”€â”€ Main content â”€â”€ */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* â”€â”€ Error banner â”€â”€ */}
+        {/* ── Main content ── */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* ── Error banner ── */}
           {errorMsg && (
-            <div
-              className="shrink-0 px-4 py-2 text-xs"
-              style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
-            >
+            <div className="bg-danger shrink-0 px-4 py-2 text-xs text-white">
               {errorMsg}
             </div>
           )}
 
-          {/* â”€â”€ Model loading overlay â”€â”€ */}
+          {/* ── Model loading overlay ── */}
           {isLoading && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-              <div
-                className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-                style={{
-                  borderColor: 'var(--accent)',
-                  borderTopColor: 'transparent',
-                }}
-              />
-              <p
-                className="font-display text-sm uppercase tracking-widest text-center"
-                style={{ color: 'var(--accent)' }}
-              >
-                Reanimating neural pathwaysâ€¦
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+              <div className="border-accent h-10 w-10 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="font-display text-accent text-center text-sm tracking-widest uppercase">
+                Reanimating neural pathways…
               </p>
-              <p
-                className="text-[10px] uppercase tracking-widest"
-                style={{ color: 'var(--fg-muted)' }}
-              >
+              <p className="text-3xs text-muted tracking-widest uppercase">
                 Charging the locomotion automaton
               </p>
             </div>
           )}
 
-          {/* â”€â”€ Source cards (initial state: no source selected) â”€â”€ */}
+          {/* ── Source cards (initial state: no source selected) ── */}
           {!isLoading && !sourceSelected && !captureComplete && (
-            <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-              <div className="flex flex-col items-center gap-8 max-w-2xl w-full">
+            <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
+              <div className="flex w-full max-w-2xl flex-col items-center gap-8">
                 {/* Header */}
-                <div
-                  className="flex flex-row items-center justify-center mb-2 gap-2"
-                  style={{ color: 'var(--accent)' }}
-                >
+                <div className="text-accent mb-2 flex flex-row items-center justify-center gap-2">
                   <BrainIcon size={24} />
                   <p className="text-xs font-bold tracking-[0.35em] uppercase">
                     Select a source.
                   </p>
                 </div>
                 {/* Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
                   {/* Live card */}
                   <button
                     onClick={() => {
                       setSource('live');
                       setSourceSelected(true);
                     }}
-                    className="card-themed rounded-xl p-6 flex flex-col gap-4 group text-left transition-all hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left transition-all hover:brightness-110 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
                   >
                     <div>
-                      <div
-                        className="flex flex-row items-center gap-2"
-                        style={{ color: 'var(--accent)' }}
-                      >
+                      <div className="text-accent flex flex-row items-center gap-2">
                         <BodyRunningIcon size={24} />
-                        <p className="text-xs font-bold tracking-[0.3em] uppercase mb-1">
+                        <p className="mb-1 text-xs font-bold tracking-[0.3em] uppercase">
                           Live
                         </p>
                       </div>
-                      <h3
-                        className="font-display font-bold uppercase text-lg mb-2"
-                        style={{ color: 'var(--fg)' }}
-                      >
+                      <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
                         Living Subject
                       </h3>
-                      <p
-                        className="text-sm leading-relaxed"
-                        style={{ color: 'var(--fg-muted)' }}
-                      >
+                      <p className="text-muted text-sm leading-relaxed">
                         Transmit motion directly from a living subject via
                         camera feed in real time.
                       </p>
                     </div>
-                    <span
-                      className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      Begin Capture â†’
+                    <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
+                      Begin Capture →
                     </span>
                   </button>
 
@@ -472,40 +435,25 @@ export default function ExtractPage() {
                       setSourceSelected(true);
                       fileInputRef.current?.click();
                     }}
-                    className="card-themed rounded-xl p-6 flex flex-col gap-4 group text-left transition-all hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left transition-all hover:brightness-110 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
                   >
-                    <div
-                      className="w-12 h-12 flex items-center justify-center rounded-lg shrink-0"
-                      style={{ backgroundColor: 'var(--accent-faint)' }}
-                    >
+                    <div className="bg-accent-faint flex h-12 w-12 shrink-0 items-center justify-center rounded-lg">
                       <FridgeOpenIcon />
                     </div>
                     <div>
-                      <p
-                        className="text-xs font-bold tracking-[0.3em] uppercase mb-1"
-                        style={{ color: 'var(--accent)' }}
-                      >
+                      <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
                         Browse
                       </p>
-                      <h3
-                        className="font-display font-bold uppercase text-lg mb-2"
-                        style={{ color: 'var(--fg)' }}
-                      >
+                      <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
                         Motion Recording
                       </h3>
-                      <p
-                        className="text-sm leading-relaxed"
-                        style={{ color: 'var(--fg-muted)' }}
-                      >
+                      <p className="text-muted text-sm leading-relaxed">
                         Recover a kinetic sequence from a preserved video
                         recording.
                       </p>
                     </div>
-                    <span
-                      className="mt-auto text-xs font-semibold tracking-widest uppercase inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      Select Recording â†’
+                    <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
+                      Select Recording →
                     </span>
                   </button>
                 </div>
@@ -513,7 +461,7 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* Hidden file input â€” available at all times for source cards */}
+          {/* Hidden file input — available at all times for source cards */}
           <input
             ref={fileInputRef}
             type="file"
@@ -523,32 +471,28 @@ export default function ExtractPage() {
           />
 
           {/*
-           * â”€â”€ Video + pose overlay â”€â”€
+           * ── Video + pose overlay ──
            * flex-1 + absolute positioning fills available space between navbar
            * and toolbar without overflowing or causing page scroll on iOS.
            * object-contain on the video preserves aspect ratio with letterboxing.
-           * PoseCanvas covers the same container; both scale from videoWÃ—videoH
+           * PoseCanvas covers the same container; both scale from videoW×videoH
            * coordinates to CSS container size uniformly, keeping overlay aligned.
            */}
           {!isLoading && sourceSelected && !captureComplete && (
-            <div
-              className="flex-1 min-h-0 overflow-hidden relative"
-              style={{ backgroundColor: 'var(--surface)' }}
-            >
+            <div className="bg-surface relative min-h-0 flex-1 overflow-hidden">
               <video
                 ref={videoRef}
                 playsInline
                 muted
                 controls={source === 'browse' && !isDetecting}
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ display: 'block' }}
+                className="absolute inset-0 block h-full w-full object-contain"
               />
               {currentFrame && (
                 <PoseCanvas
                   width={videoW}
                   height={videoH}
                   landmarks={currentFrame}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  className="pointer-events-none absolute inset-0 h-full w-full"
                 />
               )}
 
@@ -557,28 +501,19 @@ export default function ExtractPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6">
                   {cameraPermission === 'denied' ? (
                     <>
-                      <p
-                        className="text-sm uppercase tracking-widest text-center"
-                        style={{ color: 'var(--danger)' }}
-                      >
+                      <p className="text-danger text-center text-sm tracking-widest uppercase">
                         Camera access blocked
                       </p>
-                      <p
-                        className="text-xs tracking-wider text-center max-w-xs"
-                        style={{ color: 'var(--fg-muted)' }}
-                      >
+                      <p className="text-muted max-w-xs text-center text-xs tracking-wider">
                         Allow camera access in your browser settings, then
                         reload the page.
                       </p>
                     </>
                   ) : (
-                    <p
-                      className="text-sm uppercase tracking-widest"
-                      style={{ color: 'var(--fg-muted)' }}
-                    >
+                    <p className="text-muted text-sm tracking-widest uppercase">
                       {cameraPermission === 'prompt'
-                        ? 'Allow camera access to continueâ€¦'
-                        : 'Starting cameraâ€¦'}
+                        ? 'Allow camera access to continue…'
+                        : 'Starting camera…'}
                     </p>
                   )}
                 </div>
@@ -587,10 +522,7 @@ export default function ExtractPage() {
               {/* Empty state: no video file selected */}
               {source === 'browse' && !videoReady && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p
-                    className="text-sm uppercase tracking-widest"
-                    style={{ color: 'var(--fg-muted)' }}
-                  >
+                  <p className="text-muted text-sm tracking-widest uppercase">
                     Browse to select a video
                   </p>
                 </div>
@@ -598,14 +530,14 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* â”€â”€ Skeleton preview (capture complete) â”€â”€ */}
+          {/* ── Skeleton preview (capture complete) ── */}
           {captureComplete && (
-            <div className="flex-1 min-h-0 overflow-hidden relative">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
               <PoseCanvas
                 width={videoW}
                 height={videoH}
                 landmarks={previewLandmarks}
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 h-full w-full"
               />
             </div>
           )}

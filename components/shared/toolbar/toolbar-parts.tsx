@@ -67,11 +67,11 @@ export function ActionIcon({
     alignItems: 'center',
     justifyContent: 'center',
     gap: labeledButton ? 4 : 0,
-    border: 'none',
+    borderRight: isSide ? 'none' : '1px solid var(--border)',
     background: 'none',
     cursor: disabled ? 'default' : 'pointer',
     opacity: disabled ? 0.4 : 1,
-    padding: isMobile ? '6px 8px' : labeledButton ? '4px 8px' : '4px 6px',
+    padding: isMobile ? '6px 12px' : labeledButton ? '4px 12px' : '4px 12px',
     minWidth: isMobile
       ? ACTION_ICON_MIN_MOBILE
       : labeledButton
@@ -82,20 +82,14 @@ export function ActionIcon({
     position: 'relative' as const,
     transition:
       'background-color 100ms ease, color 100ms ease, box-shadow 120ms ease, transform 100ms ease',
-    transform:
-      active || isOpen
-        ? 'scale(1.18)'
-        : hovered && !disabled
-          ? 'scale(1.1)'
-          : 'scale(1)',
     ...(danger && active
       ? {
           backgroundColor: 'var(--danger)',
           color: '#fff',
-          boxShadow: '0 0 12px rgba(138,43,36,0.5)',
         }
       : active || isOpen
         ? {
+            backgroundColor: 'var(--overlay)',
             color: 'var(--fg)',
           }
         : hovered && !disabled
@@ -128,7 +122,7 @@ export function ActionIcon({
         className="toolbar-action-btn"
         style={style}
       >
-        <span className="leading-none shrink-0" aria-hidden="true">
+        <span className="shrink-0 leading-none" aria-hidden="true">
           {icon}
         </span>
         {labeledButton && (
@@ -295,9 +289,6 @@ export function ActionIconsRow({ expanded, children }: ActionIconsRowProps) {
               display: 'flex',
               flexDirection: 'row',
               alignItems: 'stretch',
-              gap: isMobile ? 2 : 4,
-              paddingLeft: isMobile ? 4 : 8,
-              paddingRight: isMobile ? 4 : 8,
             }
       }
     >

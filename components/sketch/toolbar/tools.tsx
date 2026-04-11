@@ -210,7 +210,7 @@ export function ToolsSection({
                 step={0.1}
                 value={zoom}
                 onChange={(e) => onZoomChange(Number(e.target.value))}
-                className="flex-1 accent-accent"
+                className="accent-accent flex-1"
                 title="Canvas zoom"
               />
               <span
@@ -286,7 +286,7 @@ export function ToolsSection({
               max={40}
               value={brushSize}
               onChange={(e) => onBrushSizeChange(Number(e.target.value))}
-              className="flex-1 accent-accent"
+              className="accent-accent flex-1"
               title="Brush size"
             />
             <div

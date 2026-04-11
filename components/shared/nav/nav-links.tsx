@@ -43,9 +43,8 @@ export function NavDropdown() {
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={`Navigation: ${currentLabel}`}
-        className="flex items-center gap-1.5 rounded px-3 py-2 transition-colors sm:px-2 sm:py-1.5"
+        className="text-muted flex items-center gap-1.5 rounded px-3 py-2 transition-colors sm:px-2 sm:py-1.5"
         style={{
-          color: 'var(--fg-muted)',
           backgroundColor: open ? 'var(--surface-raised)' : 'transparent',
         }}
         onMouseEnter={(e) => {
@@ -91,7 +90,7 @@ export function NavDropdown() {
             fill="currentColor"
           />
         </svg>
-        <span className="text-[10px] font-semibold uppercase tracking-widest hidden sm:inline">
+        <span className="text-3xs hidden font-semibold tracking-widest uppercase sm:inline">
           {currentLabel}
         </span>
         {/* Chevron */}
@@ -120,16 +119,9 @@ export function NavDropdown() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full mt-1 z-50 min-w-45 rounded-md py-1 shadow-lg"
-          style={{
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border-strong)',
-          }}
+          className="bg-surface border-edge-strong absolute top-full left-0 z-50 mt-1 min-w-45 rounded-md border py-1 shadow-lg"
         >
-          <div
-            className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]"
-            style={{ color: 'var(--fg-muted)' }}
-          >
+          <div className="text-4xs text-muted px-3 py-1.5 font-bold tracking-[0.2em] uppercase">
             Lab Stations
           </div>
           {TABS.map(({ href, label }) => {
@@ -140,7 +132,7 @@ export function NavDropdown() {
                 href={href}
                 role="menuitem"
                 onClick={close}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold tracking-widest uppercase transition-colors"
                 style={{
                   color: active ? 'var(--accent)' : 'var(--fg)',
                   backgroundColor: active

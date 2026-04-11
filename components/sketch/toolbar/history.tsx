@@ -41,7 +41,7 @@ export function HistorySection({
                 onClearAll();
                 onClearClose();
               }}
-              className="btn-danger w-full rounded py-1.5 text-xs uppercase tracking-widest font-bold"
+              className="btn-danger w-full rounded py-1.5 text-xs font-bold tracking-widest uppercase"
             >
               Clear All
             </button>

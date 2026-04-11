@@ -269,7 +269,7 @@ export default function ConsolePage() {
 
         {/* Canvas area */}
         <div
-          className="flex flex-1 items-center justify-center p-4 min-h-0 overflow-hidden"
+          className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4"
           style={{ backgroundColor: previewBgColor }}
         >
           <AnimationCanvas

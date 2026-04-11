@@ -3,7 +3,7 @@
 import type { FileEntry } from '@/lib/types';
 import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { BrainIcon } from '@/components/shared/icons/brain';
-import { PersonFrontIcon } from '@/components/shared/icons/person-view';
+import { PersonArmsDownIcon } from '@/components/shared/icons/person';
 import { FilesIcon } from '@/components/console/icons/files-icon';
 import FileList from '@/components/console/controls/file-list';
 
@@ -75,7 +75,7 @@ export function CollectionSection({
         onDropdownClose={onActivityDropdownClose}
         dropdownWidth={280}
         dropdownContent={
-          <div style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+          <div className="max-h-[40vh] overflow-y-auto">
             <FileList
               bucket="landmarks"
               selected={landmarkFile}
@@ -89,7 +89,7 @@ export function CollectionSection({
         }
       />
       <ActionIcon
-        icon={<PersonFrontIcon size={10} />}
+        icon={<PersonArmsDownIcon size={10} />}
         label="Creations"
         labeledButton
         onClick={onCreationsDropdownToggle}
@@ -98,7 +98,7 @@ export function CollectionSection({
         onDropdownClose={onCreationsDropdownClose}
         dropdownWidth={280}
         dropdownContent={
-          <div style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+          <div className="max-h-[40vh] overflow-y-auto">
             <FileList
               bucket="svgs"
               selected={svgFile}
