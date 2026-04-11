@@ -96,14 +96,14 @@ export function ActionIcon({
         }
       : active || isOpen
         ? {
-            color: 'var(--accent)',
+            color: 'var(--fg)',
           }
         : hovered && !disabled
           ? {
               color: danger ? 'var(--danger)' : 'var(--fg)',
             }
           : {
-              color: danger ? 'var(--fg-muted)' : 'var(--fg-muted-gray)',
+              color: danger ? 'var(--fg-muted)' : 'var(--fg-muted)',
             }),
   };
 
@@ -193,7 +193,7 @@ function Tooltip({
     pointerEvents: 'none',
     padding: '3px 7px',
     fontSize: 10,
-    fontWeight: 600,
+    fontWeight: 500,
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     whiteSpace: 'nowrap',
@@ -264,33 +264,7 @@ export function SectionLabel({
         // Mobile: text label only, no icon
         <span style={{ fontSize: SECTION_LABEL_SIZE_MOBILE }}>{label}</span>
       ) : isSide ? (
-        // Side: icon + text horizontal
-        <>
-          <span className="leading-none shrink-0" aria-hidden="true">
-            {icon}
-          </span>
-          <span style={{ fontSize: SECTION_SIDE_LABEL_SIZE }}>{label}</span>
-        </>
-      ) : isTopExpanded ? (
-        // Top expanded: label + up-chevron, space-between
-        <>
-          <span style={{ fontSize: SECTION_LABEL_SIZE }}>{label}</span>
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M2 7l4-4 4 4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </>
+        <span style={{ fontSize: SECTION_SIDE_LABEL_SIZE }}>{label}</span>
       ) : (
         // Top not expanded: text label
         <span style={{ fontSize: SECTION_LABEL_SIZE }}>{label}</span>
@@ -322,6 +296,8 @@ export function ActionIconsRow({ expanded, children }: ActionIconsRowProps) {
               flexDirection: 'row',
               alignItems: 'stretch',
               gap: isMobile ? 2 : 4,
+              paddingLeft: isMobile ? 4 : 8,
+              paddingRight: isMobile ? 4 : 8,
             }
       }
     >
@@ -365,7 +341,7 @@ export function ToolbarGroup({
         flexDirection: isColumn ? 'column' : 'row',
         alignItems: 'stretch',
         borderBottom: isSide ? 'none' : '1px solid var(--border)',
-        borderRight: isSide ? '1px solid var(--border)' : 'none',
+        borderRight: '1px solid var(--border)',
       }}
     >
       <SectionLabel

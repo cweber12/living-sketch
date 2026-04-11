@@ -83,7 +83,7 @@ export function ColorSection({
       onToggle={onToggle}
     >
       <ActionIcon
-        icon={<ColorPickerIcon />}
+        icon={<Flask2Icon color={color} />}
         label="Color Picker"
         onClick={onPickerDropdownToggle}
         dropdownOpen={pickerDropdownOpen}
