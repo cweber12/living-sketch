@@ -1,6 +1,6 @@
-/* ═══════════════════════════════════════════════════════════════════════════
+/* =============================================================================
    Toolbar-specific styles
-   ═══════════════════════════════════════════════════════════════════════════ */
+   ============================================================================= */
 
 /* Pulsing glow for toolbar active/live indicators */
 .glow-pulse {
@@ -34,9 +34,52 @@
   }
 }
 
-/* ── Button active press effect ─────────────────────────────────── */
-
+/* Button active press effect */
 [data-toolbar] button:active:not(:disabled) {
   transform: scale(0.96);
   transition: transform 80ms ease;
+}
+
+/* =============================================================================
+   SectionLabel base styles
+   Shared static properties for the ToolbarGroup section-label button.
+   Dynamic state (color, background, shadow) is applied via inline styles.
+   ============================================================================= */
+.toolbar-label {
+  display: flex;
+  align-items: center;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease;
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   ActionIcon base styles
+   Shared static properties for ActionIcon buttons.
+   Dynamic state (color, background, box-shadow) is applied via inline styles.
+   ============================================================================= */
+.toolbar-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition:
+    background-color 100ms ease,
+    color 100ms ease,
+    box-shadow 120ms ease;
+}
+.toolbar-action-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
 }

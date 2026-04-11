@@ -126,7 +126,6 @@ export function DropdownPanel({
 
   const isMobilePanel = isMobile;
   const isSidePanel = !isMobile && mode === 'side';
-  const isTopPanel = !isMobile && mode === 'top';
 
   return createPortal(
     <div

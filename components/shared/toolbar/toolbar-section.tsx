@@ -4,6 +4,12 @@ import { useState, useRef, useContext } from 'react';
 import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
 import { ToolbarSectionProps } from './types';
+import {
+  SECTION_PADDING,
+  SECTION_PADDING_MOBILE,
+  SECTION_MIN_W_MOBILE,
+  SECTION_MIN_H_MOBILE,
+} from './constants';
 
 /* â”€â”€ ToolbarSection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export function ToolbarSection({
@@ -159,9 +165,9 @@ export function ToolbarSection({
         onMouseLeave={() => setHovered(false)}
         className={`flex items-center justify-center transition-all duration-150 focus-visible:outline-none${glow ? ' glow-pulse' : ''}`}
         style={{
-          padding: isMobile ? '4px 12px' : '4px 10px',
-          minWidth: isMobile ? 52 : 'auto',
-          minHeight: isMobile ? 52 : 'auto',
+          padding: isMobile ? SECTION_PADDING_MOBILE : SECTION_PADDING,
+          minWidth: isMobile ? SECTION_MIN_W_MOBILE : 'auto',
+          minHeight: isMobile ? SECTION_MIN_H_MOBILE : 'auto',
           gap: 4,
           border: 'none',
           borderLeft: '1px solid var(--border)',

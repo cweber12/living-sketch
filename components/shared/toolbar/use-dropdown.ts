@@ -3,8 +3,8 @@ import { MOBILE_BP } from './constants';
 
 /**
  * Multi-dropdown manager.
- * - Mobile (< 1024 px): one dropdown open at a time (FIFO)
- * - Desktop: multiple dropdowns; FIFO eviction when viewport width is exhausted.
+ * - Mobile (< MOBILE_BP): one dropdown open at a time (FIFO, max 1)
+ * - Desktop: multiple dropdowns; FIFO eviction when viewport is narrow.
  *   Max open count = floor(window.innerWidth / 240), minimum 2.
  */
 export function useDropdown() {
