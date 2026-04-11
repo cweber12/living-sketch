@@ -15,9 +15,14 @@ import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
 import { FridgeOpenIcon } from '@/components/shared/icons/fridge';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
-import type { LandmarkFrame } from '@/lib/types';
+import type { LandmarkFrame, Dimensions } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { filterAndInterpolateFrames } from '@/lib/utils/frame-filter';
+import {
+  computeSubjectCrop,
+  transformFramesToCrop,
+  cropToDimensions,
+} from '@/lib/utils/frame-crop';
 
 const PREVIEW_FRAME_MS = 1000 / 30;
 
@@ -205,9 +210,35 @@ export default function ExtractPage() {
     if (source === 'browse') videoRef.current?.pause();
   }, [stop, source]);
 
+  /* ── Derived (needed by upload handler) ─────────────────────────── */
+  const videoW = videoDims.w || dimensions.width || 640;
+  const videoH = videoDims.h || dimensions.height || 480;
+
+  const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
+
+  // Subject crop — computed once after capture completes
+  const cropData = useMemo(() => {
+    if (!captureComplete || frames.length === 0) return null;
+    const frameDims: Dimensions = { width: videoW, height: videoH };
+    const crop = computeSubjectCrop(frames, frameDims);
+    return {
+      croppedFrames: transformFramesToCrop(frames, crop),
+      cropDimensions: cropToDimensions(crop),
+    };
+  }, [captureComplete, frames, videoW, videoH]);
+
+  const croppedFrames = useMemo(
+    () => cropData?.croppedFrames ?? [],
+    [cropData],
+  );
+  const cropDimensions: Dimensions = useMemo(
+    () => cropData?.cropDimensions ?? { width: videoW, height: videoH },
+    [cropData, videoW, videoH],
+  );
+
   /* ── Upload landmarks to Supabase ───────────────────────────────── */
   const handleUpload = useCallback(async () => {
-    if (frames.length === 0) return;
+    if (croppedFrames.length === 0) return;
     setUploadStatus('uploading');
     setErrorMsg('');
     try {
@@ -215,7 +246,11 @@ export default function ExtractPage() {
       const res = await fetch('/api/storage/landmarks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, frames, dimensions }),
+        body: JSON.stringify({
+          name,
+          frames: croppedFrames,
+          dimensions: cropDimensions,
+        }),
       });
       const json = (await res.json()) as { error?: string; path?: string };
       if (!res.ok) throw new Error(json.error ?? 'Upload failed');
@@ -226,7 +261,7 @@ export default function ExtractPage() {
       setUploadStatus('error');
       setTimeout(() => setUploadStatus('idle'), 4000);
     }
-  }, [frames, dimensions, router]);
+  }, [croppedFrames, cropDimensions, router]);
   const handleReExtract = useCallback(() => {
     window.location.reload();
   }, []);
@@ -241,9 +276,7 @@ export default function ExtractPage() {
     return () => video.removeEventListener('ended', onEnded);
   }, [isDetecting, handleStop]);
 
-  /* ── Derived ────────────────────────────────────────────────────── */
-  const captureComplete = frames.length > 0 && !isDetecting && !isLoading;
-
+  /* ── Other derived ──────────────────────────────────────────────── */
   // Phase-based toolbar state machine
   const extractPhase: ExtractPhase = !sourceSelected
     ? 'source-select'
@@ -259,9 +292,9 @@ export default function ExtractPage() {
 
   // Smoothed, filtered frames for preview — computed once after capture completes
   const smoothedBaseFrames = useMemo(() => {
-    if (!captureComplete || frames.length === 0) return frames;
-    return smoothLandmarkFrames(filterAndInterpolateFrames(frames));
-  }, [captureComplete, frames]);
+    if (!captureComplete || croppedFrames.length === 0) return croppedFrames;
+    return smoothLandmarkFrames(filterAndInterpolateFrames(croppedFrames));
+  }, [captureComplete, croppedFrames]);
 
   // Re-detection is allowed: remove !captureComplete guard so users can
   // run detection again on the same or a new video after a capture.
@@ -270,10 +303,10 @@ export default function ExtractPage() {
     !isDetecting &&
     (source === 'live' ? webcamReady : videoReady);
   const canUpload =
-    captureComplete && uploadStatus !== 'uploading' && uploadStatus !== 'done';
-
-  const videoW = videoDims.w || dimensions.width || 640;
-  const videoH = videoDims.h || dimensions.height || 480;
+    captureComplete &&
+    croppedFrames.length > 0 &&
+    uploadStatus !== 'uploading' &&
+    uploadStatus !== 'done';
 
   /* ── Animated skeleton preview ──────────────────────────────────── */
   useEffect(() => {
@@ -489,8 +522,8 @@ export default function ExtractPage() {
               />
               {currentFrame && (
                 <PoseCanvas
-                  width={videoW}
-                  height={videoH}
+                  sourceWidth={videoW}
+                  sourceHeight={videoH}
                   landmarks={currentFrame}
                   className="pointer-events-none absolute inset-0 h-full w-full"
                 />
@@ -534,8 +567,8 @@ export default function ExtractPage() {
           {captureComplete && (
             <div className="relative min-h-0 flex-1 overflow-hidden">
               <PoseCanvas
-                width={videoW}
-                height={videoH}
+                sourceWidth={cropDimensions.width}
+                sourceHeight={cropDimensions.height}
                 landmarks={previewLandmarks}
                 className="absolute inset-0 h-full w-full"
               />

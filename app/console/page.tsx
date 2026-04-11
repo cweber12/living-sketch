@@ -11,7 +11,7 @@ import type {
 import { useShiftFactorsStore } from '@/lib/stores/shift-factors-store';
 import { useScaleFactorsStore } from '@/lib/stores/scale-factors-store';
 import { useCacheSvgs } from '@/hooks/use-cache-svgs';
-import { scaleLandmarkFrames } from '@/lib/utils/pose-utils';
+import { scaleLandmarkFramesUniform } from '@/lib/utils/pose-utils';
 import {
   filterAndInterpolateFrames,
   interpolateLowConfidenceLandmarks,
@@ -87,7 +87,7 @@ export default function ConsolePage() {
     const filtered = filterAndInterpolateFrames(frames);
     const filled = interpolateLowConfidenceLandmarks(filtered);
     const smoothed = smoothLandmarkFrames(filled);
-    return scaleLandmarkFrames(smoothed, origDims, {
+    return scaleLandmarkFramesUniform(smoothed, origDims, {
       width: CANVAS_W,
       height: CANVAS_H,
     });

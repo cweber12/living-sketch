@@ -28,6 +28,48 @@ export function scaleLandmarkFrames(
 }
 
 /**
+ * Scale a single landmark frame from original to target dimensions using
+ * uniform (aspect-ratio-preserving) scaling.
+ *
+ * Applies the same scale factor on both axes (the smaller of sx and sy),
+ * then centers the result within the target area. This prevents horizontal
+ * or vertical stretching when the source and target aspect ratios differ.
+ *
+ * Coordinate space contract:
+ *   - Input:  pixel coordinates in [0, original.width] × [0, original.height]
+ *   - Output: pixel coordinates centered in [0, target.width] × [0, target.height]
+ */
+export function scaleLandmarksUniform(
+  landmarks: LandmarkFrame,
+  original: Dimensions,
+  target: Dimensions,
+): LandmarkFrame {
+  if (original.width <= 0 || original.height <= 0) return landmarks;
+  const s = Math.min(
+    target.width / original.width,
+    target.height / original.height,
+  );
+  const ox = (target.width - original.width * s) / 2;
+  const oy = (target.height - original.height * s) / 2;
+  return landmarks.map(
+    (kp): Keypoint => ({
+      ...kp,
+      x: kp.x * s + ox,
+      y: kp.y * s + oy,
+    }),
+  );
+}
+
+/** Scale a batch of frames from original to target dimensions using uniform scale. */
+export function scaleLandmarkFramesUniform(
+  frames: LandmarkFrame[],
+  original: Dimensions,
+  target: Dimensions,
+): LandmarkFrame[] {
+  return frames.map((f) => scaleLandmarksUniform(f, original, target));
+}
+
+/**
  * Static mapping: keypoint index → shift-factor key name.
  * Computed once at module load instead of per-frame.
  */

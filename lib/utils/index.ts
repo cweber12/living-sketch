@@ -6,3 +6,5 @@ export * from './validation-utils';
 export * from './render-part-svg';
 export * from './torso-dimensions';
 export * from './ear-distance';
+export * from './display-transform';
+export * from './frame-crop';
