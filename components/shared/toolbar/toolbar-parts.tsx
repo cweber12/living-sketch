@@ -10,6 +10,15 @@ import {
 } from 'react';
 import { ToolbarCtx } from './toolbar-main';
 import { DropdownPanel } from './dropdown-panel';
+import {
+  ACTION_ICON_MIN,
+  ACTION_ICON_MIN_MOBILE,
+  ACTION_ICON_LABELED_FONT,
+  SECTION_LABEL_SIZE,
+  SECTION_LABEL_SIZE_MOBILE,
+  SECTION_SIDE_PADDING,
+  SECTION_SIDE_LABEL_SIZE,
+} from './constants';
 
 /* ── ActionIcon ─────────────────────────────────────────────────────── */
 
@@ -61,8 +70,12 @@ export function ActionIcon({
     cursor: disabled ? 'default' : 'pointer',
     opacity: disabled ? 0.4 : 1,
     padding: isMobile ? '6px 8px' : labeledButton ? '4px 8px' : '4px 6px',
-    minWidth: isMobile ? 44 : labeledButton ? 'auto' : 28,
-    minHeight: isMobile ? 44 : 28,
+    minWidth: isMobile
+      ? ACTION_ICON_MIN_MOBILE
+      : labeledButton
+        ? 'auto'
+        : ACTION_ICON_MIN,
+    minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
     borderRadius: 3,
     position: 'relative' as const,
     transition:
@@ -112,7 +125,7 @@ export function ActionIcon({
           setHovered(false);
           setShowTooltip(false);
         }}
-        className="focus-visible:outline-none"
+        className="toolbar-action-btn focus-visible:outline-none"
         style={style}
       >
         <span className="leading-none shrink-0" aria-hidden="true">
@@ -121,7 +134,7 @@ export function ActionIcon({
         {labeledButton && (
           <span
             style={{
-              fontSize: 10,
+              fontSize: ACTION_ICON_LABELED_FONT,
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
@@ -222,41 +235,22 @@ export function SectionLabel({
   const [hovered, setHovered] = useState(false);
   const { mode, isMobile } = useContext(ToolbarCtx);
   const isSide = mode === 'side';
+  const isTopExpanded = !isSide && !isMobile && expanded;
 
   const style: CSSProperties = {
-    display: 'flex',
-    alignItems: isSide ? 'center' : 'center',
-    justifyContent: 'center',
-    flexDirection: isSide ? 'column' : 'row',
-    gap: 3,
-    border: 'none',
-    cursor: 'pointer',
-    padding: isSide ? '6px 4px' : isMobile ? '4px 10px' : '4px 8px',
-    minWidth: isMobile ? 44 : 'auto',
-    minHeight: isMobile ? 44 : 'auto',
-    borderRadius: 0,
-    transition:
-      'background-color 100ms ease, color 100ms ease, box-shadow 120ms ease',
-    ...(expanded
-      ? {
-          backgroundColor: 'var(--surface-raised)',
-          color: 'var(--accent)',
-          boxShadow: 'inset 0 -2px 0 var(--accent)',
-        }
-      : hovered
-        ? {
-            backgroundColor: 'var(--surface-raised)',
-            color: 'var(--accent)',
-          }
-        : hovered
-          ? {
-              backgroundColor: 'var(--surface-raised)',
-              color: 'var(--accent)',
-            }
-          : {
-              backgroundColor: 'transparent',
-              color: 'var(--fg)',
-            }),
+    justifyContent: isTopExpanded
+      ? 'space-between'
+      : isSide
+        ? 'flex-start'
+        : 'center',
+    gap: isSide ? 4 : 3,
+    padding: isSide ? SECTION_SIDE_PADDING : isMobile ? '4px 10px' : '4px 8px',
+    minWidth: isMobile ? ACTION_ICON_MIN_MOBILE : 'auto',
+    minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : 'auto',
+    width: isTopExpanded || isSide ? '100%' : 'auto',
+    background: expanded || hovered ? 'var(--surface-raised)' : 'transparent',
+    color: expanded || hovered ? 'var(--fg)' : 'var(--fg-muted)',
+    boxShadow: expanded && !isSide ? 'inset 0 -2px 0 var(--accent)' : undefined,
   };
 
   return (
@@ -267,31 +261,43 @@ export function SectionLabel({
       aria-expanded={expanded}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="focus-visible:outline-none shrink-0"
+      className="toolbar-label focus-visible:outline-none"
       style={style}
     >
       {isMobile ? (
-        <span className="leading-none shrink-0" aria-hidden="true">
-          {icon}
-        </span>
+        // Mobile: text label only, no icon
+        <span style={{ fontSize: SECTION_LABEL_SIZE_MOBILE }}>{label}</span>
+      ) : isSide ? (
+        // Side: icon + text horizontal
+        <>
+          <span className="leading-none shrink-0" aria-hidden="true">
+            {icon}
+          </span>
+          <span style={{ fontSize: SECTION_SIDE_LABEL_SIZE }}>{label}</span>
+        </>
+      ) : isTopExpanded ? (
+        // Top expanded: label + up-chevron, space-between
+        <>
+          <span style={{ fontSize: SECTION_LABEL_SIZE }}>{label}</span>
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M2 7l4-4 4 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </>
       ) : (
-        <span
-          style={{
-            fontSize: isSide ? 7 : isMobile ? 9 : 8,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            whiteSpace: 'nowrap',
-            ...(isSide
-              ? {
-                  writingMode: 'vertical-lr',
-                  textOrientation: 'mixed',
-                }
-              : {}),
-          }}
-        >
-          {label}
-        </span>
+        // Top not expanded: text label
+        <span style={{ fontSize: SECTION_LABEL_SIZE }}>{label}</span>
       )}
     </button>
   );
@@ -312,12 +318,16 @@ export function ActionIconsRow({ expanded, children }: ActionIconsRowProps) {
 
   return (
     <div
-      style={{
-        display: 'flex',
-        flexDirection: isSide ? 'column' : 'row',
-        alignItems: 'stretch',
-        gap: isMobile ? 2 : 1,
-      }}
+      style={
+        isSide
+          ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }
+          : {
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'stretch',
+              gap: isMobile ? 2 : 1,
+            }
+      }
     >
       {children}
     </div>
@@ -354,7 +364,7 @@ export function ToolbarGroup({
       data-toolbar-group
       style={{
         display: 'flex',
-        flexDirection: isSide ? 'column' : 'row',
+        flexDirection: isSide || expanded ? 'column' : 'row',
         alignItems: 'stretch',
         borderBottom: isSide ? 'none' : '1px solid var(--border)',
         borderRight: isSide ? '1px solid var(--border)' : 'none',

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   createContext,
@@ -64,7 +64,6 @@ export function ToolbarLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const touchStartY = useRef(0);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
@@ -77,33 +76,6 @@ export function ToolbarLayout({
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-
-  // Mobile scroll Ã¢â€ â€™ auto-collapse/expand the bottom toolbar
-  useEffect(() => {
-    if (!isMobile || disableAutoCollapse) return;
-    const THRESHOLD = 40;
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      const dy = e.touches[0].clientY - touchStartY.current;
-      if (dy > THRESHOLD) {
-        // Finger moving DOWN (content scrolling toward top) Ã¢â€ â€™ collapse toolbar
-        setCollapsed(true);
-        touchStartY.current = e.touches[0].clientY;
-      } else if (dy < -THRESHOLD) {
-        // Finger moving UP (content scrolling toward bottom) Ã¢â€ â€™ expand toolbar
-        setCollapsed(false);
-        touchStartY.current = e.touches[0].clientY;
-      }
-    };
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove', onTouchMove, { passive: true });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchmove', onTouchMove);
-    };
-  }, [isMobile, disableAutoCollapse]);
 
   const mode: ToolbarMode =
     !mounted || isMobile ? 'top' : preferSide ? 'side' : 'top';
@@ -166,6 +138,38 @@ export function PageToolbar({
 
   const optionsBtnRef = useRef<HTMLButtonElement>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Drag-down on the bottom toolbar collapses it (mobile only)
+  useEffect(() => {
+    if (!isMobile || disableAutoCollapse) return;
+    const el = toolbarRef.current;
+    if (!el) return;
+    let startY = 0;
+    let dragging = false;
+    const onTouchStart = (e: TouchEvent) => {
+      startY = e.touches[0].clientY;
+      dragging = true;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!dragging) return;
+      if (e.touches[0].clientY - startY > 40) {
+        setCollapsed(true);
+        dragging = false;
+      }
+    };
+    const onTouchEnd = () => {
+      dragging = false;
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isMobile, disableAutoCollapse, setCollapsed]);
 
   /* ── Side mode ── */
   if (mode === 'side') {
@@ -380,16 +384,22 @@ export function PageToolbar({
   return (
     <>
       <div
+        ref={toolbarRef}
         data-toolbar
         style={{
           position: 'fixed',
           ...(isBottom ? { bottom: 0 } : { top: NAVBAR_H }),
           left: 0,
           right: 0,
-          height: collapsed ? 0 : toolbarH,
+          ...(isBottom
+            ? { height: collapsed ? 0 : toolbarH }
+            : {
+                maxHeight: collapsed ? 0 : '60vh',
+                minHeight: collapsed ? 0 : toolbarH,
+              }),
           zIndex: 40,
           overflow: 'hidden',
-          transition: 'height 200ms ease',
+          transition: isBottom ? 'height 200ms ease' : 'max-height 200ms ease',
           backgroundColor: 'var(--surface-inset)',
           borderBottom: isBottom ? undefined : '2px solid var(--border)',
           borderTop: isBottom ? '2px solid var(--border)' : undefined,
@@ -399,64 +409,62 @@ export function PageToolbar({
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'stretch',
-          overflowX: isBottom ? 'auto' : 'hidden',
-          paddingBottom: isBottom
-            ? 'env(safe-area-inset-bottom, 0px)'
-            : undefined,
         }}
       >
-        {/* Options + Sections */}
+        {/* Options button — pinned left, outside scrollable sections */}
+        <button
+          ref={optionsBtnRef}
+          onClick={() => setOptionsOpen((v) => !v)}
+          title="Options"
+          aria-label="Options"
+          aria-expanded={optionsOpen}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            padding: isMobile ? '4px 12px' : '4px 10px',
+            border: 'none',
+            borderRight: '1px solid var(--border)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            backgroundColor: optionsOpen
+              ? 'var(--surface-raised)'
+              : 'transparent',
+            color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
+            transition: 'background-color 100ms ease',
+          }}
+        >
+          <OptionsIcon size={16} />
+        </button>
+        <DropdownPanel
+          anchorRef={optionsBtnRef}
+          open={optionsOpen}
+          onClose={() => setOptionsOpen(false)}
+          width={160}
+        >
+          <OptionsMenu
+            onSave={onSave}
+            saveStatus={saveStatus}
+            saveDisabled={saveDisabled}
+            onUndo={onUndo}
+            onClearAll={onClearAll}
+            onClose={() => setOptionsOpen(false)}
+          />
+        </DropdownPanel>
+        {/* Scrollable toolbar sections */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'stretch',
-            overflow: isBottom ? undefined : 'hidden',
-            overflowX: isBottom ? 'auto' : undefined,
             flex: 1,
+            overflowX: isBottom ? 'auto' : 'hidden',
+            paddingBottom: isBottom
+              ? 'env(safe-area-inset-bottom, 0px)'
+              : undefined,
           }}
         >
-          {/* Options button */}
-          <button
-            ref={optionsBtnRef}
-            onClick={() => setOptionsOpen((v) => !v)}
-            title="Options"
-            aria-label="Options"
-            aria-expanded={optionsOpen}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-              padding: isMobile ? '4px 12px' : '4px 10px',
-              border: 'none',
-              borderRight: '1px solid var(--border)',
-              cursor: 'pointer',
-              flexShrink: 0,
-              backgroundColor: optionsOpen
-                ? 'var(--surface-raised)'
-                : 'transparent',
-              color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
-              transition: 'background-color 100ms ease',
-            }}
-          >
-            <OptionsIcon size={16} />
-          </button>
-          <DropdownPanel
-            anchorRef={optionsBtnRef}
-            open={optionsOpen}
-            onClose={() => setOptionsOpen(false)}
-            width={160}
-          >
-            <OptionsMenu
-              onSave={onSave}
-              saveStatus={saveStatus}
-              saveDisabled={saveDisabled}
-              onUndo={onUndo}
-              onClearAll={onClearAll}
-              onClose={() => setOptionsOpen(false)}
-            />
-          </DropdownPanel>
           {children}
         </div>
 
@@ -667,6 +675,14 @@ function OptionsMenu({
   onClearAll?: () => void;
   onClose: () => void;
 }) {
+  const [clearPending, setClearPending] = useState(false);
+
+  useEffect(() => {
+    if (!clearPending) return;
+    const t = setTimeout(() => setClearPending(false), 3000);
+    return () => clearTimeout(t);
+  }, [clearPending]);
+
   const statusLabel =
     saveStatus === 'saving'
       ? 'Saving…'
@@ -764,12 +780,17 @@ function OptionsMenu({
         </button>
       )}
 
-      {/* Clear All */}
+      {/* Clear All — two-step confirmation */}
       {onClearAll && (
         <button
           onClick={() => {
-            onClearAll();
-            onClose();
+            if (clearPending) {
+              onClearAll();
+              setClearPending(false);
+              onClose();
+            } else {
+              setClearPending(true);
+            }
           }}
           style={{
             display: 'flex',
@@ -794,11 +815,11 @@ function OptionsMenu({
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
           }}
-          title="Clear All"
-          aria-label="Clear All"
+          title={clearPending ? 'Confirm Clear?' : 'Clear All'}
+          aria-label={clearPending ? 'Confirm Clear?' : 'Clear All'}
         >
           <TrashIcon size={14} />
-          Clear All
+          {clearPending ? 'Confirm Clear?' : 'Clear All'}
         </button>
       )}
     </div>
