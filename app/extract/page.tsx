@@ -9,11 +9,14 @@ import {
   ToolbarLayout,
   PageToolbar,
 } from '@/components/shared/toolbar/toolbar-main';
-import { ToolbarSection } from '@/components/shared/toolbar/toolbar-section';
+import { DropdownPanel } from '@/components/shared/toolbar/dropdown-panel';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
-import { FridgeOpenIcon } from '@/components/shared/icons/fridge';
+import {
+  FridgeOpenIcon,
+  FridgeClosedIcon,
+} from '@/components/shared/icons/fridge';
 import { RecordIcon } from '@/components/extract/icons/record';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
 import type { LandmarkFrame, Dimensions } from '@/lib/types';
@@ -48,8 +51,10 @@ export default function ExtractPage() {
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
+  const [reExtractDropdownOpen, setReExtractDropdownOpen] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const reExtractBtnRef = useRef<HTMLButtonElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlRef = useRef<string | null>(null);
@@ -120,10 +125,12 @@ export default function ExtractPage() {
     return () => stopWebcam();
   }, [source, sourceSelected, startWebcam, stopWebcam]);
 
-  // Cleanup blob URLs on unmount
+  // Cleanup blob URLs and extract state on unmount
   useEffect(() => {
     return () => {
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      useLandmarksStore.getState().reset();
+      cancelAnimationFrame(previewRafRef.current);
     };
   }, []);
 
@@ -263,9 +270,24 @@ export default function ExtractPage() {
       setTimeout(() => setUploadStatus('idle'), 4000);
     }
   }, [croppedFrames, cropDimensions, router]);
-  const handleReExtract = useCallback(() => {
+  const handleReExtractNewSource = useCallback(() => {
+    setReExtractDropdownOpen(false);
+    useLandmarksStore.getState().reset();
     window.location.reload();
   }, []);
+
+  const handleReExtractSameSource = useCallback(() => {
+    setReExtractDropdownOpen(false);
+    useLandmarksStore.getState().reset();
+    setUploadStatus('idle');
+    setErrorMsg('');
+    cancelAnimationFrame(previewRafRef.current);
+    setPreviewLandmarks(null);
+    if (source === 'browse' && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.pause();
+    }
+  }, [source]);
   /* ── Video ended event (stop detection automatically) ───────────── */
   useEffect(() => {
     const video = videoRef.current;
@@ -354,48 +376,142 @@ export default function ExtractPage() {
             }
             saveDisabled={!canUpload}
           >
-            {/* Phase: ready — Extract only, centered */}
-            {extractPhase === 'ready' && (
-              <div className="flex flex-1 items-stretch justify-center">
-                <ToolbarSection
-                  icon={<CircularSawIcon />}
-                  label="Extract"
-                  primary={canStart}
-                  glow={canStart}
-                  disabled={!canStart}
+            {/* Compact centered action buttons */}
+            <div className="flex flex-1 items-center justify-center gap-3 px-4">
+              {/* Phase: ready */}
+              {extractPhase === 'ready' && (
+                <button
                   onClick={handleStart}
+                  disabled={!canStart}
+                  className="btn-primary flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
                   title="Start pose extraction"
-                />
-              </div>
-            )}
+                >
+                  <CircularSawIcon />
+                  Extract
+                </button>
+              )}
 
-            {/* Phase: detecting — Stop + inline Status */}
-            {extractPhase === 'detecting' && (
-              <>
-                <ToolbarSection
-                  icon={<span>■</span>}
-                  label="Stop"
-                  danger
-                  onClick={handleStop}
-                  title="Stop extraction"
-                />
-                <ToolbarSection
-                  icon={<PulseIcon />}
-                  label={`Status: ${frameCount}`}
-                  active
-                />
-              </>
-            )}
+              {/* Phase: detecting */}
+              {extractPhase === 'detecting' && (
+                <>
+                  <button
+                    onClick={handleStop}
+                    className="flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                    style={{
+                      backgroundColor: 'var(--danger)',
+                      color: '#fff',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 0 10px rgba(180,0,0,0.25)',
+                    }}
+                    title="Stop extraction"
+                  >
+                    <span aria-hidden="true">■</span>
+                    Stop
+                  </button>
+                  <span
+                    className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase"
+                    style={{ color: 'var(--fg-muted)' }}
+                    aria-live="polite"
+                  >
+                    <PulseIcon />
+                    {frameCount} frames
+                  </span>
+                </>
+              )}
 
-            {/* Phase: complete — Re-Extract + Save */}
-            {extractPhase === 'complete' && (
-              <ToolbarSection
-                icon={<CircularSawIcon />}
-                label="Re-Extract"
-                onClick={handleReExtract}
-                title="Reload and start a new extraction"
-              />
-            )}
+              {/* Phase: complete — Re-Extract dropdown + Save */}
+              {extractPhase === 'complete' && (
+                <>
+                  <button
+                    ref={reExtractBtnRef}
+                    onClick={() => setReExtractDropdownOpen((v) => !v)}
+                    className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                    aria-haspopup="true"
+                    aria-expanded={reExtractDropdownOpen}
+                    title="Re-extract options"
+                  >
+                    <CircularSawIcon />
+                    Re-Extract
+                    <svg
+                      width="8"
+                      height="8"
+                      viewBox="0 0 10 10"
+                      fill="none"
+                      aria-hidden="true"
+                      style={{
+                        transform: reExtractDropdownOpen
+                          ? 'rotate(180deg)'
+                          : 'none',
+                        transition: 'transform 150ms ease',
+                      }}
+                    >
+                      <path
+                        d="M2 3.5L5 6.5L8 3.5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                  <DropdownPanel
+                    anchorRef={reExtractBtnRef}
+                    open={reExtractDropdownOpen}
+                    onClose={() => setReExtractDropdownOpen(false)}
+                    width={180}
+                  >
+                    <div className="flex flex-col py-1">
+                      <button
+                        onClick={handleReExtractNewSource}
+                        className="hover:bg-surface-hover w-full px-4 py-2.5 text-left text-xs font-semibold tracking-wide uppercase"
+                        style={{
+                          color: 'var(--fg)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background-color 100ms ease',
+                        }}
+                      >
+                        New Source
+                      </button>
+                      <button
+                        onClick={handleReExtractSameSource}
+                        className="hover:bg-surface-hover w-full px-4 py-2.5 text-left text-xs font-semibold tracking-wide uppercase"
+                        style={{
+                          color: 'var(--fg)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background-color 100ms ease',
+                        }}
+                      >
+                        Same Source
+                      </button>
+                    </div>
+                  </DropdownPanel>
+                  <button
+                    onClick={handleUpload}
+                    disabled={!canUpload}
+                    className="btn-primary flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                    title={
+                      uploadStatus === 'done'
+                        ? 'Motion saved'
+                        : uploadStatus === 'uploading'
+                          ? 'Saving…'
+                          : 'Save extracted motion'
+                    }
+                  >
+                    <FridgeClosedIcon size="14px" />
+                    {uploadStatus === 'uploading'
+                      ? 'Saving…'
+                      : uploadStatus === 'done'
+                        ? 'Saved!'
+                        : 'Save'}
+                  </button>
+                </>
+              )}
+            </div>
           </PageToolbar>
         )}
 
