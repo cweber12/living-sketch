@@ -619,9 +619,17 @@ export default function ExtractPage() {
            * object-contain on the video preserves aspect ratio with letterboxing.
            * PoseCanvas covers the same container; both scale from videoW×videoH
            * coordinates to CSS container size uniformly, keeping overlay aligned.
+           *
+           * IMPORTANT: this div is always mounted when sourceSelected (not
+           * conditionally on !captureComplete). CSS `hidden` hides it during
+           * the complete phase so the <video> element stays in the DOM and
+           * retains its src — required for "Same Source" re-extract to work
+           * without needing to re-attach the blob URL.
            */}
-          {!isLoading && sourceSelected && !captureComplete && (
-            <div className="bg-surface relative min-h-0 flex-1 overflow-hidden">
+          {!isLoading && sourceSelected && (
+            <div
+              className={`bg-surface relative min-h-0 flex-1 overflow-hidden${captureComplete ? 'hidden' : ''}`}
+            >
               <video
                 ref={videoRef}
                 playsInline

@@ -17,9 +17,9 @@ export const RecordIcon = ({
     <g
       id="Page-1"
       stroke="none"
-      stroke-width={SVG_LINE_WIDTH.line}
+      strokeWidth={SVG_LINE_WIDTH.line}
       fill="none"
-      fill-rule="evenodd"
+      fillRule="evenodd"
     >
       <g
         id="Dribbble-Light-Preview"
