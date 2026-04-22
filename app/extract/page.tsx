@@ -266,23 +266,18 @@ export default function ExtractPage() {
       setTimeout(() => setUploadStatus('idle'), 4000);
     }
   }, [croppedFrames, cropDimensions, router]);
-  const handleReExtractNewSource = useCallback(() => {
+  const handleGoBack = useCallback(() => {
     useLandmarksStore.getState().reset();
     window.location.reload();
   }, []);
 
-  const handleReExtractSameSource = useCallback(() => {
+  const handleRecordAgain = useCallback(() => {
     useLandmarksStore.getState().reset();
+    cancelAnimationFrame(previewRafRef.current);
     setPreviewLandmarks(null);
     setUploadStatus('idle');
     setErrorMsg('');
-    cancelAnimationFrame(previewRafRef.current);
-    setPreviewLandmarks(null);
-    if (source === 'browse' && videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.pause();
-    }
-  }, [source]);
+  }, []);
   /* ── Video ended event (stop detection automatically) ───────────── */
   useEffect(() => {
     const video = videoRef.current;
@@ -373,8 +368,8 @@ export default function ExtractPage() {
           >
             {/* Back button — always visible when toolbar shown */}
             <button
-              onClick={handleReExtractNewSource}
-              className="btn-ghost flex h-8 flex-shrink-0 items-center gap-1.5 rounded px-3 text-xs font-bold tracking-widest uppercase"
+              onClick={handleGoBack}
+              className="btn-ghost flex h-full items-center gap-1.5 rounded px-3 text-xs font-bold tracking-widest uppercase"
               style={{
                 borderRight: '1px solid var(--border)',
                 borderRadius: 0,
@@ -443,17 +438,29 @@ export default function ExtractPage() {
                 </>
               )}
 
-              {/* Phase: complete — Re-Extract + Save */}
+              {/* Phase: complete — source-specific re-capture + Save */}
               {extractPhase === 'complete' && (
                 <>
-                  <button
-                    onClick={handleReExtractSameSource}
-                    className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
-                    title="Re-extract from same source"
-                  >
-                    <CircularSawIcon />
-                    Re-Extract
-                  </button>
+                  {source === 'browse' && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                      title="Select a new video file"
+                    >
+                      <FridgeOpenIcon size="14px" />
+                      New Video
+                    </button>
+                  )}
+                  {source === 'live' && (
+                    <button
+                      onClick={handleRecordAgain}
+                      className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                      title="Record from webcam again"
+                    >
+                      <RecordIcon />
+                      Record Again
+                    </button>
+                  )}
                   <button
                     onClick={handleUpload}
                     disabled={!canUpload}
@@ -587,8 +594,8 @@ export default function ExtractPage() {
            * IMPORTANT: this div is always mounted when sourceSelected (not
            * conditionally on !captureComplete). CSS `hidden` hides it during
            * the complete phase so the <video> element stays in the DOM and
-           * retains its src — required for "Same Source" re-extract to work
-           * without needing to re-attach the blob URL.
+           * retains its blob src — required for the "New Video" button to
+           * work correctly (fileInputRef click fires while element is hidden).
            */}
           {!isLoading && sourceSelected && (
             <div
