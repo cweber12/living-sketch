@@ -9,7 +9,6 @@ import {
   ToolbarLayout,
   PageToolbar,
 } from '@/components/shared/toolbar/toolbar-main';
-import { DropdownPanel } from '@/components/shared/toolbar/dropdown-panel';
 import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
@@ -51,10 +50,7 @@ export default function ExtractPage() {
   const [videoDims, setVideoDims] = useState({ w: 0, h: 0 });
   const [previewLandmarks, setPreviewLandmarks] =
     useState<LandmarkFrame | null>(null);
-  const [reExtractDropdownOpen, setReExtractDropdownOpen] = useState(false);
-
   const videoRef = useRef<HTMLVideoElement>(null);
-  const reExtractBtnRef = useRef<HTMLButtonElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlRef = useRef<string | null>(null);
@@ -271,14 +267,13 @@ export default function ExtractPage() {
     }
   }, [croppedFrames, cropDimensions, router]);
   const handleReExtractNewSource = useCallback(() => {
-    setReExtractDropdownOpen(false);
     useLandmarksStore.getState().reset();
     window.location.reload();
   }, []);
 
   const handleReExtractSameSource = useCallback(() => {
-    setReExtractDropdownOpen(false);
     useLandmarksStore.getState().reset();
+    setPreviewLandmarks(null);
     setUploadStatus('idle');
     setErrorMsg('');
     cancelAnimationFrame(previewRafRef.current);
@@ -376,6 +371,34 @@ export default function ExtractPage() {
             }
             saveDisabled={!canUpload}
           >
+            {/* Back button — always visible when toolbar shown */}
+            <button
+              onClick={handleReExtractNewSource}
+              className="btn-ghost flex h-8 flex-shrink-0 items-center gap-1.5 rounded px-3 text-xs font-bold tracking-widest uppercase"
+              style={{
+                borderRight: '1px solid var(--border)',
+                borderRadius: 0,
+              }}
+              title="Go back to source selection"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M8 2L4 6L8 10"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Back
+            </button>
+
             {/* Compact centered action buttons */}
             <div className="flex flex-1 items-center justify-center gap-3 px-4">
               {/* Phase: ready */}
@@ -420,76 +443,17 @@ export default function ExtractPage() {
                 </>
               )}
 
-              {/* Phase: complete — Re-Extract dropdown + Save */}
+              {/* Phase: complete — Re-Extract + Save */}
               {extractPhase === 'complete' && (
                 <>
                   <button
-                    ref={reExtractBtnRef}
-                    onClick={() => setReExtractDropdownOpen((v) => !v)}
+                    onClick={handleReExtractSameSource}
                     className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
-                    aria-haspopup="true"
-                    aria-expanded={reExtractDropdownOpen}
-                    title="Re-extract options"
+                    title="Re-extract from same source"
                   >
                     <CircularSawIcon />
                     Re-Extract
-                    <svg
-                      width="8"
-                      height="8"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                      aria-hidden="true"
-                      style={{
-                        transform: reExtractDropdownOpen
-                          ? 'rotate(180deg)'
-                          : 'none',
-                        transition: 'transform 150ms ease',
-                      }}
-                    >
-                      <path
-                        d="M2 3.5L5 6.5L8 3.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
                   </button>
-                  <DropdownPanel
-                    anchorRef={reExtractBtnRef}
-                    open={reExtractDropdownOpen}
-                    onClose={() => setReExtractDropdownOpen(false)}
-                    width={180}
-                  >
-                    <div className="flex flex-col py-1">
-                      <button
-                        onClick={handleReExtractNewSource}
-                        className="hover:bg-surface-hover w-full px-4 py-2.5 text-left text-xs font-semibold tracking-wide uppercase"
-                        style={{
-                          color: 'var(--fg)',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'background-color 100ms ease',
-                        }}
-                      >
-                        New Source
-                      </button>
-                      <button
-                        onClick={handleReExtractSameSource}
-                        className="hover:bg-surface-hover w-full px-4 py-2.5 text-left text-xs font-semibold tracking-wide uppercase"
-                        style={{
-                          color: 'var(--fg)',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'background-color 100ms ease',
-                        }}
-                      >
-                        Same Source
-                      </button>
-                    </div>
-                  </DropdownPanel>
                   <button
                     onClick={handleUpload}
                     disabled={!canUpload}
