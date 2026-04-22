@@ -635,7 +635,7 @@ export default function SketchPage() {
                   {/* Prev : large screens only */}
                   <button
                     onClick={goPrev}
-                    className="focus-visible:ring-accent bg-surface border-edge text-foreground ml-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95 md:flex"
+                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground ml-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97] md:flex"
                     aria-label="Previous part"
                   >
                     <PrevIcon />
@@ -680,7 +680,7 @@ export default function SketchPage() {
                   {/* Next : large screens only */}
                   <button
                     onClick={goNext}
-                    className="focus-visible:ring-accent bg-surface border-edge text-foreground mr-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95 md:flex"
+                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground mr-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97] md:flex"
                   >
                     <NextIcon />
                   </button>
@@ -690,14 +690,14 @@ export default function SketchPage() {
                 <div className="flex shrink-0 items-center justify-between gap-4 px-6 pb-1 md:hidden">
                   <button
                     onClick={goPrev}
-                    className="focus-visible:ring-accent bg-surface border-edge text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
+                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97]"
                     aria-label="Previous part"
                   >
                     <PrevIcon />
                   </button>
                   <button
                     onClick={goNext}
-                    className="focus-visible:ring-accent bg-surface border-edge text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-all hover:brightness-125 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
+                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97]"
                     aria-label="Next part"
                   >
                     <NextIcon />

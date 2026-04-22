@@ -1,9 +1,9 @@
 import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
 export const RecordIcon = ({
-  size = '20px',
+  size = 20,
   color = 'currentColor',
 }: {
-  size?: string;
+  size?: number;
   color?: string;
 }) => (
   <svg

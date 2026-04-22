@@ -8,23 +8,6 @@ import { Flask2Icon } from '@/components/sketch/icons/flask-2';
 export const DEFAULT_COLOR_LIGHT = '#000000';
 export const DEFAULT_COLOR_DARK = '#ffffff';
 
-/* Inline color-picker icon */
-const ColorPickerIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="3" fill="currentColor" />
-  </svg>
-);
-
 /* Chevron icon for overflow */
 const ChevronDownIcon = () => (
   <svg

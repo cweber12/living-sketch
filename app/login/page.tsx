@@ -32,7 +32,7 @@ export default async function LoginPage({
             Sign In
           </h1>
           <p className="text-muted text-xs tracking-wide">
-            The laboratory awaits
+            Sign in to your account
           </p>
         </div>
 

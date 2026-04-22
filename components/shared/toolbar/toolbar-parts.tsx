@@ -89,12 +89,12 @@ export function ActionIcon({
         }
       : active || isOpen
         ? {
-            backgroundColor: 'var(--overlay)',
-            color: 'var(--fg)',
+            backgroundColor: 'var(--accent)',
+            color: 'var(--overlay)',
           }
         : hovered && !disabled
           ? {
-              color: danger ? 'var(--danger)' : 'var(--fg)',
+              color: danger ? 'var(--danger)' : 'var(--accent)',
             }
           : {
               color: danger ? 'var(--fg-muted)' : 'var(--fg-muted)',

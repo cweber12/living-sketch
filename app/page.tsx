@@ -60,7 +60,7 @@ export default async function Home() {
             className="font-display text-foreground font-bold tracking-[0.08em] uppercase"
             style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
           >
-            How the Resurrection Works
+            How It Works
           </h2>
         </header>
 
@@ -70,43 +70,20 @@ export default async function Home() {
             href="/sketch"
             className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
-              {/* Flask / laboratory icon */}
-              <svg
-                className="text-accent"
-                width="28"
-                height="28"
-                viewBox="0 0 28 28"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M10 4h8M11 4v8l-5 10a1.5 1.5 0 001.4 2h13.2a1.5 1.5 0 001.4-2L17 12V4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="19" r="1.2" fill="currentColor" />
-                <circle cx="16" cy="17" r="0.9" fill="currentColor" />
-                <circle cx="18" cy="20" r="1.1" fill="currentColor" />
-              </svg>
-            </div>
             <div>
-              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
-                I — Sketch
+              <p className="text-muted mb-2 font-mono text-xs font-bold tracking-widest">
+                01
               </p>
               <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
-                The Laboratory
+                Sketch
               </h3>
               <p className="text-muted text-sm leading-relaxed">
-                Assemble your creature part by part. Draw each body segment on
-                its own canvas — head, torso, limbs — then export as SVG for
-                later use.
+                Draw each body part on its own canvas. 14 segments — head,
+                torso, arms, hands, legs, feet.
               </p>
             </div>
             <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
-              Open Canvas →
+              Open Sketch →
             </span>
           </Link>
 
@@ -115,46 +92,20 @@ export default async function Home() {
             href="/extract"
             className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
-              {/* Signal / pose-capture icon */}
-              <svg
-                className="text-accent"
-                width="28"
-                height="28"
-                viewBox="0 0 28 28"
-                fill="none"
-                aria-hidden="true"
-              >
-                <circle cx="14" cy="14" r="3" fill="currentColor" />
-                <path
-                  d="M6.5 21.5a10.5 10.5 0 0115 0M9.5 18.5a6 6 0 019 0"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M14 11V6M14 6l-2 2M14 6l2 2"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
             <div>
-              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
-                II — Extract
+              <p className="text-muted mb-2 font-mono text-xs font-bold tracking-widest">
+                02
               </p>
               <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
-                The Ritual
+                Extract
               </h3>
               <p className="text-muted text-sm leading-relaxed">
-                Harness pose landmarks from a webcam or uploaded video. The
-                bones obey. Landmark frames are recorded and saved for playback.
+                Detect pose landmarks from a live camera feed or uploaded video.
+                Save the motion for later.
               </p>
             </div>
             <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
-              Start Extract →
+              Open Extract →
             </span>
           </Link>
 
@@ -163,36 +114,16 @@ export default async function Home() {
             href="/console"
             className="card-themed group flex flex-col gap-5 rounded-xl p-8"
           >
-            <div className="bg-accent-faint flex h-14 w-14 items-center justify-center rounded-lg">
-              {/* Lightning bolt / awakening icon */}
-              <svg
-                className="text-accent"
-                width="28"
-                height="28"
-                viewBox="0 0 28 28"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M16 3L6 16h9l-3 9 12-14h-9l3-8z"
-                  fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
             <div>
-              <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
-                III — Re-Animate
+              <p className="text-muted mb-2 font-mono text-xs font-bold tracking-widest">
+                03
               </p>
               <h3 className="font-display text-foreground mb-3 text-xl font-bold uppercase">
-                The Awakening
+                Re-Animate
               </h3>
               <p className="text-muted text-sm leading-relaxed">
-                Fuse your sketches with captured motion. Adjust anchors. Scale
-                each limb. Your creation rises — animated and alive.
+                Combine your sketches with extracted motion. Fine-tune joint
+                positions and scale any body part.
               </p>
             </div>
             <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
@@ -211,16 +142,28 @@ export default async function Home() {
           — Pose-Driven Animation Studio
         </span>
         <nav className="flex gap-6 uppercase">
-          <Link href="/sketch" className="transition-opacity hover:opacity-80">
+          <Link
+            href="/sketch"
+            className="hover:text-foreground transition-colors"
+          >
             Sketch
           </Link>
-          <Link href="/extract" className="transition-opacity hover:opacity-80">
+          <Link
+            href="/extract"
+            className="hover:text-foreground transition-colors"
+          >
             Extract
           </Link>
-          <Link href="/console" className="transition-opacity hover:opacity-80">
+          <Link
+            href="/console"
+            className="hover:text-foreground transition-colors"
+          >
             Console
           </Link>
-          <Link href="/docs" className="transition-opacity hover:opacity-80">
+          <Link
+            href="/docs"
+            className="hover:text-foreground transition-colors"
+          >
             Docs
           </Link>
         </nav>

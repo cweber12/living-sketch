@@ -18,7 +18,7 @@ export function BodyThumbnail({ focusPart, onSelect }: BodyThumbnailProps) {
   const ac = t;
   const lc = Math.round(t * 1.15);
   return (
-    <div className="border-edge fixed right-4 bottom-4 z-40 rounded-lg border bg-black/70 p-1.5 backdrop-blur-sm">
+    <div className="border-edge bg-surface/90 fixed right-4 bottom-4 z-40 rounded-lg border p-1.5 backdrop-blur-sm">
       <div
         style={{
           display: 'grid',

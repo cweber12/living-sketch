@@ -43,54 +43,12 @@ export function NavDropdown() {
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={`Navigation: ${currentLabel}`}
-        className="text-muted flex items-center gap-1.5 rounded px-3 py-2 transition-colors sm:px-2 sm:py-1.5"
+        className="text-muted hover:text-foreground focus-visible:ring-accent flex items-center gap-1.5 rounded px-3 py-2 text-xs font-semibold tracking-widest uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none sm:px-2 sm:py-1.5"
         style={{
           backgroundColor: open ? 'var(--surface-raised)' : 'transparent',
         }}
-        onMouseEnter={(e) => {
-          if (!open)
-            (e.currentTarget as HTMLElement).style.borderColor =
-              'var(--border)';
-        }}
-        onMouseLeave={(e) => {
-          if (!open)
-            (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
-        }}
       >
-        {/* Hamburger icon */}
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <rect
-            x="2"
-            y="3"
-            width="12"
-            height="1.5"
-            rx="0.75"
-            fill="currentColor"
-          />
-          <rect
-            x="2"
-            y="7.25"
-            width="12"
-            height="1.5"
-            rx="0.75"
-            fill="currentColor"
-          />
-          <rect
-            x="2"
-            y="11.5"
-            width="12"
-            height="1.5"
-            rx="0.75"
-            fill="currentColor"
-          />
-        </svg>
-        <span className="text-3xs hidden font-semibold tracking-widest uppercase sm:inline">
+        <span className="hidden text-xs font-semibold tracking-widest uppercase sm:inline">
           {currentLabel}
         </span>
         {/* Chevron */}

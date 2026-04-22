@@ -3,65 +3,94 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Living Sketch – Re-Animator Theme
    ─────────────────────────────────────────────────────────────────────────
-   Retro horror laboratory · neon bio-electric chemistry · dark experimental
-   lab · glowing reagent green · clinical off-whites · deep shadows ·
-   high contrast · cinematic cult sci-fi horror energy
+   Laboratory instrument aesthetic · glowing reagent green · warm parchment
+   surfaces · clinical precision · deep shadows · incandescent accents
 
-   Light:  green-tinted clinical lab – off-whites, sharp contrast, deep green
-   Dark:   black-green abyss – luminous acid green, chemical red, amber signals
+   Light:  warm parchment lab-bench — soft ivories, readable warm neutrals,
+           dark forest-green accent for high contrast
+   Dark:   near-black void — luminous acid green, visible red danger,
+           amber signal, cool-warm neutral muted text
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Light mode: high-contrast Re-Animator laboratory ── */
-  --bg: #f3efdf; /* bright aged ivory / lab light */
-  --surface: #ddd7c2; /* pale instrument housing */
-  --surface-raised: #c8c09f; /* stronger elevated panel */
-  --surface-inset: #aea57f; /* deeper recessed well */
-  --surface-hover: #9a9068; /* pronounced hover contrast */
+  /* ── Light mode ── */
+  --bg: #f3efdf; /* warm parchment — main page bg        */
+  --surface: #ece6d2; /* panel / section surface              */
+  --surface-raised: #e2dbc5; /* elevated card / panel                */
+  --surface-inset: #d4ccb4; /* recessed input background            */
+  --surface-hover: #c8bfa4; /* hover state surface                  */
 
-  --border: #0f0e0e; /* dark olive-brass */
-  --border-strong: #000000; /* hard equipment edge */
+  --border: #b0a78e; /* warm tan — visible, not harsh        */
+  --border-strong: #7a7260; /* stronger separator / edge            */
 
-  --fg: #131108; /* deep near-black brown/olive */
-  --fg-muted: #4e4d2b; /* murky olive text */
-  --accent: #89af00; /* vivid reagent green */
-  --accent-hover: #374600; /* darker hover green */
-  --accent-active: #5e7411; /* pressed / active */
-  --accent-faint: rgba(140, 171, 31, 0.16);
-  --accent-glow: rgba(170, 210, 40, 0.28);
-  --danger: #8a2b24; /* blood-vial red */
-  --danger-hover: #6f211c;
-  --danger-muted: rgba(138, 43, 36, 0.15);
-  --signal: #a87418; /* iodine / chemical amber */
-  --signal-faint: rgba(168, 116, 24, 0.16);
-  --overlay: rgba(24, 19, 9, 0.64);
-  --overlay-faint: rgba(24, 19, 9, 0.24);
+  --fg: #1a1810; /* warm near-black — primary text       */
+  --fg-muted: #695f47; /* warm mid-brown — muted text (5:1)    */
+
+  --accent: #2d6000; /* vivid dark forest green              */
+  --accent-hover: #3a7800; /* slightly brighter hover              */
+  --accent-active: #1f4400; /* pressed / active                     */
+  --accent-faint: rgba(45, 96, 0, 0.1);
+  --accent-glow: rgba(70, 140, 0, 0.18);
+
+  --danger: #b33a30; /* readable blood red in light mode     */
+  --danger-hover: #8f2e26;
+  --danger-muted: rgba(179, 58, 48, 0.12);
+
+  --success: #1f6e3a; /* success green                        */
+  --success-muted: rgba(31, 110, 58, 0.12);
+
+  --signal: #956610; /* iodine amber                         */
+  --signal-faint: rgba(149, 102, 16, 0.12);
+
+  --info: #2a5a8a; /* clinical blue                        */
+  --info-muted: rgba(42, 90, 138, 0.12);
+
+  --overlay: rgba(20, 16, 8, 0.6);
+  --overlay-faint: rgba(20, 16, 8, 0.2);
+
+  --disabled-bg: rgba(0, 0, 0, 0.06);
+  --disabled-fg: rgba(0, 0, 0, 0.28);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* ── Dark mode: black-green laboratory abyss ── */
-    --bg: #060a06; /* near-black, green-tinted void            */
-    --surface: #0d140d; /* primary panel surface                    */
-    --surface-raised: #131d13; /* elevated section / card                  */
-    --surface-inset: #0a100a; /* recessed input / inset area              */
-    --surface-hover: #1b271b; /* hover state                              */
-    --border: #1e301e; /* default border — dark green              */
-    --border-strong: #2c482c; /* prominent border                         */
-    --fg: #e4f0e4; /* clinical off-white, slight green tint    */
-    --fg-muted: #5e875e; /* muted green text */
-    --accent: #4ade80; /* luminous reagent green — bio-electric     */
-    --accent-hover: #86efac; /* brighter on hover                        */
-    --accent-active: #22c55e; /* pressed / active                         */
+    /* ── Dark mode ── */
+    --bg: #060a06; /* near-black, green-void               */
+    --surface: #0d140d; /* primary panel surface                */
+    --surface-raised: #131d13; /* elevated card / panel                */
+    --surface-inset: #0a100a; /* recessed input background            */
+    --surface-hover: #1b271b; /* hover state surface                  */
+
+    --border: #1e301e; /* dark green border                    */
+    --border-strong: #2e4a2e; /* prominent border                     */
+
+    --fg: #e4f0e4; /* clinical off-white, green tint       */
+    --fg-muted: #80a880; /* lighter neutral green — more readable */
+
+    --accent: #4ade80; /* luminous reagent green               */
+    --accent-hover: #86efac; /* brighter on hover                    */
+    --accent-active: #22c55e; /* pressed / active                     */
     --accent-faint: rgba(74, 222, 128, 0.1);
-    --accent-glow: rgba(74, 222, 128, 0.22);
-    --danger: #8a2b24; /* blood-vial red */
-    --danger-hover: #6f211c;
-    --danger-muted: rgba(248, 113, 113, 0.12);
-    --signal: #fbbf24; /* amber warning signal                     */
+    --accent-glow: rgba(74, 222, 128, 0.24);
+
+    --danger: #f06060; /* bright visible red for dark mode     */
+    --danger-hover: #e84848;
+    --danger-muted: rgba(240, 96, 96, 0.14);
+
+    --success: #4ade80; /* same as accent in dark mode          */
+    --success-muted: rgba(74, 222, 128, 0.12);
+
+    --signal: #fbbf24; /* amber warning signal                 */
     --signal-faint: rgba(251, 191, 36, 0.1);
+
+    --info: #60a8dc; /* clinical blue — lighter for dark bg  */
+    --info-muted: rgba(96, 168, 220, 0.12);
+
     --overlay: rgba(0, 0, 0, 0.72);
     --overlay-faint: rgba(0, 0, 0, 0.32);
+
+    --disabled-bg: rgba(255, 255, 255, 0.05);
+    --disabled-fg: rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -83,8 +112,12 @@
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-muted: var(--danger-muted);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
   --color-signal: var(--signal);
   --color-signal-faint: var(--signal-faint);
+  --color-info: var(--info);
+  --color-info-muted: var(--info-muted);
   --color-overlay: var(--overlay);
   --color-overlay-faint: var(--overlay-faint);
   --font-sans: var(--font-geist-sans);
@@ -93,6 +126,15 @@
   --text-2xs: 11px;
   --text-3xs: 10px;
   --text-4xs: 9px;
+
+  /* ── Motion tokens ── */
+  --duration-fast: 100ms;
+  --duration-normal: 180ms;
+  --duration-slow: 280ms;
+  --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.4, 1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -161,9 +203,13 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--bg);
-  box-shadow: 0 0 0 1px var(--border-strong);
+  box-shadow:
+    0 0 0 1px var(--border-strong),
+    0 1px 4px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: box-shadow 120ms ease;
+  transition:
+    box-shadow var(--duration-fast) var(--ease-ui),
+    background-color var(--duration-fast) var(--ease-ui);
 }
 input[type='range']::-moz-range-thumb {
   width: 14px;
@@ -177,21 +223,41 @@ input[type='range']::-moz-range-thumb {
 input[type='range']:focus-visible::-webkit-slider-thumb {
   box-shadow:
     0 0 0 1px var(--border-strong),
-    0 0 0 3px var(--accent-faint);
+    0 0 0 4px var(--accent-faint),
+    0 0 12px var(--accent-glow);
 }
 input[type='range']:hover::-webkit-slider-thumb {
   background: var(--accent-hover);
+  box-shadow:
+    0 0 0 1px var(--border-strong),
+    0 0 10px var(--accent-glow);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Glow utilities
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Vivid reagent glow on display text */
+/* Subtle incandescent glow on display headings */
 .glow-accent {
   text-shadow:
-    0 0 20px var(--accent-glow),
+    0 0 24px var(--accent-glow),
     0 0 60px var(--accent-faint);
+}
+
+/* Pulse animation for active/processing states */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 18px var(--accent-glow),
+      0 0 32px var(--accent-faint);
+  }
+}
+.glow-pulse {
+  animation: glow-pulse 2s var(--ease-ui) infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -201,42 +267,72 @@ input[type='range']:hover::-webkit-slider-thumb {
 .card-themed {
   background-color: var(--surface-raised);
   border: 1px solid var(--border);
+  border-radius: 10px;
   transition:
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    transform 220ms ease;
+    border-color var(--duration-normal) var(--ease-ui),
+    box-shadow var(--duration-normal) var(--ease-ui),
+    transform var(--duration-normal) var(--ease-ui);
 }
 .card-themed:hover {
   border-color: var(--accent);
   box-shadow:
-    0 0 0 1px var(--accent),
-    0 8px 40px var(--accent-glow);
-  transform: translateY(-2px);
+    0 0 0 1px var(--accent-faint),
+    0 4px 24px var(--accent-glow),
+    0 1px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+.card-themed:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Buttons
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Primary — reagent green fill */
+/* Primary — accent fill with incandescent glow */
 .btn-primary {
   background-color: var(--accent);
   color: var(--bg);
   font-family: var(--font-space-grotesk, var(--font-geist-sans), sans-serif);
   font-weight: 700;
   letter-spacing: 0.08em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px var(--border-strong),
+    0 1px 3px rgba(0, 0, 0, 0.18);
   transition:
-    background-color 140ms ease,
-    box-shadow 140ms ease,
-    transform 80ms ease;
+    background-color var(--duration-fast) var(--ease-ui),
+    box-shadow var(--duration-fast) var(--ease-ui),
+    transform var(--duration-fast) var(--ease-ui);
 }
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
-  box-shadow: 0 0 20px var(--accent-glow);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 0 1px var(--border-strong),
+    0 0 18px var(--accent-glow),
+    0 2px 6px rgba(0, 0, 0, 0.24);
 }
 .btn-primary:active:not(:disabled) {
   background-color: var(--accent-active);
-  transform: scale(0.97);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 1px var(--border-strong);
+  transform: translateY(1px);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 4px var(--accent-faint),
+    0 0 16px var(--accent-glow);
+}
+.btn-primary:disabled {
+  background-color: var(--disabled-bg);
+  color: var(--disabled-fg);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* Ghost / secondary */
@@ -245,10 +341,10 @@ input[type='range']:hover::-webkit-slider-thumb {
   color: var(--fg-muted);
   border: 1px solid var(--border);
   transition:
-    color 140ms ease,
-    border-color 140ms ease,
-    background-color 140ms ease,
-    transform 80ms ease;
+    color var(--duration-fast) var(--ease-ui),
+    border-color var(--duration-fast) var(--ease-ui),
+    background-color var(--duration-fast) var(--ease-ui),
+    transform var(--duration-fast) var(--ease-ui);
 }
 .btn-ghost:hover:not(:disabled) {
   color: var(--fg);
@@ -256,7 +352,41 @@ input[type='range']:hover::-webkit-slider-thumb {
   background-color: var(--surface-hover);
 }
 .btn-ghost:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: translateY(1px);
+  background-color: var(--surface-inset);
+}
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn-ghost:disabled {
+  color: var(--disabled-fg);
+  border-color: var(--border);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Danger */
+.btn-danger {
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition:
+    background-color var(--duration-fast) var(--ease-ui),
+    color var(--duration-fast) var(--ease-ui),
+    transform var(--duration-fast) var(--ease-ui);
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--danger-muted);
+}
+.btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn-danger:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -268,17 +398,27 @@ input[type='range']:hover::-webkit-slider-thumb {
   border: 1px solid var(--border);
   color: var(--fg);
   transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+    border-color var(--duration-fast) var(--ease-ui),
+    box-shadow var(--duration-fast) var(--ease-ui);
 }
 .input-themed::placeholder {
   color: var(--fg-muted);
-  opacity: 0.65;
+  opacity: 0.55;
+}
+.input-themed:hover:not(:focus) {
+  border-color: var(--border-strong);
 }
 .input-themed:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-faint);
+  box-shadow:
+    0 0 0 3px var(--accent-faint),
+    inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.input-themed:disabled {
+  background-color: var(--disabled-bg);
+  color: var(--disabled-fg);
+  cursor: not-allowed;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -289,12 +429,28 @@ input[type='range']:hover::-webkit-slider-thumb {
   background-color: var(--danger-muted);
   border: 1px solid var(--danger);
   color: var(--danger);
+  border-radius: 6px;
 }
 
 .alert-success {
-  background-color: var(--accent-faint);
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  background-color: var(--success-muted);
+  border: 1px solid var(--success);
+  color: var(--success);
+  border-radius: 6px;
+}
+
+.alert-signal {
+  background-color: var(--signal-faint);
+  border: 1px solid var(--signal);
+  color: var(--signal);
+  border-radius: 6px;
+}
+
+.alert-info {
+  background-color: var(--info-muted);
+  border: 1px solid var(--info);
+  color: var(--info);
+  border-radius: 6px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -310,5 +466,5 @@ input[type='range']:hover::-webkit-slider-thumb {
     var(--accent),
     transparent
   );
-  opacity: 0.45;
+  opacity: 0.35;
 }

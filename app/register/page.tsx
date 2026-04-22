@@ -32,7 +32,7 @@ export default async function RegisterPage({
             Create Account
           </h1>
           <p className="text-muted text-xs tracking-wide">
-            Begin your experiment
+            Create your account
           </p>
         </div>
 
@@ -92,7 +92,7 @@ export default async function RegisterPage({
         <div className="divider-accent" />
 
         <p className="text-muted text-center text-xs tracking-wide">
-          Already animated?{' '}
+          Already have an account?{' '}
           <Link
             href="/login"
             className="text-accent font-semibold transition-opacity hover:opacity-70"

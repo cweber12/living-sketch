@@ -113,7 +113,7 @@ export function ToolbarLayout({
         setMobileExpandSlot,
       }}
     >
-      {/* Content area Ã¢â‚¬â€ padded to avoid being covered by fixed toolbar */}
+      {/* Content area padded to avoid being covered by fixed toolbar */}
       <div
         className={cn(
           'flex w-full flex-1 flex-col overflow-hidden transition-all duration-200',
@@ -128,7 +128,7 @@ export function ToolbarLayout({
   );
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ PageToolbar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* PageToolbar */
 export function PageToolbar({
   children,
   onSave,
@@ -342,7 +342,7 @@ export function PageToolbar({
           )}
         </div>
 
-        {/* Side expand tab Ã¢â‚¬â€ visible when collapsed, outside the collapsible div */}
+        {/* Side expand tab visible when collapsed, outside the collapsible div */}
         {collapsed && (
           <button
             onClick={() => setCollapsed(false)}
@@ -399,7 +399,7 @@ export function PageToolbar({
     );
   }
 
-  /* Ã¢â€â‚¬Ã¢â€â‚¬ Top / bottom mode (mobile = fixed bottom, desktop = fixed top) Ã¢â€â‚¬Ã¢â€â‚¬ */
+  /* Top / bottom mode (mobile = fixed bottom, desktop = fixed top) */
   const isBottom = isMobile;
   const toolbarH = isBottom ? TOOLBAR_H_MOBILE : TOOLBAR_H;
 

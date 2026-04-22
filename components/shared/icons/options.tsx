@@ -9,16 +9,26 @@ export const OptionsIcon = ({
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 16 16"
     fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
   >
-    <path
-      d="M8 8.5C8 9.88071 6.88071 11 5.5 11C4.11929 11 3 9.88071 3 8.5C3 7.11929 4.11929 6 5.5 6C6.88071 6 8 7.11929 8 8.5ZM8 8.5H21M16 15.5C16 16.8807 17.1193 18 18.5 18C19.8807 18 21 16.8807 21 15.5C21 14.1193 19.8807 13 18.5 13C17.1193 13 16 14.1193 16 15.5ZM16 15.5H3"
-      stroke={color}
-      stroke-width={SVG_LINE_WIDTH.line}
-      stroke-linecap="round"
-      stroke-linejoin="round"
+    <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor" />
+    <rect
+      x="2"
+      y="7.25"
+      width="12"
+      height="1.5"
+      rx="0.75"
+      fill="currentColor"
+    />
+    <rect
+      x="2"
+      y="11.5"
+      width="12"
+      height="1.5"
+      rx="0.75"
+      fill="currentColor"
     />
   </svg>
 );

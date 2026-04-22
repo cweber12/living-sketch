@@ -14,6 +14,7 @@ import { BrainIcon } from '@/components/shared/icons/brain';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
 import { FridgeOpenIcon } from '@/components/shared/icons/fridge';
+import { RecordIcon } from '@/components/extract/icons/record';
 import { BodyRunningIcon } from '@/components/shared/icons/body';
 import type { LandmarkFrame, Dimensions } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
@@ -402,7 +403,7 @@ export default function ExtractPage() {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* ── Error banner ── */}
           {errorMsg && (
-            <div className="bg-danger shrink-0 px-4 py-2 text-xs text-white">
+            <div className="alert-danger mx-4 mt-3 shrink-0 px-4 py-2.5 text-xs">
               {errorMsg}
             </div>
           )}
@@ -415,7 +416,7 @@ export default function ExtractPage() {
                 Reanimating neural pathways…
               </p>
               <p className="text-3xs text-muted tracking-widest uppercase">
-                Charging the locomotion automaton
+                Loading pose detection model
               </p>
             </div>
           )}
@@ -439,25 +440,21 @@ export default function ExtractPage() {
                       setSource('live');
                       setSourceSelected(true);
                     }}
-                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left transition-all hover:brightness-110 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
                   >
                     <div>
-                      <div className="text-accent flex flex-row items-center gap-2">
-                        <BodyRunningIcon size={24} />
-                        <p className="mb-1 text-xs font-bold tracking-[0.3em] uppercase">
+                      <div className="text-accent mb-2 flex flex-row items-center gap-2">
+                        <RecordIcon />
+                        <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
                           Live
-                        </p>
+                        </h3>
                       </div>
-                      <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
-                        Living Subject
-                      </h3>
                       <p className="text-muted text-sm leading-relaxed">
-                        Transmit motion directly from a living subject via
-                        camera feed in real time.
+                        Use your webcam to capture live movement.
                       </p>
                     </div>
                     <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
-                      Begin Capture →
+                      Start Capture →
                     </span>
                   </button>
 
@@ -468,21 +465,17 @@ export default function ExtractPage() {
                       setSourceSelected(true);
                       fileInputRef.current?.click();
                     }}
-                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left transition-all hover:brightness-110 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
                   >
-                    <div className="bg-accent-faint flex h-12 w-12 shrink-0 items-center justify-center rounded-lg">
-                      <FridgeOpenIcon />
-                    </div>
                     <div>
-                      <p className="text-accent mb-1 text-xs font-bold tracking-[0.3em] uppercase">
-                        Browse
-                      </p>
-                      <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
-                        Motion Recording
-                      </h3>
+                      <div className="text-accent flex flex-row items-center gap-2">
+                        <FridgeOpenIcon size={'24px'} />
+                        <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
+                          Browse Saved
+                        </h3>
+                      </div>
                       <p className="text-muted text-sm leading-relaxed">
-                        Recover a kinetic sequence from a preserved video
-                        recording.
+                        Upload a saved video file to extract motion.
                       </p>
                     </div>
                     <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
