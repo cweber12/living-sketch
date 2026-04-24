@@ -10,14 +10,11 @@ import {
   PageToolbar,
 } from '@/components/shared/toolbar/toolbar-main';
 import { BrainIcon } from '@/components/shared/icons/brain';
+import { ChevronLeftIcon } from '@/components/shared/icons/chevron';
 import { CircularSawIcon } from '@/components/extract/icons/circular-saw';
 import { PulseIcon } from '@/components/extract/icons/pulse';
-import {
-  FridgeOpenIcon,
-  FridgeClosedIcon,
-} from '@/components/shared/icons/fridge';
+import { FridgeClosedIcon } from '@/components/shared/icons/fridge';
 import { RecordIcon } from '@/components/extract/icons/record';
-import { BodyRunningIcon } from '@/components/shared/icons/body';
 import type { LandmarkFrame, Dimensions } from '@/lib/types';
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { filterAndInterpolateFrames } from '@/lib/utils/frame-filter';
@@ -376,26 +373,12 @@ export default function ExtractPage() {
               }}
               title="Go back to source selection"
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M8 2L4 6L8 10"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ChevronLeftIcon size={12} />
               Back
             </button>
 
             {/* Compact centered action buttons */}
-            <div className="flex flex-1 items-center justify-center gap-3 px-4">
+            <div className="flex flex-1 items-center justify-start gap-3 px-4">
               {/* Phase: ready */}
               {extractPhase === 'ready' && (
                 <button
@@ -441,16 +424,6 @@ export default function ExtractPage() {
               {/* Phase: complete — source-specific re-capture + Save */}
               {extractPhase === 'complete' && (
                 <>
-                  {source === 'browse' && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-ghost flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
-                      title="Select a new video file"
-                    >
-                      <FridgeOpenIcon size="14px" />
-                      New Video
-                    </button>
-                  )}
                   {source === 'live' && (
                     <button
                       onClick={handleRecordAgain}
@@ -464,7 +437,7 @@ export default function ExtractPage() {
                   <button
                     onClick={handleUpload}
                     disabled={!canUpload}
-                    className="btn-primary flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
+                    className="btn-primary flex h-8 items-center gap-1.5 rounded px-6 text-xs font-bold tracking-widest uppercase"
                     title={
                       uploadStatus === 'done'
                         ? 'Motion saved'
@@ -473,7 +446,6 @@ export default function ExtractPage() {
                           : 'Save extracted motion'
                     }
                   >
-                    <FridgeClosedIcon size="14px" />
                     {uploadStatus === 'uploading'
                       ? 'Saving…'
                       : uploadStatus === 'done'
@@ -555,9 +527,9 @@ export default function ExtractPage() {
                     className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
                   >
                     <div>
-                      <div className="text-accent flex flex-row items-center gap-2">
-                        <FridgeOpenIcon size={'24px'} />
-                        <h3 className="font-display text-foreground mb-2 text-lg font-bold uppercase">
+                      <div className="text-accent mb-2 flex flex-row items-center gap-2">
+                        <FridgeClosedIcon size={'24px'} />
+                        <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
                           Browse Saved
                         </h3>
                       </div>
@@ -597,7 +569,7 @@ export default function ExtractPage() {
            * retains its blob src — required for the "New Video" button to
            * work correctly (fileInputRef click fires while element is hidden).
            */}
-          {!isLoading && sourceSelected && (
+          {!isLoading && sourceSelected && !captureComplete && (
             <div
               className={`bg-surface relative min-h-0 flex-1 overflow-hidden${captureComplete ? 'hidden' : ''}`}
             >

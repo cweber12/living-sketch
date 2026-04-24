@@ -10,9 +10,9 @@ export async function NavBar() {
   } = await supabase.auth.getUser();
   return (
     <header className="bg-surface border-edge sticky top-0 z-50 border-b">
-      <div className="flex h-12 items-center justify-between px-3 py-2 sm:px-5">
-        {/* Left: nav dropdown + title */}
-        <div className="flex items-center gap-2">
+      <div className="relative flex h-12 items-center px-3 sm:px-5">
+        {/* Left: logo */}
+        <div className="flex flex-1 items-center">
           <Link
             href="/"
             className="font-display text-foreground hover:text-accent shrink-0 text-sm font-bold tracking-wide uppercase transition-colors sm:text-base"
@@ -20,11 +20,17 @@ export async function NavBar() {
             Living Sketch
           </Link>
         </div>
-        {user && <NavDropdown />}
+
+        {/* Center: nav dropdown — absolutely centered */}
+        {user && (
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <NavDropdown />
+          </div>
+        )}
 
         {/* Right: user + sign-out */}
         {user && (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-1 items-center justify-end gap-2">
             <span className="text-muted hidden text-xs tracking-wide sm:block">
               {user.email}
             </span>

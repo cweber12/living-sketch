@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { ToolbarCtx } from '@/components/shared/toolbar/toolbar-main';
 import { Flask2Icon } from '@/components/sketch/icons/flask-2';
+import { FlaskIcon } from '@/components/sketch/icons/flask';
 
 export const DEFAULT_COLOR_LIGHT = '#000000';
 export const DEFAULT_COLOR_DARK = '#ffffff';
@@ -60,13 +61,13 @@ export function ColorSection({
 
   return (
     <ToolbarGroup
-      icon={<Flask2Icon size={14} />}
+      icon={<FlaskIcon size={14} />}
       label="Color"
       expanded={expanded}
       onToggle={onToggle}
     >
       <ActionIcon
-        icon={<Flask2Icon color={color} />}
+        icon={<FlaskIcon color={color} size={24} />}
         label="Color Picker"
         onClick={onPickerDropdownToggle}
         dropdownOpen={pickerDropdownOpen}

@@ -3,42 +3,43 @@ import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
 // Closed fridge: https://www.svgrepo.com/svg/331489/fridge
 // -----------------------------------------------------------------------------
 export const FridgeClosedIcon = ({
-  size,
-  color,
+  size = '24px',
+  color = 'currentColor',
 }: {
   size?: string;
   color?: string;
 }) => (
   <svg
-    width={size || '18px'}
-    height={size || '18px'}
-    viewBox="0 0 64 64"
-    enableBackground="new 0 0 64 64"
-    id="Layer_1"
-    version="1.1"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    fill={color || 'currentColor'}
   >
-    <g>
-      <path
-        d="M22,55c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C23,55.448,22.552,55,22,55z"
-        fill={color || 'currentColor'}
-      />
-      <path
-        d="M42,55c-0.552,0-1,0.448-1,1v2c0,0.552,0.448,1,1,1s1-0.448,1-1v-2C43,55.448,42.552,55,42,55z"
-        fill={color || 'currentColor'}
-      />
-    </g>
-    <g>
-      <path
-        d="M46,21V9c-0.004-2.207-1.793-3.996-4-4H22c-2.207,0.004-3.996,1.793-4,4v12H46z M23,11c0-0.552,0.448-1,1-1   s1,0.448,1,1v6c0,0.552-0.448,1-1,1s-1-0.448-1-1V11z"
-        fill={color || 'currentColor'}
-      />
-      <path
-        d="M18,23v30c0.004,2.207,1.793,3.996,4,4h20c2.207-0.004,3.996-1.793,4-4V23H18z M25,33c0,0.552-0.448,1-1,1   s-1-0.448-1-1v-6c0-0.552,0.448-1,1-1s1,0.448,1,1V33z"
-        fill={color || 'currentColor'}
-      />
-    </g>
+    <path
+      d="M4.5365 19.3206V4.67986C4.5365 3.66912 5.35586 2.84976 6.36659 2.84976H17.3472C18.3579 2.84976 19.1773 3.66912 19.1773 4.67986V19.3206C19.1773 20.3314 18.3579 21.1507 17.3472 21.1507H6.36659C5.35586 21.1507 4.5365 20.3314 4.5365 19.3206Z"
+      stroke={color}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+    />
+    <path
+      d="M4.53625 9.25487H19.177"
+      stroke={color}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="square"
+    />
+    <path
+      d="M8.19653 12L8.19653 15.6602"
+      stroke={color}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+    />
+    <path
+      d="M8.19653 5.59467L8.19653 6.50997"
+      stroke={color}
+      strokeWidth={SVG_LINE_WIDTH.line}
+      strokeLinecap="round"
+    />
   </svg>
 );
 

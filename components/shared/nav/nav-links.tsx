@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ChevronDownIcon } from '@/components/shared/icons/chevron';
 
 const TABS = [
   { href: '/sketch', label: 'Sketch' },
@@ -51,72 +52,69 @@ export function NavDropdown() {
         <span className="hidden text-xs font-semibold tracking-widest uppercase sm:inline">
           {currentLabel}
         </span>
-        {/* Chevron */}
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          fill="none"
-          aria-hidden="true"
-          className="hidden sm:inline"
-          style={{
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 150ms ease',
-          }}
-        >
-          <path
-            d="M2 3.5L5 6.5L8 3.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ChevronDownIcon size={12} color="currentColor" />
       </button>
 
-      {open && (
-        <div
-          role="menu"
-          className="bg-surface border-edge-strong absolute top-full left-0 z-50 mt-1 min-w-45 rounded-md border py-1 shadow-lg"
-        >
-          <div className="text-4xs text-muted px-3 py-1.5 font-bold tracking-[0.2em] uppercase">
-            Lab Stations
-          </div>
-          {TABS.map(({ href, label }) => {
-            const active = pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                role="menuitem"
-                onClick={close}
-                className="flex items-center gap-2 px-3 py-2 text-xs font-semibold tracking-widest uppercase transition-colors"
-                style={{
-                  color: active ? 'var(--accent)' : 'var(--fg)',
-                  backgroundColor: active
-                    ? 'var(--accent-faint)'
-                    : 'transparent',
-                  borderLeft: active
-                    ? '2px solid var(--accent)'
-                    : '2px solid transparent',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active)
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      'var(--surface-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!active)
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      'transparent';
-                }}
-              >
-                {label}
-              </Link>
-            );
-          })}
+      {/* Always rendered — animated with opacity + translateY */}
+      <div
+        role="menu"
+        aria-hidden={!open}
+        style={{
+          position: 'absolute',
+          top: '100%',
+          left: '50%',
+          transform: open
+            ? 'translateX(-50%) translateY(0)'
+            : 'translateX(-50%) translateY(-6px)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'opacity 160ms ease, transform 160ms ease',
+          minWidth: '180px',
+          zIndex: 50,
+          backgroundColor: 'var(--surface)',
+          borderRadius: '0 0 6px 6px',
+          border: '1px solid var(--border-strong)',
+          borderTop: 'none',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          paddingBlock: '4px',
+        }}
+      >
+        <div className="text-4xs text-muted px-3 py-1.5 font-bold tracking-[0.2em] uppercase">
+          Lab Stations
         </div>
-      )}
+        {TABS.map(({ href, label }) => {
+          const active = pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              role="menuitem"
+              onClick={close}
+              tabIndex={open ? 0 : -1}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold tracking-widest uppercase transition-colors"
+              style={{
+                color: active ? 'var(--accent)' : 'var(--fg)',
+                backgroundColor: active ? 'var(--accent-faint)' : 'transparent',
+                borderLeft: active
+                  ? '2px solid var(--accent)'
+                  : '2px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                if (!active)
+                  (e.currentTarget as HTMLElement).style.backgroundColor =
+                    'var(--surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (!active)
+                  (e.currentTarget as HTMLElement).style.backgroundColor =
+                    'transparent';
+              }}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

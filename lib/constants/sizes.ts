@@ -16,10 +16,18 @@ export const WEBCAM_DIMENSIONS = {
 export const SMALL_SCREEN_BREAKPOINT = 600;
 
 export const ICON_SIZES = {
-  toolbarIcon: 18,
-  buttonIconLarge: 20,
-  buttonIconMedium: 16,
-  buttonIconSmall: 14,
+  /**
+   * Inline icon inside a toolbar/action button.
+   * 16px on desktop, 18px on touch targets.
+   */
+  btn: 16,
+  btnTouch: 18,
+  /**
+   * Icon in a card header, section header, or page-level header.
+   * 24px standard, 28px on larger screens.
+   */
+  header: 24,
+  headerLg: 28,
 } as const;
 
 export const SVG_LINE_WIDTH = { line: 1.25 } as const;

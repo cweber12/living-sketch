@@ -6,11 +6,6 @@ export default async function Home() {
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <section className="relative flex min-h-[88vh] flex-col items-center justify-center px-6 py-24 text-center">
         <div className="flex max-w-4xl flex-col items-center gap-8">
-          {/* Overline */}
-          <p className="text-accent text-xs font-bold tracking-[0.35em] uppercase">
-            Reanimation Studio
-          </p>
-
           {/* Main headline */}
           <h1
             className="font-display glow-accent text-foreground leading-none font-bold tracking-[0.06em] uppercase"
@@ -21,13 +16,6 @@ export default async function Home() {
 
           {/* Divider */}
           <div className="divider-accent w-48" />
-
-          {/* Sub-copy */}
-          <p className="text-muted max-w-lg text-lg leading-relaxed sm:text-xl">
-            Draw the parts. Extract the motion.
-            <br />
-            Watch your creation <em className="text-foreground">wake.</em>
-          </p>
 
           {/* CTAs */}
           <div className="mt-2 flex flex-wrap items-center justify-center gap-4">

@@ -10,30 +10,26 @@ export const FlaskIcon = ({
   return (
     <svg
       fill={color}
-      width={`${size}px`}
-      height={`${size}px`}
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       id="flask-2"
-      data-name="Flat Line"
+      data-name="Flat Color"
       xmlns="http://www.w3.org/2000/svg"
-      className="icon flat-line"
+      className="icon flat-color"
     >
       <path
-        id="secondary"
-        d="M18,15a6,6,0,1,1-8-5.65V3h4V9.35A6,6,0,0,1,18,15Z"
-        style={{ fill: color, strokeWidth: SVG_LINE_WIDTH.line }}
+        id="primary"
+        d="M15,8.68V3a1,1,0,0,0-1-1H10A1,1,0,0,0,9,3V8.68a7,7,0,1,0,6,0Z"
+        style={{ fill: color }}
       ></path>
       <path
-        id="primary"
-        d="M18,15a6,6,0,1,1-8-5.65V3h4V9.35A6,6,0,0,1,18,15ZM9,3h6"
-        style={{
-          fill: 'none',
-          stroke: 'currentColor',
-          strokeLinecap: 'round',
-          strokeLinejoin: 'round',
-          strokeWidth: SVG_LINE_WIDTH.line,
-        }}
-      ></path>
+        id="secondary"
+        d="M15,4H9A1,1,0,0,1,9,2h6a1,1,0,0,1,0,2Z"
+        style={{ fill: 'currentColor' }}
+      >
+        {' '}
+      </path>
     </svg>
   );
 };

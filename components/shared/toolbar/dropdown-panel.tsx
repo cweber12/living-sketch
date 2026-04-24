@@ -13,6 +13,7 @@ import { DropdownPanelProps } from './types';
 import { ToolbarCtx } from './toolbar-main';
 import {
   NAVBAR_H,
+  TOOLBAR_H,
   TOOLBAR_W,
   TOOLBAR_H_MOBILE,
   DROPDOWN_MIN_W,
@@ -43,10 +44,10 @@ export function DropdownPanel({
     const panelWidth = typeof width === 'number' ? width : DROPDOWN_MIN_W;
 
     if (isMobile) {
-      /* ── Mobile: full-width panel above bottom toolbar ── */
+      /* ── Mobile: full-width panel flush with top of bottom toolbar ── */
       setStyle({
         position: 'fixed',
-        bottom: TOOLBAR_H_MOBILE + 2,
+        bottom: TOOLBAR_H_MOBILE,
         left: 0,
         right: 0,
         maxHeight: '65vh',
@@ -54,12 +55,12 @@ export function DropdownPanel({
         overflowY: 'auto',
       });
     } else if (mode === 'side') {
-      /* ── Side mode: panel to the right of the sidebar ── */
+      /* ── Side mode: panel flush with the right edge of the sidebar ── */
       const top = Math.max(NAVBAR_H, rect.top);
       setStyle({
         position: 'fixed',
         top,
-        left: TOOLBAR_W + 2,
+        left: TOOLBAR_W,
         minWidth: DROPDOWN_MIN_W_SIDE,
         maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
@@ -68,18 +69,18 @@ export function DropdownPanel({
         overflowY: 'auto',
       });
     } else {
-      /* ── Top mode: placed below the anchor button ── */
-      const topOffset = rect.bottom;
+      /* ── Top mode: panel flush with the bottom edge of the toolbar ── */
+      const toolbarBottom = NAVBAR_H + TOOLBAR_H;
       const left =
         align === 'right' ? Math.max(0, rect.right - panelWidth) : rect.left;
       setStyle({
         position: 'fixed',
-        top: topOffset,
+        top: toolbarBottom,
         left: Math.min(Math.max(0, left), window.innerWidth - panelWidth - 4),
         minWidth: DROPDOWN_MIN_W,
         maxWidth: typeof width === 'number' ? width : DROPDOWN_MAX_W,
         width: width ?? undefined,
-        maxHeight: `calc(100vh - ${topOffset + 8}px)`,
+        maxHeight: `calc(100vh - ${toolbarBottom + 8}px)`,
         zIndex: 60,
         overflowY: 'auto',
       });
@@ -125,6 +126,15 @@ export function DropdownPanel({
 
   const isMobilePanel = isMobile;
   const isSidePanel = !isMobile && mode === 'side';
+  // Top-mode panel: appears BELOW the toolbar — no top border (flush with toolbar bottom)
+  // Side-mode panel: appears RIGHT of sidebar — no left border (flush with sidebar right edge)
+  // Mobile panel: appears ABOVE the bottom toolbar — no bottom border (flush with toolbar top)
+  const borderTop = isSidePanel ? '1px solid var(--border-strong)' : 'none';
+  const borderLeft = isSidePanel ? 'none' : '1px solid var(--border-strong)';
+  const borderRight = '1px solid var(--border-strong)';
+  const borderBottom = isMobilePanel
+    ? 'none'
+    : '1px solid var(--border-strong)';
 
   return createPortal(
     <div
@@ -132,10 +142,11 @@ export function DropdownPanel({
       data-toolbar-panel
       style={{
         ...style,
-        backgroundColor: 'var(--overlay)',
-        borderBottom: `1px solid var(--border-strong)`,
-        borderLeft: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
-        borderRight: isMobilePanel ? 'none' : '1px solid var(--border-strong)',
+        backgroundColor: 'var(--surface-raised)',
+        borderTop,
+        borderLeft,
+        borderRight,
+        borderBottom,
         borderRadius: isMobilePanel
           ? 0
           : isSidePanel

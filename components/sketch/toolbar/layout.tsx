@@ -102,7 +102,7 @@ export function LayoutSection({
       <ActionIcon
         icon={
           <span className="flex rotate-90">
-            <HeadIcon size={14} />
+            <HeadIcon size={24} />
           </span>
         }
         label="Face Up"
@@ -113,7 +113,7 @@ export function LayoutSection({
       <ActionIcon
         icon={
           <span className="flex -scale-x-100 rotate-90">
-            <HeadIcon size={14} />
+            <HeadIcon size={24} />
           </span>
         }
         label="Face Down"
@@ -122,7 +122,7 @@ export function LayoutSection({
       />
       {/* Arms Up */}
       <ActionIcon
-        icon={<PersonArmsUpIcon />}
+        icon={<PersonArmsUpIcon size={24} />}
         label="Arms Up"
         active={armPose === 'up'}
         disabled={isSingle}
@@ -130,7 +130,7 @@ export function LayoutSection({
       />
       {/* Arms Down */}
       <ActionIcon
-        icon={<PersonArmsDownIcon />}
+        icon={<PersonArmsDownIcon size={24} />}
         label="Arms Down"
         active={armPose === 'down'}
         disabled={isSingle}

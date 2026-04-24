@@ -1,8 +1,7 @@
-import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
-import path from 'path/win32';
+/** Bold chevron icons — 2px stroke, 16×16 viewBox */
 
 export const ChevronDownIcon = ({
-  size = 18,
+  size = 16,
   color = 'currentColor',
 }: {
   size?: number | string;
@@ -11,22 +10,22 @@ export const ChevronDownIcon = ({
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 16 16"
     fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
   >
     <path
-      d="M9.5 10.5L12.1997 13.1997V13.1997C12.3656 13.3656 12.6344 13.3656 12.8003 13.1997V13.1997L15.5 10.5"
+      d="M4 6L8 10L12 6"
       stroke={color}
-      stroke-width={SVG_LINE_WIDTH.line}
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
 
 export const ChevronUpIcon = ({
-  size = 18,
+  size = 16,
   color = 'currentColor',
 }: {
   size?: number | string;
@@ -35,16 +34,64 @@ export const ChevronUpIcon = ({
   <svg
     width={size}
     height={size}
-    viewBox="0 0 24 24"
+    viewBox="0 0 16 16"
     fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
   >
     <path
-      d="M15 13.5L12.3003 10.8003V10.8003C12.1344 10.6344 11.8656 10.6344 11.6997 10.8003V10.8003L9 13.5"
+      d="M4 10L8 6L12 10"
       stroke={color}
-      stroke-width={SVG_LINE_WIDTH.line}
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const ChevronLeftIcon = ({
+  size = 16,
+  color = 'currentColor',
+}: {
+  size?: number | string;
+  color?: string;
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M10 4L6 8L10 12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const ChevronRightIcon = ({
+  size = 16,
+  color = 'currentColor',
+}: {
+  size?: number | string;
+  color?: string;
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M6 4L10 8L6 12"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );

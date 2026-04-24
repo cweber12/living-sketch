@@ -205,7 +205,7 @@ export function PageToolbar({
             top: NAVBAR_H,
             left: 0,
             bottom: 0,
-            width: collapsed ? 0 : TOOLBAR_W,
+            width: collapsed ? 0 : 'fit-content',
             zIndex: 40,
             overflow: 'hidden',
             transition: 'width 200ms ease',
