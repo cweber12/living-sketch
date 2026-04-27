@@ -4,19 +4,25 @@ import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { PreviewIcon } from '@/components/console/icons/preview-icon';
 
 /* Inline mini-icons */
-const ColorIcon = () => (
+// Shows the current background colour as a filled swatch — clicking opens the picker.
+const BackgroundIcon = ({ bgColor }: { bgColor: string }) => (
   <svg
     width="14"
     height="14"
-    viewBox="0 0 24 24"
+    viewBox="0 0 14 14"
     fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+    aria-hidden="true"
   >
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="3" fill="currentColor" />
+    <rect
+      x="1"
+      y="1"
+      width="12"
+      height="12"
+      rx="2"
+      fill={bgColor}
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
   </svg>
 );
 
@@ -75,7 +81,7 @@ export function DisplaySection({
       onToggle={onToggle}
     >
       <ActionIcon
-        icon={<ColorIcon />}
+        icon={<BackgroundIcon bgColor={bgColor} />}
         label="Background"
         onClick={onBgDropdownToggle}
         dropdownOpen={bgDropdownOpen}
