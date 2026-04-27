@@ -1,17 +1,17 @@
-// Panel (hamburger lines) icon – used in console Tools toolbar panel
-export const PanelIcon = ({ size = 12 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 12 12"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M2 3.5h8M2 6h8M2 8.5h8"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
+import { Menu } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const PanelIcon = ({
+  size = 12,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Menu
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

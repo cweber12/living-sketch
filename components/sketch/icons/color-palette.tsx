@@ -1,12 +1,14 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 // Color palette icon – four test-tube columns for toolbar Colors panel
-export const ColorPaletteIcon = ({ size = 16 }: { size?: number }) => (
+export const ColorPaletteIcon = ({ size = 16, className }: IconProps) => (
   <svg
-    height={`${size}px`}
-    width={`${size}px`}
-    version="1.1"
+    height={size}
+    width={size}
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
-    aria-hidden="true"
+    aria-hidden={true}
+    className={className}
   >
     <g>
       <g>

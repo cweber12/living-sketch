@@ -1,11 +1,17 @@
-export const CircleIcon = ({ size = 16 }: { size?: number | string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2.5" />
-  </svg>
+import { Circle } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const CircleIcon = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Circle
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

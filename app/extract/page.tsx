@@ -528,7 +528,7 @@ export default function ExtractPage() {
                   >
                     <div>
                       <div className="text-accent mb-2 flex flex-row items-center gap-2">
-                        <FridgeClosedIcon size={'24px'} />
+                        <FridgeClosedIcon size={24} />
                         <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
                           Browse
                         </h3>

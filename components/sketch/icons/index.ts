@@ -1,0 +1,17 @@
+export { BrushIcon } from './brush';
+export { CircleIcon } from './circle';
+export { ColorPaletteIcon } from './color-palette';
+export { DrawScalpelIcon } from './draw-scalpel';
+export { EllipseIcon } from './ellipse';
+export { EraserIcon } from './eraser';
+export { Flask2Icon } from './flask-2';
+export { FlaskIcon } from './flask';
+export { HeadIcon } from './head';
+export { LayoutIcon } from './layout';
+export { LineIcon } from './line';
+export { PenIcon } from './pen';
+export { RectIcon } from './rect';
+export { TableIcon } from './table';
+export { TagIcon } from './tag';
+export { TestTubeAndFlaskIcon } from './test-tube-and-flask';
+export { TestTubeIcon } from './test-tube';

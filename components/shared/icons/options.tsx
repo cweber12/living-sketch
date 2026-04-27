@@ -1,34 +1,17 @@
-import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
+import { SlidersHorizontal } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
 export const OptionsIcon = ({
-  size = 20,
+  size = 16,
   color = 'currentColor',
-}: {
-  size?: number;
-  color?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <rect x="2" y="3" width="12" height="1.5" rx="0.75" fill="currentColor" />
-    <rect
-      x="2"
-      y="7.25"
-      width="12"
-      height="1.5"
-      rx="0.75"
-      fill="currentColor"
-    />
-    <rect
-      x="2"
-      y="11.5"
-      width="12"
-      height="1.5"
-      rx="0.75"
-      fill="currentColor"
-    />
-  </svg>
+  className,
+}: IconProps) => (
+  <SlidersHorizontal
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

@@ -1,97 +1,64 @@
-/** Bold chevron icons — 2px stroke, 16×16 viewBox */
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
 
 export const ChevronDownIcon = ({
-  size = 16,
+  size = 12,
   color = 'currentColor',
-}: {
-  size?: number | string;
-  color?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M4 6L8 10L12 6"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  className,
+}: IconProps) => (
+  <ChevronDown
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );
 
 export const ChevronUpIcon = ({
-  size = 16,
+  size = 12,
   color = 'currentColor',
-}: {
-  size?: number | string;
-  color?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M4 10L8 6L12 10"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  className,
+}: IconProps) => (
+  <ChevronUp
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );
 
 export const ChevronLeftIcon = ({
-  size = 16,
+  size = 12,
   color = 'currentColor',
-}: {
-  size?: number | string;
-  color?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M10 4L6 8L10 12"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  className,
+}: IconProps) => (
+  <ChevronLeft
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );
 
 export const ChevronRightIcon = ({
-  size = 16,
+  size = 12,
   color = 'currentColor',
-}: {
-  size?: number | string;
-  color?: string;
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <path
-      d="M6 4L10 8L6 12"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  className,
+}: IconProps) => (
+  <ChevronRight
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

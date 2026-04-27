@@ -718,7 +718,7 @@ export default function SketchPage() {
                   className="text-muted hover:text-foreground flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors"
                   aria-label="Dismiss"
                 >
-                  <CloseIcon size="10px" />
+                  <CloseIcon size={10} />
                 </button>
                 <div className="border-edge h-4 w-px" />
                 <button

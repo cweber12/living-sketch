@@ -1,16 +1,18 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 export const LayoutIcon = ({
   size = 18,
   color = 'currentColor',
-}: {
-  size?: number;
-  color?: string;
-}) => (
+  className,
+}: IconProps) => (
   <svg
     fill={color}
     height={size}
     width={size}
     viewBox="0 0 364.026 364.026"
     xmlns="http://www.w3.org/2000/svg"
+    aria-hidden={true}
+    className={className}
   >
     <path
       d="M113.035,180.958c-0.165-1.033-0.151-2.104,0.06-3.163c0.139-0.704,0.359-1.379,0.651-2.013l13.635-31.582

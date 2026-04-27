@@ -1,19 +1,17 @@
-export const LineIcon = ({ size = 16 }: { size?: number | string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="none"
-    aria-hidden="true"
-  >
-    <line
-      x1="3"
-      y1="13"
-      x2="13"
-      y2="3"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-    />
-  </svg>
+import { Minus } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const LineIcon = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Minus
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

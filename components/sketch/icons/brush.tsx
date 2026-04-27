@@ -1,11 +1,17 @@
-export const BrushIcon = ({ size = 16 }: { size?: number | string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <circle cx="8" cy="8" r="5" />
-  </svg>
+import { Paintbrush } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const BrushIcon = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Paintbrush
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

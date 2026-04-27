@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   createContext,
@@ -30,7 +30,7 @@ import {
 /* Re-export constants for backward compatibility */
 export { NAVBAR_H, TOOLBAR_H, TOOLBAR_W, TOOLBAR_H_MOBILE } from './constants';
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ Toolbar Context Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ Toolbar Context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export const ToolbarCtx = createContext<ToolbarCtxValue>({
   mode: 'top',
   collapsed: false,
@@ -42,7 +42,7 @@ export const ToolbarCtx = createContext<ToolbarCtxValue>({
   setMobileExpandSlot: () => {},
 });
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ ToolbarLayout Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* â”€â”€ ToolbarLayout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /**
  * Wrap PageToolbar + page content inside ToolbarLayout.
  * PageToolbar is position:fixed; ToolbarLayout pads the content area to
@@ -201,14 +201,14 @@ export function PageToolbar({
 
   const statusLabel =
     saveStatus === 'saving'
-      ? 'Saving…'
+      ? 'Saving�'
       : saveStatus === 'saved'
         ? 'Saved'
         : saveStatus === 'error'
           ? 'Error'
           : 'Save';
 
-  /* ── Side mode ── */
+  /* -- Side mode -- */
   if (mode === 'side') {
     return (
       <>
@@ -234,7 +234,7 @@ export function PageToolbar({
               <div className="flex flex-1 flex-col overflow-y-auto">
                 {children}
               </div>
-              {/* Direct actions — Save / Undo / Clear All */}
+              {/* Direct actions � Save / Undo / Clear All */}
               <div
                 style={{ flexShrink: 0, borderTop: '1px solid var(--border)' }}
               >
@@ -275,7 +275,7 @@ export function PageToolbar({
                         'color 150ms ease, background-color 150ms ease',
                     }}
                   >
-                    <FridgeIcon size="14" />
+                    <FridgeIcon size={14} />
                     {statusLabel}
                   </button>
                 )}
@@ -301,7 +301,7 @@ export function PageToolbar({
                         transition: 'color 100ms ease',
                       }}
                     >
-                      <UndoIcon size="14" />
+                      <UndoIcon size={14} />
                     </button>
                   )}
                   {onClearAll && (
@@ -315,7 +315,7 @@ export function PageToolbar({
                         }
                       }}
                       title={
-                        clearPending ? 'Confirm — click again' : 'Clear All'
+                        clearPending ? 'Confirm � click again' : 'Clear All'
                       }
                       aria-label={
                         clearPending ? 'Confirm clear all' : 'Clear All'
@@ -487,7 +487,7 @@ export function PageToolbar({
 
   return (
     <>
-      {/* Mobile expand slot — portaled action-icon panels render here, above the toolbar */}
+      {/* Mobile expand slot � portaled action-icon panels render here, above the toolbar */}
       {isBottom && (
         <div
           ref={mobileSlotRef}
@@ -541,7 +541,7 @@ export function PageToolbar({
           {children}
         </div>
 
-        {/* Primary actions + layout controls — pinned right */}
+        {/* Primary actions + layout controls � pinned right */}
         <div
           style={{
             display: 'flex',
@@ -570,7 +570,7 @@ export function PageToolbar({
                 transition: 'color 100ms ease, background-color 100ms ease',
               }}
             >
-              <UndoIcon size="16" />
+              <UndoIcon size={16} />
             </button>
           )}
           {onClearAll && (
@@ -585,7 +585,7 @@ export function PageToolbar({
               }}
               title={
                 clearPending
-                  ? 'Confirm — click again to clear all'
+                  ? 'Confirm � click again to clear all'
                   : 'Clear All'
               }
               aria-label={clearPending ? 'Confirm clear all' : 'Clear All'}
@@ -645,7 +645,7 @@ export function PageToolbar({
                 transition: 'color 150ms ease, background-color 150ms ease',
               }}
             >
-              <FridgeIcon size="16" />
+              <FridgeIcon size={16} />
               {!isMobile && statusLabel}
             </button>
           )}
@@ -731,7 +731,7 @@ export function PageToolbar({
         </div>
       </div>
 
-      {/* Desktop expand tab — always visible strip below navbar when toolbar is collapsed */}
+      {/* Desktop expand tab � always visible strip below navbar when toolbar is collapsed */}
       {!isBottom && collapsed && (
         <button
           onClick={() => setCollapsed(false)}
@@ -784,7 +784,7 @@ export function PageToolbar({
         </button>
       )}
 
-      {/* Mobile expand handle Ã¢â‚¬â€ visible at bottom when toolbar is collapsed */}
+      {/* Mobile expand handle â€” visible at bottom when toolbar is collapsed */}
       {isBottom && collapsed && !disableAutoCollapse && (
         <button
           onClick={() => setCollapsed(false)}

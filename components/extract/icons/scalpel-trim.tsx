@@ -1,19 +1,19 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 // Jitter icon: test tube / vial (reduce noise = purify sample)
 export const ScalpelTrimIcon = ({
-  size,
-  color,
-}: {
-  size?: string;
-  color?: string;
-}) => (
+  size = 18,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
   <svg
-    fill={color || '#8a2b24'}
-    version="1.1"
-    id="Capa_1"
+    fill={color}
     xmlns="http://www.w3.org/2000/svg"
-    width={size || '18px'}
-    height={size || '18px'}
+    width={size}
+    height={size}
     viewBox="0 0 962.547 962.546"
+    aria-hidden={true}
+    className={className}
   >
     <g>
       <g>

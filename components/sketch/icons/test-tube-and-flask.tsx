@@ -1,20 +1,19 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 // Test tube and flask icon sourced from https://www.svgrepo.com/svg/331489/test-tube-and-flask
-// -----------------------------------------------------------------------------
 export const TestTubeAndFlaskIcon = ({
   size = 14,
   color = 'currentColor',
-}: {
-  size?: number;
-  color?: string;
-}) => (
+  className,
+}: IconProps) => (
   <svg
     fill={color}
-    version="1.1"
-    id="Capa_1"
     xmlns="http://www.w3.org/2000/svg"
     width={size}
     height={size}
     viewBox="0 0 31.93 31.93"
+    aria-hidden={true}
+    className={className}
   >
     <g>
       <g>

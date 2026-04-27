@@ -1,11 +1,17 @@
-export const EraserIcon = ({ size = 16 }: { size?: number | string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 16 16"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M10 2L14 6l-6 7H5L2 10l8-8zM6.5 13.5h7a.5.5 0 010 1h-7a.5.5 0 010-1z" />
-  </svg>
+import { Eraser } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const EraserIcon = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Eraser
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

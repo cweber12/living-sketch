@@ -1,40 +1,18 @@
-import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
-// Table icon – stylised cadaver figure for toolbar Layout panel
+import { LayoutGrid } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+// TableIcon is used as the Layout section header icon in the sketch toolbar.
 export const TableIcon = ({
-  size = 20,
+  size = 14,
   color = 'currentColor',
-}: {
-  size?: number;
-  color?: string;
-}) => (
-  <svg
-    fill={color}
-    width={`${size}px`}
-    height={`${size}px`}
-    viewBox="0 0 24 24"
-    id="desk-8"
-    data-name="Flat Line"
-    xmlns="http://www.w3.org/2000/svg"
-    className="icon flat-line"
-  >
-    <rect
-      id="secondary"
-      x="4"
-      y="6"
-      width="16"
-      height="4"
-      style={{ fill: 'none', strokeWidth: SVG_LINE_WIDTH.line }}
-    ></rect>
-    <path
-      id="primary"
-      d="M4,6V18M20,6V18M4,6v4H20V6ZM3,6H21"
-      style={{
-        fill: 'none',
-        stroke: color,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-        strokeWidth: SVG_LINE_WIDTH.line,
-      }}
-    ></path>
-  </svg>
+  className,
+}: IconProps) => (
+  <LayoutGrid
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

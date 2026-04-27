@@ -1,19 +1,19 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 // Extract icon: hacksaw (medical saw)
 export const CircularSawIcon = ({
-  size = '24px',
+  size = 24,
   color = 'currentColor',
-}: {
-  size?: string;
-  color?: string;
-}) => (
+  className,
+}: IconProps) => (
   <svg
     fill={color}
     height={size}
     width={size}
-    version="1.1"
-    id="Layer_1"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 511.999 511.999"
+    aria-hidden={true}
+    className={className}
   >
     <g>
       <g>

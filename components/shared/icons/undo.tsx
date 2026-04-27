@@ -1,30 +1,17 @@
-import { SVG_LINE_WIDTH } from '@/lib/constants/sizes';
-// Undo icon: back arrow
-// https://www.svgrepo.com/svg/331492/undo
-// -----------------------------------------------------------------------------
+import { Undo2 } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
 export const UndoIcon = ({
-  size,
-  color,
-}: {
-  size?: string;
-  color?: string;
-}) => (
-  <svg
-    width={size || '18px'}
-    height={size || '18px'}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <g id="Edit / Undo">
-      <path
-        id="Vector"
-        d="M10 8H5V3M5.29102 16.3569C6.22284 17.7918 7.59014 18.8902 9.19218 19.4907C10.7942 20.0913 12.547 20.1624 14.1925 19.6937C15.8379 19.225 17.2893 18.2413 18.3344 16.8867C19.3795 15.5321 19.963 13.878 19.9989 12.1675C20.0347 10.4569 19.5211 8.78001 18.5337 7.38281C17.5462 5.98561 16.1366 4.942 14.5122 4.40479C12.8878 3.86757 11.1341 3.86499 9.5083 4.39795C7.88252 4.93091 6.47059 5.97095 5.47949 7.36556"
-        stroke={color || 'currentColor'}
-        strokeWidth={SVG_LINE_WIDTH.line}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </g>
-  </svg>
+  size = 16,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Undo2
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

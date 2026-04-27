@@ -1,26 +1,17 @@
-// Preview icon – monitor/screen rectangle for Preview toolbar panel
-export const PreviewIcon = ({ size = 12 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 12 12"
-    fill="none"
-    aria-hidden="true"
-  >
-    <rect
-      x="1"
-      y="2"
-      width="10"
-      height="7"
-      rx="1"
-      stroke="currentColor"
-      strokeWidth="1.2"
-    />
-    <path
-      d="M4 10h4"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-    />
-  </svg>
+import { Monitor } from 'lucide-react';
+import { ICON_STROKE } from '@/lib/constants/icons';
+import type { IconProps } from '@/lib/constants/icons';
+
+export const PreviewIcon = ({
+  size = 12,
+  color = 'currentColor',
+  className,
+}: IconProps) => (
+  <Monitor
+    size={size}
+    color={color}
+    strokeWidth={ICON_STROKE}
+    className={className}
+    aria-hidden={true}
+  />
 );

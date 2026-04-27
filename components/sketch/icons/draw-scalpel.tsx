@@ -1,11 +1,14 @@
+import type { IconProps } from '@/lib/constants/icons';
+
 // Draw scalpel icon – surgical scalpel for toolbar Tools panel
-export const DrawScalpelIcon = ({ size = 14 }: { size?: number }) => (
+export const DrawScalpelIcon = ({ size = 14, className }: IconProps) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 14 14"
     fill="none"
-    aria-hidden="true"
+    aria-hidden={true}
+    className={className}
   >
     {/* Blade */}
     <path
