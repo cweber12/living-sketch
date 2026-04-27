@@ -10,8 +10,8 @@ import ScaleControls from '@/components/console/controls/scale-controls';
 /* Anchor/joints icon */
 const JointsIcon = () => (
   <svg
-    width="14"
-    height="14"
+    width="24"
+    height="24"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -49,13 +49,13 @@ export function ModifySection({
 }: ModifySectionProps) {
   return (
     <ToolbarGroup
-      icon={<PanelIcon size={14} />}
+      icon={<PanelIcon size={24} />}
       label="Modifications"
       expanded={expanded}
       onToggle={onToggle}
     >
       <ActionIcon
-        icon={<ShiftIcon size={14} />}
+        icon={<ShiftIcon size={24} />}
         label="Shift Joints"
         onClick={onShiftDropdownToggle}
         dropdownOpen={shiftDropdownOpen}
@@ -64,7 +64,7 @@ export function ModifySection({
         dropdownContent={<ShiftControls />}
       />
       <ActionIcon
-        icon={<ScaleIcon size={14} />}
+        icon={<ScaleIcon size={24} />}
         label="Scale Parts"
         onClick={onScaleDropdownToggle}
         dropdownOpen={scaleDropdownOpen}

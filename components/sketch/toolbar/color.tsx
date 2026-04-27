@@ -79,10 +79,9 @@ export function ColorSection({
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '4px 0',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <input
                   type="color"
                   value={color}

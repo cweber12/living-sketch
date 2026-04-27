@@ -1,18 +1,18 @@
 // Status icon: EEG / pulse monitor trace
 export const PulseIcon = ({
-  size,
-  color,
+  size = 24,
+  color = 'currentColor',
 }: {
-  size?: string;
+  size?: number;
   color?: string;
 }) => (
   <svg
-    fill={color || 'currentColor'}
+    fill={color}
     version="1.1"
     id="Layer_1"
     xmlns="http://www.w3.org/2000/svg"
-    width={size || '15px'}
-    height={size || '15px'}
+    width={size}
+    height={size}
     viewBox="0 0 92 92"
     enableBackground="new 0 0 92 92"
   >

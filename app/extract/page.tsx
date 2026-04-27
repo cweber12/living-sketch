@@ -530,7 +530,7 @@ export default function ExtractPage() {
                       <div className="text-accent mb-2 flex flex-row items-center gap-2">
                         <FridgeClosedIcon size={'24px'} />
                         <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
-                          Browse Saved
+                          Browse
                         </h3>
                       </div>
                       <p className="text-muted text-sm leading-relaxed">

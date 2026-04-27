@@ -3,6 +3,7 @@
 import type { FileEntry } from '@/lib/types';
 import { ToolbarGroup, ActionIcon } from '@/components/shared/toolbar';
 import { BrainIcon } from '@/components/shared/icons/brain';
+import { PulseIcon } from '@/components/extract/icons/pulse';
 import { PersonArmsDownIcon } from '@/components/shared/icons/person';
 import { FilesIcon } from '@/components/console/icons/files-icon';
 import FileList from '@/components/console/controls/file-list';
@@ -66,7 +67,7 @@ export function CollectionSection({
       onToggle={onToggle}
     >
       <ActionIcon
-        icon={<BrainIcon />}
+        icon={<PulseIcon size={24} />}
         label="Activity"
         labeledButton
         onClick={onActivityDropdownToggle}
@@ -89,7 +90,7 @@ export function CollectionSection({
         }
       />
       <ActionIcon
-        icon={<PersonArmsDownIcon size={10} />}
+        icon={<PersonArmsDownIcon size={24} />}
         label="Creations"
         labeledButton
         onClick={onCreationsDropdownToggle}

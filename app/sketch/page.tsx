@@ -43,7 +43,7 @@ import { CloseIcon } from '@/components/shared/icons/close';
 const SESSION_STATE_KEY = 'sketch-page-state';
 
 const DEFAULT_CANVAS_SIZE = 110;
-const MOBILE_BP = 1024;
+const MOBILE_BP = 768;
 
 /* ─── Page ────────────────────────────────────────────────────────── */
 
@@ -631,7 +631,7 @@ export default function SketchPage() {
                   desktop (md+) – ◀ canvas ▶ side-by-side               */}
               <div className="flex min-h-0 flex-1 flex-col items-stretch py-3">
                 {/* Canvas row */}
-                <div className="flex min-h-0 flex-1 items-center justify-center gap-2 px-0 md:px-2">
+                <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-auto px-0 md:px-2">
                   {/* Prev : large screens only */}
                   <button
                     onClick={goPrev}
@@ -646,10 +646,10 @@ export default function SketchPage() {
                       {PART_LABEL[focusPart]} | {side}
                     </p>
                     <div
-                      className="border-edge bg-surface relative max-h-[55vh] w-full max-w-[min(96vw,380px)] origin-top overflow-hidden rounded-[10px] border"
+                      className="border-edge bg-surface relative overflow-hidden rounded-[10px] border"
                       style={{
                         aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
-                        transform: `scale(${zoom})`,
+                        width: `min(${Math.round(zoom * 96)}vw, ${Math.round(zoom * 380)}px)`,
                       }}
                     >
                       {(['front', 'back'] as Side[]).map((s) => (
@@ -712,14 +712,15 @@ export default function SketchPage() {
           {/* Copy-front overlay (subsequent back visits) */}
           {side === 'back' && showCopyFront && (
             <div className="pointer-events-none absolute top-3 right-0 left-2 z-10 flex justify-start">
-              <div className="bg-surface-raised border-edge-strong pointer-events-auto flex items-center gap-1.5 rounded-full border px-3 py-1 shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+              <div className="bg-surface-raised border-edge-strong pointer-events-auto flex items-center gap-2 rounded-full border px-2 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
                 <button
                   onClick={() => setShowCopyFront(false)}
-                  className="text-3xs text-muted cursor-pointer border-none bg-transparent transition-colors"
-                  aria-label="Dismiss copy front"
+                  className="text-muted hover:text-foreground flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors"
+                  aria-label="Dismiss"
                 >
-                  <CloseIcon />
+                  <CloseIcon size="10px" />
                 </button>
+                <div className="border-edge h-4 w-px" />
                 <button
                   onClick={() => {
                     for (const part of BODY_PARTS) {
@@ -728,7 +729,7 @@ export default function SketchPage() {
                     }
                     setShowCopyFront(false);
                   }}
-                  className="text-3xs text-accent cursor-pointer border-none bg-transparent font-bold tracking-widest uppercase transition-colors"
+                  className="bg-accent text-overlay hover:bg-accent-hover cursor-pointer rounded-full border-none px-3 py-1 text-[10px] font-bold tracking-widest uppercase transition-colors"
                 >
                   Copy Front
                 </button>

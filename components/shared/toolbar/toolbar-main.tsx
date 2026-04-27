@@ -11,10 +11,8 @@ import {
 import { cn } from '@/lib/cn';
 import { ToolbarMode, ToolbarCtxValue, PageToolbarProps } from './types';
 import { FridgeIcon } from '@/components/shared/icons/fridge';
-import { OptionsIcon } from '@/components/shared/icons/options';
 import { UndoIcon } from '@/components/shared/icons/undo';
 import { TrashIcon } from '@/components/shared/icons/trash';
-import { DropdownPanel } from './dropdown-panel';
 import {
   NAVBAR_H,
   TOOLBAR_H,
@@ -25,6 +23,8 @@ import {
   EXPAND_TAB_H,
   EXPAND_TAB_SIDE_W,
   EXPAND_TAB_SIDE_H,
+  ACTION_ICON_MIN,
+  ACTION_ICON_MIN_MOBILE,
 } from './constants';
 
 /* Re-export constants for backward compatibility */
@@ -147,10 +147,9 @@ export function PageToolbar({
     setMobileExpandSlot,
   } = useContext(ToolbarCtx);
 
-  const optionsBtnRef = useRef<HTMLButtonElement>(null);
-  const [optionsOpen, setOptionsOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const mobileSlotRef = useRef<HTMLDivElement>(null);
+  const [clearPending, setClearPending] = useState(false);
 
   // Register the mobile expand slot div in context when in mobile mode
   useEffect(() => {
@@ -193,6 +192,22 @@ export function PageToolbar({
     };
   }, [isMobile, disableAutoCollapse, setCollapsed]);
 
+  // Auto-reset clear confirmation after 3 s
+  useEffect(() => {
+    if (!clearPending) return;
+    const t = setTimeout(() => setClearPending(false), 3000);
+    return () => clearTimeout(t);
+  }, [clearPending]);
+
+  const statusLabel =
+    saveStatus === 'saving'
+      ? 'Saving…'
+      : saveStatus === 'saved'
+        ? 'Saved'
+        : saveStatus === 'error'
+          ? 'Error'
+          : 'Save';
+
   /* ── Side mode ── */
   if (mode === 'side') {
     return (
@@ -216,50 +231,117 @@ export function PageToolbar({
         >
           {!collapsed && (
             <div className="flex h-full flex-col">
-              {/* Options button — top of sidebar */}
-              <button
-                ref={optionsBtnRef}
-                onClick={() => setOptionsOpen((v) => !v)}
-                title="Options"
-                aria-label="Options"
-                aria-expanded={optionsOpen}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  padding: '6px 4px',
-                  border: 'none',
-                  borderBottom: '1px solid var(--border)',
-                  cursor: 'pointer',
-                  width: '100%',
-                  backgroundColor: optionsOpen
-                    ? 'var(--surface-raised)'
-                    : 'transparent',
-                  color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
-                  transition: 'background-color 100ms ease',
-                }}
-              >
-                <OptionsIcon size={16} />
-              </button>
-              <DropdownPanel
-                anchorRef={optionsBtnRef}
-                open={optionsOpen}
-                onClose={() => setOptionsOpen(false)}
-                width={160}
-              >
-                <OptionsMenu
-                  onSave={onSave}
-                  saveStatus={saveStatus}
-                  saveDisabled={saveDisabled}
-                  onUndo={onUndo}
-                  onClearAll={onClearAll}
-                  onClose={() => setOptionsOpen(false)}
-                />
-              </DropdownPanel>
               <div className="flex flex-1 flex-col overflow-y-auto">
                 {children}
+              </div>
+              {/* Direct actions — Save / Undo / Clear All */}
+              <div
+                style={{ flexShrink: 0, borderTop: '1px solid var(--border)' }}
+              >
+                {onSave && (
+                  <button
+                    onClick={onSave}
+                    disabled={saveDisabled}
+                    title={statusLabel}
+                    aria-label={statusLabel}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      width: '100%',
+                      height: 36,
+                      border: 'none',
+                      borderBottom: '1px solid var(--border)',
+                      background:
+                        saveStatus === 'saving' || saveStatus === 'saved'
+                          ? 'var(--accent-faint)'
+                          : 'none',
+                      cursor: saveDisabled ? 'default' : 'pointer',
+                      color:
+                        saveStatus === 'error'
+                          ? 'var(--danger)'
+                          : saveStatus === 'saved'
+                            ? 'var(--accent)'
+                            : saveDisabled
+                              ? 'var(--fg-muted)'
+                              : 'var(--fg)',
+                      opacity: saveDisabled ? 0.5 : 1,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      transition:
+                        'color 150ms ease, background-color 150ms ease',
+                    }}
+                  >
+                    <FridgeIcon size="14" />
+                    {statusLabel}
+                  </button>
+                )}
+                <div style={{ display: 'flex' }}>
+                  {onUndo && (
+                    <button
+                      onClick={onUndo}
+                      title="Undo"
+                      aria-label="Undo"
+                      style={{
+                        flex: 1,
+                        height: 32,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        borderRight: onClearAll
+                          ? '1px solid var(--border)'
+                          : 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--fg-muted)',
+                        transition: 'color 100ms ease',
+                      }}
+                    >
+                      <UndoIcon size="14" />
+                    </button>
+                  )}
+                  {onClearAll && (
+                    <button
+                      onClick={() => {
+                        if (clearPending) {
+                          onClearAll();
+                          setClearPending(false);
+                        } else {
+                          setClearPending(true);
+                        }
+                      }}
+                      title={
+                        clearPending ? 'Confirm — click again' : 'Clear All'
+                      }
+                      aria-label={
+                        clearPending ? 'Confirm clear all' : 'Clear All'
+                      }
+                      style={{
+                        flex: 1,
+                        height: 32,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        background: clearPending
+                          ? 'var(--danger-muted)'
+                          : 'none',
+                        cursor: 'pointer',
+                        color: clearPending
+                          ? 'var(--danger)'
+                          : 'var(--fg-muted)',
+                        transition:
+                          'color 100ms ease, background-color 100ms ease',
+                      }}
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setCollapsed(true)}
@@ -446,47 +528,6 @@ export function PageToolbar({
           alignItems: 'stretch',
         }}
       >
-        {/* Options button — pinned left, outside scrollable sections */}
-        <button
-          ref={optionsBtnRef}
-          onClick={() => setOptionsOpen((v) => !v)}
-          title="Options"
-          aria-label="Options"
-          aria-expanded={optionsOpen}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4,
-            padding: isMobile ? '4px 18px' : '4px 14px',
-            border: 'none',
-            borderRight: '1px solid var(--border)',
-            cursor: 'pointer',
-            flexShrink: 0,
-            backgroundColor: optionsOpen
-              ? 'var(--surface-raised)'
-              : 'transparent',
-            color: optionsOpen ? 'var(--fg)' : 'var(--fg-muted)',
-            transition: 'background-color 100ms ease',
-          }}
-        >
-          <OptionsIcon size={16} />
-        </button>
-        <DropdownPanel
-          anchorRef={optionsBtnRef}
-          open={optionsOpen}
-          onClose={() => setOptionsOpen(false)}
-          width={160}
-        >
-          <OptionsMenu
-            onSave={onSave}
-            saveStatus={saveStatus}
-            saveDisabled={saveDisabled}
-            onUndo={onUndo}
-            onClearAll={onClearAll}
-            onClose={() => setOptionsOpen(false)}
-          />
-        </DropdownPanel>
         {/* Toolbar sections */}
         <div
           style={{
@@ -500,84 +541,194 @@ export function PageToolbar({
           {children}
         </div>
 
-        {/* Desktop-only: collapse + sidebar controls */}
-        {!isBottom && (
-          <div className="ml-auto flex shrink-0 items-stretch">
+        {/* Primary actions + layout controls — pinned right */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            flexShrink: 0,
+            borderLeft: '1px solid var(--border)',
+          }}
+        >
+          {onUndo && (
             <button
-              onClick={() => setPreferSide(true)}
-              title="Switch to sidebar"
-              aria-label="Switch to sidebar"
+              onClick={onUndo}
+              title="Undo"
+              aria-label="Undo"
               style={{
-                padding: '0 10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--fg-muted)',
-                background: 'transparent',
+                padding: isMobile ? '4px 14px' : '4px 10px',
+                minWidth: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
+                minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
                 border: 'none',
-                borderLeft: '1px solid var(--border)',
+                borderRight: '1px solid var(--border)',
+                background: 'none',
                 cursor: 'pointer',
+                color: 'var(--fg-muted)',
+                transition: 'color 100ms ease, background-color 100ms ease',
               }}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
+              <UndoIcon size="16" />
+            </button>
+          )}
+          {onClearAll && (
+            <button
+              onClick={() => {
+                if (clearPending) {
+                  onClearAll();
+                  setClearPending(false);
+                } else {
+                  setClearPending(true);
+                }
+              }}
+              title={
+                clearPending
+                  ? 'Confirm — click again to clear all'
+                  : 'Clear All'
+              }
+              aria-label={clearPending ? 'Confirm clear all' : 'Clear All'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: isMobile ? '4px 14px' : '4px 10px',
+                minWidth: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
+                minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
+                border: 'none',
+                borderRight: '1px solid var(--border)',
+                background: clearPending ? 'var(--danger-muted)' : 'none',
+                cursor: 'pointer',
+                color: clearPending ? 'var(--danger)' : 'var(--fg-muted)',
+                transition: 'color 100ms ease, background-color 100ms ease',
+              }}
+            >
+              <TrashIcon size={16} />
+            </button>
+          )}
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={saveDisabled}
+              title={statusLabel}
+              aria-label={statusLabel}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+                padding: isMobile ? '4px 16px' : '4px 14px',
+                minWidth: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
+                minHeight: isMobile ? ACTION_ICON_MIN_MOBILE : ACTION_ICON_MIN,
+                border: 'none',
+                borderRight: !isBottom ? '1px solid var(--border)' : 'none',
+                background:
+                  saveStatus === 'saving' || saveStatus === 'saved'
+                    ? 'var(--accent-faint)'
+                    : 'none',
+                cursor: saveDisabled ? 'default' : 'pointer',
+                color:
+                  saveStatus === 'error'
+                    ? 'var(--danger)'
+                    : saveStatus === 'saved'
+                      ? 'var(--accent)'
+                      : saveDisabled
+                        ? 'var(--fg-muted)'
+                        : 'var(--fg)',
+                opacity: saveDisabled ? 0.5 : 1,
+                fontSize: 10,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                whiteSpace: 'nowrap',
+                transition: 'color 150ms ease, background-color 150ms ease',
+              }}
+            >
+              <FridgeIcon size="16" />
+              {!isMobile && statusLabel}
+            </button>
+          )}
+          {!isBottom && (
+            <>
+              <button
+                onClick={() => setPreferSide(true)}
+                title="Switch to sidebar"
+                aria-label="Switch to sidebar"
+                style={{
+                  padding: '0 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--fg-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderLeft: '1px solid var(--border)',
+                  cursor: 'pointer',
+                }}
               >
-                <rect
-                  x="1"
-                  y="1"
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    x="1"
+                    y="1"
+                    width="10"
+                    height="10"
+                    rx="1.5"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                  />
+                  <rect
+                    x="1"
+                    y="1"
+                    width="4"
+                    height="10"
+                    rx="1.5"
+                    fill="currentColor"
+                    opacity="0.5"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                title={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+                aria-label={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+                style={{
+                  padding: '0 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: collapsed ? 'var(--accent)' : 'var(--fg-muted)',
+                  background: collapsed
+                    ? 'var(--surface-raised)'
+                    : 'transparent',
+                  border: 'none',
+                  borderLeft: '1px solid var(--border)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
                   width="10"
                   height="10"
-                  rx="1.5"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-                <rect
-                  x="1"
-                  y="1"
-                  width="4"
-                  height="10"
-                  rx="1.5"
-                  fill="currentColor"
-                  opacity="0.5"
-                />
-              </svg>
-            </button>
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              title={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
-              aria-label={collapsed ? 'Expand toolbar' : 'Collapse toolbar'}
-              style={{
-                padding: '0 10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: collapsed ? 'var(--accent)' : 'var(--fg-muted)',
-                background: collapsed ? 'var(--surface-raised)' : 'transparent',
-                border: 'none',
-                borderLeft: '1px solid var(--border)',
-                cursor: 'pointer',
-              }}
-            >
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 10 10"
-                fill="none"
-                aria-hidden="true"
-              >
-                {collapsed ? (
-                  <path d="M5 8L1 3h8L5 8z" fill="currentColor" />
-                ) : (
-                  <path d="M5 2l4 5H1l4-5z" fill="currentColor" />
-                )}
-              </svg>
-            </button>
-          </div>
-        )}
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  {collapsed ? (
+                    <path d="M5 8L1 3h8L5 8z" fill="currentColor" />
+                  ) : (
+                    <path d="M5 2l4 5H1l4-5z" fill="currentColor" />
+                  )}
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Desktop expand tab — always visible strip below navbar when toolbar is collapsed */}
@@ -687,173 +838,5 @@ export function PageToolbar({
         </button>
       )}
     </>
-  );
-}
-
-/* ── OptionsMenu (used inside the Options DropdownPanel) ──────────── */
-
-function OptionsMenu({
-  onSave,
-  saveStatus,
-  saveDisabled,
-  onUndo,
-  onClearAll,
-  onClose,
-}: {
-  onSave?: () => void;
-  saveStatus: string;
-  saveDisabled?: boolean;
-  onUndo?: () => void;
-  onClearAll?: () => void;
-  onClose: () => void;
-}) {
-  const [clearPending, setClearPending] = useState(false);
-
-  useEffect(() => {
-    if (!clearPending) return;
-    const t = setTimeout(() => setClearPending(false), 3000);
-    return () => clearTimeout(t);
-  }, [clearPending]);
-
-  const statusLabel =
-    saveStatus === 'saving'
-      ? 'Saving…'
-      : saveStatus === 'saved'
-        ? 'Saved'
-        : saveStatus === 'error'
-          ? 'Error'
-          : 'Save';
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-        padding: '4px 0',
-      }}
-    >
-      {/* Save */}
-      {onSave && (
-        <button
-          onClick={() => {
-            onSave();
-            onClose();
-          }}
-          disabled={saveDisabled}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 10px',
-            border: 'none',
-            background: 'none',
-            cursor: saveDisabled ? 'default' : 'pointer',
-            color: saveDisabled ? 'var(--fg-muted)' : 'var(--fg)',
-            opacity: saveDisabled ? 0.5 : 1,
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            width: '100%',
-            borderRadius: 3,
-            transition: 'background-color 100ms ease',
-          }}
-          onMouseEnter={(e) => {
-            if (!saveDisabled)
-              e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-          title="Save"
-          aria-label="Save"
-        >
-          <FridgeIcon size="14" />
-          {statusLabel}
-        </button>
-      )}
-
-      {/* Undo */}
-      {onUndo && (
-        <button
-          onClick={() => {
-            onUndo();
-            onClose();
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 10px',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            color: 'var(--fg)',
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            width: '100%',
-            borderRadius: 3,
-            transition: 'background-color 100ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-          title="Undo"
-          aria-label="Undo"
-        >
-          <UndoIcon size="14" />
-          Undo
-        </button>
-      )}
-
-      {/* Clear All — two-step confirmation */}
-      {onClearAll && (
-        <button
-          onClick={() => {
-            if (clearPending) {
-              onClearAll();
-              setClearPending(false);
-              onClose();
-            } else {
-              setClearPending(true);
-            }
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 10px',
-            border: 'none',
-            background: clearPending ? 'var(--danger)' : 'none',
-            cursor: 'pointer',
-            color: clearPending ? 'var(--fg)' : 'var(--danger)',
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            width: '100%',
-            borderRadius: 3,
-            transition: 'background-color 100ms ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--surface-raised)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-          title={clearPending ? 'Confirm Clear?' : 'Clear All'}
-          aria-label={clearPending ? 'Confirm Clear?' : 'Clear All'}
-        >
-          <TrashIcon size={14} />
-          {clearPending ? 'Confirm' : 'Clear All'}
-        </button>
-      )}
-    </div>
   );
 }

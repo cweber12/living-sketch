@@ -331,7 +331,6 @@ export function ToolbarGroup({
         display: 'flex',
         flexDirection: isColumn ? 'column' : 'row',
         alignItems: 'stretch',
-        borderBottom: isSide ? 'none' : '1px solid var(--border)',
         borderRight: '1px solid var(--border)',
       }}
     >
