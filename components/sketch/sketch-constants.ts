@@ -55,6 +55,28 @@ export const PART_LABEL: Record<BodyPartName, string> = {
   rightFoot: 'R Foot',
 };
 
+/**
+ * Compact specimen-plate codes used as in-canvas labels in body view.
+ * Middle-dot separator reads as left/right + segment without the visual
+ * confusion of strings like "LLLG" (lower-left-leg).
+ */
+export const PART_CODE: Record<BodyPartName, string> = {
+  head: 'HEAD',
+  torso: 'TORSO',
+  leftUpperArm: 'L·UARM',
+  leftLowerArm: 'L·LARM',
+  leftHand: 'L·HAND',
+  rightUpperArm: 'R·UARM',
+  rightLowerArm: 'R·LARM',
+  rightHand: 'R·HAND',
+  leftUpperLeg: 'L·ULEG',
+  leftLowerLeg: 'L·LLEG',
+  leftFoot: 'L·FOOT',
+  rightUpperLeg: 'R·ULEG',
+  rightLowerLeg: 'R·LLEG',
+  rightFoot: 'R·FOOT',
+};
+
 export const PART_PROPORTIONS: Record<BodyPartName, { w: number; h: number }> =
   {
     head: { w: 1, h: 1 },
@@ -89,3 +111,8 @@ export const PARTS_ORDER: BodyPartName[] = [
   'leftFoot',
   'rightFoot',
 ];
+
+/* ── Drawing defaults ──────────────────────────────────────────────── */
+export const DEFAULT_BRUSH = 6;
+export const DEFAULT_COLOR_LIGHT = '#000000';
+export const DEFAULT_COLOR_DARK = '#ffffff';

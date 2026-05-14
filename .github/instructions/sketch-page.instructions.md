@@ -10,42 +10,32 @@ The sketch page lets users draw custom artwork onto 14 body-part canvases (× 2 
 
 ## File Map
 
-| Thing                                             | Path                                                                     |
-| ------------------------------------------------- | ------------------------------------------------------------------------ |
-| Page                                              | `app/sketch/page.tsx`                                                    |
-| Canvas component                                  | `components/sketch/canvas/sketch-canvas.tsx`                             |
-| Canvas rig hook                                   | `hooks/use-sketch-canvas-rig.ts`                                         |
-| Toolbar – Tools section                           | `components/sketch/toolbar/tools.tsx`                                    |
-| Toolbar – Shapes section                          | `components/sketch/toolbar/tools.tsx` (same file, `ShapesSection`)       |
-| Toolbar – Color section                           | `components/sketch/toolbar/color.tsx`                                    |
-| Toolbar – Layout section                          | `components/sketch/toolbar/layout.tsx`                                   |
-| Shared toolbar shell                              | `components/shared/toolbar/toolbar-main.tsx`                             |
-| Toolbar primitives (`ToolbarGroup`, `ActionIcon`) | `components/shared/toolbar/toolbar-parts.tsx`, `index.tsx`               |
-| Toolbar state hooks                               | `components/shared/toolbar/use-dropdown.ts`, `use-section-expand.ts`     |
-| Toolbar size constants                            | `components/shared/toolbar/constants.ts`                                 |
-| Body thumbnail (single-part nav)                  | `components/sketch/body-thumbnail.tsx`                                   |
-| Sketch icons                                      | `components/sketch/icons/`                                               |
-| Grid areas, part labels, proportions, parts order | `components/sketch/sketch-constants.ts`                                  |
-| Front-to-back mirror map                          | `MIRROR_PART_MAP` inside `app/sketch/page.tsx` (not in sketch-constants) |
-| Arm part lists for rotation                       | `LEFT_ARM_PARTS`, `RIGHT_ARM_PARTS` inside `app/sketch/page.tsx`         |
-| Session state key                                 | `SESSION_STATE_KEY = 'sketch-page-state'` (top of `page.tsx`)            |
-| Canvas session key                                | `SESSION_KEY = 'sketch-canvases'` (inside `use-sketch-canvas-rig.ts`)    |
+| Thing                                                                           | Path                                                                                                      |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Page                                                                            | `app/sketch/page.tsx`                                                                                     |
+| Canvas component                                                                | `components/sketch/canvas/sketch-canvas.tsx`                                                              |
+| Canvas rig hook                                                                 | `hooks/use-sketch-canvas-rig.ts`                                                                          |
+| Operating header (top bar)                                                      | `components/sketch/toolbar/operating-header.tsx` (`OperatingHeader`, `ArmPose` + `ViewMode` type exports) |
+| Tool rail (persistent left/bottom palette)                                      | `components/sketch/toolbar/tool-rail.tsx`                                                                 |
+| Rail/header button primitive                                                    | `components/sketch/toolbar/rail-button.tsx`                                                               |
+| Anchored popover primitive (sketch-local)                                       | `components/sketch/toolbar/popover.tsx`                                                                   |
+| Body thumbnail (single-part nav)                                                | `components/sketch/body-thumbnail.tsx`                                                                    |
+| Specimen plate + corner brackets (decorative frame)                             | `components/sketch/specimen-plate.tsx` (`SpecimenPlate`, `SpecimenBrackets`)                              |
+| Right inspector panel (color presets, part info, state)                         | `components/sketch/inspector-panel.tsx`                                                                   |
+| Bottom status strip (tool / brush / color readouts)                             | `components/sketch/status-strip.tsx`                                                                      |
+| Sketch icons                                                                    | `components/sketch/icons/`                                                                                |
+| Grid areas, part labels, proportions, parts order                               | `components/sketch/sketch-constants.ts`                                                                   |
+| Drawing defaults (`DEFAULT_BRUSH`, `DEFAULT_COLOR_LIGHT`, `DEFAULT_COLOR_DARK`) | `components/sketch/sketch-constants.ts`                                                                   |
+| Front-to-back mirror map                                                        | `MIRROR_PART_MAP` inside `app/sketch/page.tsx` (not in sketch-constants)                                  |
+| Arm part lists for rotation                                                     | `LEFT_ARM_PARTS`, `RIGHT_ARM_PARTS` inside `app/sketch/page.tsx`                                          |
+| Session state key                                                               | `SESSION_STATE_KEY = 'sketch-page-state'` (top of `page.tsx`)                                             |
+| Canvas session key                                                              | `SESSION_KEY = 'sketch-canvases'` (inside `use-sketch-canvas-rig.ts`)                                     |
+
+> The sketch page does **not** use `ToolbarLayout` / `PageToolbar` from `components/shared/toolbar/`. Those primitives are still used by the extract and console pages. The sketch page owns its chrome via `OperatingHeader` + `ToolRail`.
 
 ## Toolbar Architecture
 
-- `ToolbarLayout` + `PageToolbar` (from `toolbar-main.tsx`) render a **collapsible vertical sidebar** — 64 px wide on desktop, horizontal bottom bar on mobile (breakpoint: 768 px).
-- Four `ToolbarGroup` sections expand/collapse independently. State is managed by `useSectionExpand` in `page.tsx` and passed down as `expanded` + `onToggle` props.
-- Dropdowns (brush size, zoom, color picker, parts list) are controlled by `useDropdown` in `page.tsx`. All open/close callbacks are passed down as props — no dropdown state lives inside the section components.
-- `PageToolbar` owns the **Save / Undo / Clear All** actions.
-
-### Toolbar Sections
-
-| Section    | Header icon | Actions                                                                                                                                |
-| ---------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Tools**  | `DrillIcon` | Zoom (range slider dropdown, 0.5×–3×), Sketch pen toggle, Eraser toggle, Brush Size (range slider dropdown, 1–40 px)                   |
-| **Shapes** | `PenIcon`   | Tool selector: `pen` / `line` / `rect` / `circle` / `ellipse`                                                                          |
-| **Color**  | `FlaskIcon` | Color picker (native `<input type=color>`); last 6 used-color swatches visible, up to 12 tracked in `usedColors`, overflow in dropdown |
-| **Layout** | `TableIcon` | Face Up / Face Down (front/back side), Arms Up / Arms Down (arm pose + canvas rotation), Parts Mode toggle + part-picker dropdown      |
+Sketch chrome = `OperatingHeader` (top) + `ToolRail` (left rail desktop / bottom strip mobile) + `InspectorPanel` (right rail, desktop only, collapsible to 24 px — state persisted as `inspectorCollapsed`) + `StatusStrip` (bottom 28 px, desktop only, display-only mono `TOOL · BRUSH · COLOR` readouts). Read each component file for current tab/button behavior. Popover open-state (`brushOpen`, `colorOpen`, `zoomOpen`, `partsOpen`) is owned by `page.tsx` and passed as `open` / `onToggle` / `onClose` props; popovers portal to `document.body`.
 
 ### `tool` vs `isEraser` — two independent state variables
 
@@ -66,41 +56,33 @@ The sketch page lets users draw custom artwork onto 14 body-part canvases (× 2 
 - `zoom` initialises at `1` on desktop and `1.5` on mobile (`window.innerWidth < 768`), so the head and torso fill the initial mobile viewport.
 - **Anatomy note:** left body parts appear on the right side of the screen (anatomical anterior view / camera mirror). `GRID_AREA` keys reflect this: `leftUpperArm` → area `luarm` (right side of grid).
 - `PART_PROPORTIONS` in `sketch-constants.ts` defines the display aspect ratio (w/h multipliers) for each part — e.g. torso is `{ w: 2.3, h: 2.6 }`, head is `{ w: 1, h: 1 }`. These drive grid track sizing and the zoom-canvas aspect ratio in single-part mode.
+- The body grid is wrapped in **`<SpecimenPlate>`** (from `components/sketch/specimen-plate.tsx`) — purely decorative: 4 accent-colored corner reticle ticks + a monospace "Plate · Anterior/Posterior" caption. No outer border. The single-part canvas is wrapped with **`<SpecimenBrackets>`** — 4 accent L-shapes sitting on the canvas corners. Both are `pointer-events: none` so they never interfere with drawing.
 
-### SketchCanvas props
-
-```ts
-side: Side           // 'front' | 'back' — which side's canvas this is
-part: BodyPartName   // which body part
-brushSize: number    // CSS pixels (scaled to canvas-buffer px inside the component)
-color: string        // hex stroke color
-isEraser: boolean
-tool?: ShapeTool     // 'pen' | 'line' | 'rect' | 'circle' | 'ellipse'
-onMount: (side, part, el) => void       // setCanvasRef or setZoomCanvasRef
-onStrokeStart: (side, part) => void     // triggers undo snapshot in the rig
-onStrokeEnd?: (side, part) => void      // persists all canvases to sessionStorage
-```
-
-**Pen drawing** uses `perfect-freehand` — produces a pressure-sensitive, filled closed-outline path via `getStroke()` → `toSvgPath()` → `Path2D`.
-
-**Shape drawing** (`line`, `rect`, `circle`, `ellipse`) uses Canvas 2D API with a live preview loop: at `pointerdown` the current canvas pixels are snapshotted into `committedImage`. On every `pointermove`, `committedImage` is restored and the shape is redrawn from start-point to current-point. On `pointerup` the final shape is committed. This avoids accumulation artifacts.
-
-**Eraser** sets `globalCompositeOperation = 'destination-out'` and draws with pen-path mode, erasing pixels rather than painting them.
-
-Custom cursor: `makeBrushCursor(size, color, isEraser)` — inline SVG data URI, sized to match the actual brush diameter in CSS pixels. Eraser shows a dashed red circle.
-
-**`onStrokeEnd` triggers `saveToSession()`**, which serialises all 28 canvases on every stroke completion. This is intentional for session durability but is a heavier operation than it may appear.
+`SketchCanvas` props are typed in the component file. Key behavioral note: `onStrokeEnd` triggers `saveToSession()`, which serialises all 28 canvases on every stroke — intentional for session durability but heavier than it appears.
 
 ## Single-Part (Zoom) Mode
 
-Activated by **Parts Mode** in the Layout section (`viewMode: 'single'`). Exiting the mode (via the close button rendered next to the canvas) sets `viewMode` back to `'body'`.
+Activated by the **`Whole / Detail`** tab in `OperatingHeader` (`viewMode: 'single'`). When `Detail` is active, a part-picker button appears next to the tab — clicking it opens a popover listing all 14 parts.
+
+### Layout
+
+The single-part block in `page.tsx` renders a 4-row column inside the canvas stage:
+
+1. **Top bar:** an "← Whole" exit pill on the left (sets `viewMode='body'`), the centered mono plate label `PLATE · {SIDE} · {FOCUSED PART}` (focused part in accent), and a spacer that balances the exit pill width so the label stays optically centered.
+2. **Canvas row:** desktop-only labeled prev/next pills flank the canvas (`← {PART_LABEL[prevPart]}` / `{PART_LABEL[nextPart]} →`). The canvas itself is wrapped with `SpecimenBrackets` for surgical-microscope corner cues. Below the canvas: a mono tabular page count `01 / 14`.
+3. **Mobile-only nav row:** full-width prev/next pills labeled the same way (`md:hidden`).
+4. **Body map:** `BodyThumbnail` rendered **inline**, centered below the canvas. Tapping any cell in the map calls `selectPart(part)` and switches focus. It is no longer floating / fixed-positioned.
+
+The shared pill style is defined as `navPillStyle` + `mobileNavPillStyle` inside `SketchPage` and re-used across all five buttons (exit, desktop prev/next, mobile prev/next). All pills are monospace, 0.1em letter-spacing, accent-themed on hover via the existing `.toolbar-action-btn` class.
+
+`prevPart` / `nextPart` are derived from `PARTS_ORDER` with wrap-around: `(focusIdx ± 1 + PARTS_ORDER.length) % PARTS_ORDER.length`.
+
+### Canvas behavior
 
 - Renders one large `SketchCanvas` for the focused part, registered via `setZoomCanvasRef`.
 - The zoom canvas aspect ratio is derived from `PART_PROPORTIONS[focusPart]`. For arm parts when `armPose === 'up'`, `w` and `h` are swapped — arm canvases are landscape in T-pose orientation because the part is drawn horizontally.
 - `setZoomCanvasRef` copies pixel data from the primary (body-grid) canvas on mount, then copies back on unmount. Strokes in zoom mode are therefore seamlessly reflected in body-grid mode when the user exits.
-- `BodyThumbnail` shows a mini body outline with the focused part highlighted. Clicking a part navigates to it.
-- Navigation: Prev/Next arrow buttons (`PrevIcon` / `NextIcon`) flank the canvas on desktop (`md+`); full-width buttons appear below the canvas on mobile.
-- **Arms Up / Arms Down buttons are disabled in single-part mode** to prevent rotation while the zoom canvas is active.
+- **The `T-Pose / Hanging` tab is disabled in single-part mode** to prevent rotation while the zoom canvas is active.
 
 ## Canvas Rig (`useSketchCanvasRig`)
 
@@ -139,18 +121,16 @@ Undo is **cross-canvas and order-preserving**. Two data structures work together
 ## Side Switching and Back-Side Initialisation
 
 - **First switch to `back`:** `mirrorCopyCanvas` runs for all 14 parts using `MIRROR_PART_MAP` defined in `page.tsx`. Left/right limbs swap (anatomically a rotated figure shows opposite limbs); head and torso map to themselves.
-- **Subsequent switches to `back`:** `setShowCopyFront(true)` displays a dismissible "Copy Front" pill overlay. **Accepting** runs `mirrorCopyCanvas` for all 14 parts again, overwriting any existing back-side artwork. **Dismissing** sets `showCopyFront = false` with no copy performed.
+- **Subsequent switches to `back`:** `setShowCopyFront(true)` displays a dismissible **"Mirror Anterior"** pill inline in `OperatingHeader` (next to the side tabs). **Accepting** runs `mirrorCopyCanvas` for all 14 parts again, overwriting any existing back-side artwork. **Dismissing** sets `showCopyFront = false` with no copy performed.
 - `backInitialised` is a `useRef<boolean>` — persists across re-renders but resets on page reload.
 
 ## Arm Pose and Mobile Orientation
 
 `armPose: 'up' | 'down'` controls whether arms are drawn in T-pose (horizontal, `'up'`) or arms-at-sides (vertical, `'down'`).
 
-**Why left and right arms rotate in opposite directions:** In T-pose, left arms are drawn with the hand pointing left (canvas oriented landscape-left); right arms point right (landscape-right). Rotating to arms-down (portrait): left arms rotate −90° (CCW) to hang down; right arms rotate +90° (CW) to hang down. Going back to T-pose simply reverses both. This is why `LEFT_ARM_PARTS` and `RIGHT_ARM_PARTS` always receive opposite degree signs.
+Toggling pose calls `rotatePartCanvas` on all 6 arm/hand canvases on **both** sides simultaneously. `LEFT_ARM_PARTS` and `RIGHT_ARM_PARTS` use opposite degree signs — see inline comment in `page.tsx` for the anatomical reason.
 
-Toggling pose calls `rotatePartCanvas` on all 6 arm/hand canvases on **both** sides simultaneously.
-
-**Desktop:** `armPose` is changed only by the Arms Up / Arms Down toolbar buttons — no auto-rotation.
+**Desktop:** `armPose` is changed only by the `T-Pose / Hanging` tab in `OperatingHeader` — no auto-rotation.
 
 **Mobile:** A `matchMedia('(orientation: landscape)')` listener auto-rotates arm canvases when the device is physically rotated. Landscape → `'up'`; portrait → `'down'`. This listener is only registered when `isMobile` is true.
 
@@ -162,10 +142,10 @@ Toggling pose calls `rotatePartCanvas` on all 6 arm/hand canvases on **both** si
 
 ## Session Persistence
 
-| Key                   | Contents                                                                                              | Cleared on |
-| --------------------- | ----------------------------------------------------------------------------------------------------- | ---------- |
-| `'sketch-page-state'` | UI state JSON: `side`, `viewMode`, `focusIdx`, `zoom`, `brushSize`, `color`, `isEraser`, `usedColors` | Reload     |
-| `'sketch-canvases'`   | Canvas pixel data as WebP data URLs keyed by `'${side}-${part}'`                                      | Reload     |
+| Key                   | Contents                                                                                                                    | Cleared on |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| `'sketch-page-state'` | UI state JSON: `side`, `viewMode`, `focusIdx`, `zoom`, `brushSize`, `color`, `isEraser`, `usedColors`, `inspectorCollapsed` | Reload     |
+| `'sketch-canvases'`   | Canvas pixel data as WebP data URLs keyed by `'${side}-${part}'`                                                            | Reload     |
 
 `armPose` is intentionally **not** persisted — it must always be derived from actual device orientation on mount, never from a stale stored value.
 
@@ -190,7 +170,7 @@ handleSave()
 ## Key Gotchas
 
 - `brushSize` is in **CSS pixels**. `SketchCanvas` scales it to canvas-buffer pixels using `scaleRef` (the ratio of `CANVAS_SIZE / getBoundingClientRect().width`). Do not pass raw canvas coordinates to brush size calculations.
-- `DEFAULT_COLOR_LIGHT` / `DEFAULT_COLOR_DARK` are the canonical stroke color defaults, exported from `color.tsx`. The page imports them from there.
+- `DEFAULT_COLOR_LIGHT` / `DEFAULT_COLOR_DARK` / `DEFAULT_BRUSH` are the canonical drawing defaults, exported from `sketch-constants.ts`. The page imports them from there.
 - The grid has no explicit `gap` class — gap is set via inline `style` (`2px` mobile / `4px` desktop) because it participates in the grid track calculations.
 - `PARTS_ORDER` in `sketch-constants.ts` defines the tab order for single-part navigation and must stay consistent with `BodyPartName`.
 - `focusPart = PARTS_ORDER[focusIdx]` — always derive the part name from the index, never store the name directly.

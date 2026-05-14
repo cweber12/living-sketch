@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type CSSProperties,
+} from 'react';
 import {
   SketchCanvas,
   type ShapeTool,
@@ -8,38 +14,33 @@ import {
 import { useSketchCanvasRig } from '@/hooks/use-sketch-canvas-rig';
 import { BODY_PARTS } from '@/lib/constants/anchor-descriptors';
 import type { BodyPartName, Side } from '@/hooks/use-sketch-canvas-rig';
-import {
-  ToolbarLayout,
-  PageToolbar,
-} from '@/components/shared/toolbar/toolbar-main';
-import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
-import { useSectionExpand } from '@/components/shared/toolbar/use-section-expand';
 import { BodyThumbnail } from '@/components/sketch/body-thumbnail';
 import {
-  LayoutSection,
+  SpecimenPlate,
+  SpecimenBrackets,
+} from '@/components/sketch/specimen-plate';
+import { InspectorPanel } from '@/components/sketch/inspector-panel';
+import { StatusStrip } from '@/components/sketch/status-strip';
+import { ToolRail } from '@/components/sketch/toolbar/tool-rail';
+import {
+  OperatingHeader,
   type ArmPose,
   type ViewMode,
-} from '@/components/sketch/toolbar/layout';
-import {
-  ToolsSection,
-  ShapesSection,
-  DEFAULT_BRUSH,
-} from '@/components/sketch/toolbar/tools';
-import {
-  ColorSection,
-  DEFAULT_COLOR_LIGHT,
-  DEFAULT_COLOR_DARK,
-} from '@/components/sketch/toolbar/color';
+} from '@/components/sketch/toolbar/operating-header';
 import {
   GRID_ARMS_UP,
   GRID_ARMS_DOWN,
   GRID_AREA,
   PART_LABEL,
+  PART_CODE,
   PART_PROPORTIONS,
   PARTS_ORDER,
+  DEFAULT_BRUSH,
+  DEFAULT_COLOR_LIGHT,
+  DEFAULT_COLOR_DARK,
 } from '@/components/sketch/sketch-constants';
 import { PrevIcon, NextIcon } from '@/components/shared/icons/navigate';
-import { CloseIcon } from '@/components/shared/icons/close';
+
 const SESSION_STATE_KEY = 'sketch-page-state';
 
 const DEFAULT_CANVAS_SIZE = 110;
@@ -121,13 +122,16 @@ export default function SketchPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
-  const { isOpen, toggle, close } = useDropdown();
-  const { isExpanded, toggle: toggleSection } = useSectionExpand([
-    'tools',
-    'shapes',
-    'color',
-    'layout',
-  ]);
+
+  // Popover open-state (rail + header).
+  const [brushOpen, setBrushOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [partsOpen, setPartsOpen] = useState(false);
+
+  // Right inspector panel — collapsed flag (desktop only).
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
+
   const [zoom, setZoom] = useState(() =>
     // On mobile, start zoomed in so head+torso fill the initial viewport
     typeof window !== 'undefined' && window.innerWidth < MOBILE_BP ? 1.5 : 1,
@@ -186,6 +190,7 @@ export default function SketchPage() {
         color: string;
         isEraser: boolean;
         usedColors: string[];
+        inspectorCollapsed: boolean;
       }>;
       if (s.side === 'front' || s.side === 'back') setSide(s.side);
       if (s.viewMode === 'body' || s.viewMode === 'single')
@@ -197,6 +202,8 @@ export default function SketchPage() {
       if (typeof s.color === 'string' && s.color) setColor(s.color);
       if (typeof s.isEraser === 'boolean') setIsEraser(s.isEraser);
       if (Array.isArray(s.usedColors)) setUsedColors(s.usedColors);
+      if (typeof s.inspectorCollapsed === 'boolean')
+        setInspectorCollapsed(s.inspectorCollapsed);
     } catch {
       /* ignore */
     }
@@ -218,12 +225,23 @@ export default function SketchPage() {
           color,
           isEraser,
           usedColors,
+          inspectorCollapsed,
         }),
       );
     } catch {
       /* ignore */
     }
-  }, [side, viewMode, focusIdx, zoom, brushSize, color, isEraser, usedColors]);
+  }, [
+    side,
+    viewMode,
+    focusIdx,
+    zoom,
+    brushSize,
+    color,
+    isEraser,
+    usedColors,
+    inspectorCollapsed,
+  ]);
 
   // After hydration: correct arm pose to match the actual device orientation.
   // armPose initialises as 'up' (SSR-safe); this effect fixes it on the client.
@@ -240,6 +258,9 @@ export default function SketchPage() {
 
   const effectiveArms: ArmPose = armPose; // orientation-managed via state
   const focusPart = PARTS_ORDER[focusIdx];
+  const prevPart =
+    PARTS_ORDER[(focusIdx - 1 + PARTS_ORDER.length) % PARTS_ORDER.length];
+  const nextPart = PARTS_ORDER[(focusIdx + 1) % PARTS_ORDER.length];
 
   const {
     setCanvasRef,
@@ -323,6 +344,14 @@ export default function SketchPage() {
     },
     [mirrorCopyCanvas],
   );
+
+  const handleCopyFront = useCallback(() => {
+    for (const part of BODY_PARTS) {
+      const backPart = MIRROR_PART_MAP[part];
+      mirrorCopyCanvas('front', part, 'back', backPart);
+    }
+    setShowCopyFront(false);
+  }, [mirrorCopyCanvas]);
 
   const handleStrokeStart = useCallback(
     (strokeSide: Side, part: BodyPartName) => {
@@ -420,13 +449,14 @@ export default function SketchPage() {
   // The zoom factor is then baked directly into the effectiveU so that we avoid
   // using CSS `zoom:` on the grid (which causes browser layout quirks with grid
   // track sizing and coordinate-mapping issues on webkit).
+  // 160 = navbar(48) + operating-header(52) + tool-rail bottom strip(60)
   const mobileU =
     typeof window !== 'undefined'
       ? Math.max(
           20,
           Math.min(
             Math.floor((window.innerWidth - 20) / 4.3),
-            Math.floor((window.innerHeight - 140) / 9.85),
+            Math.floor((window.innerHeight - 160) / 9.85),
           ),
         )
       : 80;
@@ -468,10 +498,13 @@ export default function SketchPage() {
   const activeTool = isEraser ? 'pen' : tool;
 
   function renderCanvas(s: Side, part: BodyPartName) {
+    const isFocused = part === focusPart;
     return (
       <div
         key={`${s}-${part}`}
-        className="border-edge bg-surface relative h-full w-full overflow-hidden rounded-md border"
+        className={`${
+          isFocused ? 'border-accent' : 'border-edge'
+        } bg-surface relative h-full w-full overflow-hidden rounded-md border`}
         style={{
           gridArea: GRID_AREA[part],
           visibility: s === side ? 'visible' : 'hidden',
@@ -499,6 +532,30 @@ export default function SketchPage() {
             </span>
           </>
         )}
+        {/* Specimen-plate code label (bottom-center, pointer-events: none) */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            bottom: 1,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontFamily: 'var(--font-geist-mono), monospace',
+            fontSize: 8,
+            letterSpacing: '0.1em',
+            color: isFocused ? 'var(--accent)' : 'var(--fg-muted)',
+            opacity: isFocused ? 0.95 : 0.45,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            whiteSpace: 'nowrap',
+            maxWidth: 'calc(100% - 4px)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            textShadow: '0 0 4px var(--surface), 0 0 4px var(--surface)',
+          }}
+        >
+          {PART_CODE[part]}
+        </span>
       </div>
     );
   }
@@ -521,81 +578,99 @@ export default function SketchPage() {
       ? { w: focusProps.h, h: focusProps.w }
       : focusProps;
 
-  /* ── Toolbar content ── */
+  /* ── Render ── */
+
+  /* Shared style for the prev/next/exit pills in single-part mode */
+  const navPillStyle: CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    height: 32,
+    padding: '0 12px',
+    borderRadius: 16,
+    border: '1px solid var(--border)',
+    backgroundColor: 'var(--surface)',
+    color: 'var(--fg-muted)',
+    fontFamily: 'var(--font-geist-mono), monospace',
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition:
+      'color 120ms var(--ease-ui), background-color 120ms var(--ease-ui), border-color 120ms var(--ease-ui)',
+  };
+  const mobileNavPillStyle: CSSProperties = {
+    ...navPillStyle,
+    height: 44,
+    flex: 1,
+    justifyContent: 'center',
+    gap: 8,
+    fontSize: 11,
+  };
+
+  const railProps = {
+    isMobile,
+    tool,
+    onToolChange: setTool,
+    isEraser,
+    onIsEraserChange: setIsEraser,
+    brushSize,
+    onBrushSizeChange: setBrushSize,
+    color,
+    onColorChange: setColor,
+    usedColors,
+    zoom,
+    onZoomChange: setZoom,
+    onZoomReset: () => setZoom(1),
+    brushOpen,
+    onBrushToggle: () => setBrushOpen((v) => !v),
+    onBrushClose: () => setBrushOpen(false),
+    colorOpen,
+    onColorToggle: () => setColorOpen((v) => !v),
+    onColorClose: () => setColorOpen(false),
+    zoomOpen,
+    onZoomToggle: () => setZoomOpen((v) => !v),
+    onZoomClose: () => setZoomOpen(false),
+  };
 
   return (
-    <main className="flex w-full flex-1 overflow-hidden">
-      <ToolbarLayout>
-        {/* Unified toolbar */}
-        <PageToolbar
-          onSave={handleSave}
-          onUndo={handleUndo}
-          onClearAll={clearAll}
-          saveStatus={saveStatus}
-          saveDisabled={saveStatus === 'saving'}
-        >
-          <ToolsSection
-            zoom={zoom}
-            onZoomChange={setZoom}
-            onZoomReset={() => setZoom(1)}
-            tool={tool}
-            onToolChange={setTool}
-            brushSize={brushSize}
-            onBrushSizeChange={setBrushSize}
-            isEraser={isEraser}
-            onIsEraserChange={setIsEraser}
-            expanded={isExpanded('tools')}
-            onToggle={() => toggleSection('tools')}
-            brushDropdownOpen={isOpen('brush')}
-            onBrushDropdownToggle={() => toggle('brush')}
-            onBrushDropdownClose={() => close('brush')}
-            zoomDropdownOpen={isOpen('zoom')}
-            onZoomDropdownToggle={() => toggle('zoom')}
-            onZoomDropdownClose={() => close('zoom')}
-          />
-          <ShapesSection
-            tool={tool}
-            onToolChange={setTool}
-            isEraser={isEraser}
-            onIsEraserChange={setIsEraser}
-            expanded={isExpanded('shapes')}
-            onToggle={() => toggleSection('shapes')}
-          />
-          <ColorSection
-            color={color}
-            onColorChange={setColor}
-            usedColors={usedColors}
-            onEraserOff={() => setIsEraser(false)}
-            expanded={isExpanded('color')}
-            onToggle={() => toggleSection('color')}
-            pickerDropdownOpen={isOpen('colorPicker')}
-            onPickerDropdownToggle={() => toggle('colorPicker')}
-            onPickerDropdownClose={() => close('colorPicker')}
-            overflowDropdownOpen={isOpen('colorOverflow')}
-            onOverflowDropdownToggle={() => toggle('colorOverflow')}
-            onOverflowDropdownClose={() => close('colorOverflow')}
-          />
-          <LayoutSection
-            zoom={zoom}
-            onZoomChange={setZoom}
-            onZoomReset={() => setZoom(1)}
-            side={side}
-            onSideChange={handleSideChange}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            focusIdx={focusIdx}
-            onFocusIdxChange={setFocusIdx}
-            armPose={armPose}
-            onArmPoseChange={handleArmPoseChange}
-            expanded={isExpanded('layout')}
-            onToggle={() => toggleSection('layout')}
-            partsDropdownOpen={isOpen('parts')}
-            onPartsDropdownToggle={() => toggle('parts')}
-            onPartsDropdownClose={() => close('parts')}
-          />
-        </PageToolbar>
+    <main className="flex w-full flex-1 flex-col overflow-hidden">
+      <OperatingHeader
+        isMobile={isMobile}
+        side={side}
+        onSideChange={handleSideChange}
+        armPose={armPose}
+        onArmPoseChange={handleArmPoseChange}
+        viewMode={viewMode}
+        onViewModeChange={(v) => {
+          setViewMode(v);
+          setPartsOpen(v === 'single');
+        }}
+        focusIdx={focusIdx}
+        onFocusIdxChange={setFocusIdx}
+        saveStatus={saveStatus}
+        saveDisabled={saveStatus === 'saving'}
+        onSave={handleSave}
+        onUndo={handleUndo}
+        onClearAll={clearAll}
+        showCopyFront={showCopyFront}
+        onCopyFront={handleCopyFront}
+        onDismissCopyFront={() => setShowCopyFront(false)}
+        partsDropdownOpen={partsOpen}
+        onPartsDropdownToggle={() => setPartsOpen((v) => !v)}
+        onPartsDropdownClose={() => setPartsOpen(false)}
+      />
 
-        {/* CANVAS AREA */}
+      <div
+        className={`flex flex-1 overflow-hidden ${
+          isMobile ? 'flex-col' : 'flex-row'
+        }`}
+      >
+        {!isMobile && <ToolRail {...railProps} />}
+
+        {/* CANVAS STAGE */}
         <div className="relative flex flex-1 flex-col overflow-hidden">
           {/* BODY MODE */}
           <div
@@ -605,139 +680,186 @@ export default function SketchPage() {
           >
             <div className="flex-1 overflow-auto">
               {/* min-w-max + flex justify-center: centers grid when it fits; allows scroll in both axes when zoomed */}
-              <div className="flex min-w-max justify-center px-2 py-3 sm:px-4">
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateAreas: gridTemplate,
-                    gridTemplateColumns: gridCols,
-                    gridTemplateRows: gridRows,
-                    gap: isMobile ? '2px' : '4px',
-                  }}
-                >
-                  {(['front', 'back'] as Side[]).flatMap((s) =>
-                    BODY_PARTS.map((part) => renderCanvas(s, part)),
-                  )}
-                </div>
+              <div className="flex min-w-max justify-center px-2 py-2 sm:px-4">
+                <SpecimenPlate side={side} isMobile={isMobile}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateAreas: gridTemplate,
+                      gridTemplateColumns: gridCols,
+                      gridTemplateRows: gridRows,
+                      gap: isMobile ? '2px' : '4px',
+                    }}
+                  >
+                    {(['front', 'back'] as Side[]).flatMap((s) =>
+                      BODY_PARTS.map((part) => renderCanvas(s, part)),
+                    )}
+                  </div>
+                </SpecimenPlate>
               </div>
             </div>
           </div>
 
           {/* SINGLE-PART MODE */}
           {viewMode === 'single' && (
-            <>
-              {/* Responsive single-part layout:
-                  mobile (< md) – full-width canvas, nav buttons below
-                  desktop (md+) – ◀ canvas ▶ side-by-side               */}
-              <div className="flex min-h-0 flex-1 flex-col items-stretch py-3">
-                {/* Canvas row */}
-                <div className="flex min-h-0 flex-1 items-center justify-center gap-2 overflow-auto px-0 md:px-2">
-                  {/* Prev : large screens only */}
-                  <button
-                    onClick={goPrev}
-                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground ml-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97] md:flex"
-                    aria-label="Previous part"
-                  >
-                    <PrevIcon />
-                  </button>
-
-                  <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col items-center gap-1">
-                    <p className="text-3xs text-accent shrink-0 font-bold tracking-widest uppercase">
-                      {PART_LABEL[focusPart]} | {side}
-                    </p>
-                    <div
-                      className="border-edge bg-surface relative overflow-hidden rounded-[10px] border"
-                      style={{
-                        aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
-                        width: `min(${Math.round(zoom * 96)}vw, ${Math.round(zoom * 380)}px)`,
-                      }}
-                    >
-                      {(['front', 'back'] as Side[]).map((s) => (
-                        <div
-                          key={`single-${s}-${focusPart}`}
-                          className="h-full w-full"
-                          style={{ display: s === side ? 'block' : 'none' }}
-                        >
-                          <SketchCanvas
-                            side={s}
-                            part={focusPart}
-                            brushSize={brushSize}
-                            color={color}
-                            isEraser={isEraser}
-                            tool={activeTool}
-                            onMount={setZoomCanvasRef}
-                            onStrokeStart={handleStrokeStart}
-                            onStrokeEnd={handleStrokeEnd}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-3xs text-muted shrink-0">
-                      {focusIdx + 1} / {PARTS_ORDER.length}
-                    </p>
-                  </div>
-
-                  {/* Next : large screens only */}
-                  <button
-                    onClick={goNext}
-                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground mr-2 hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97] md:flex"
-                  >
-                    <NextIcon />
-                  </button>
-                </div>
-
-                {/* Mobile nav buttons below canvas */}
-                <div className="flex shrink-0 items-center justify-between gap-4 px-6 pb-1 md:hidden">
-                  <button
-                    onClick={goPrev}
-                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97]"
-                    aria-label="Previous part"
-                  >
-                    <PrevIcon />
-                  </button>
-                  <button
-                    onClick={goNext}
-                    className="focus-visible:ring-accent bg-surface border-edge hover:bg-surface-hover hover:border-edge-strong text-foreground flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none active:scale-[0.97]"
-                    aria-label="Next part"
-                  >
-                    <NextIcon />
-                  </button>
-                </div>
+            <div className="flex min-h-0 flex-1 flex-col py-2">
+              {/* Top bar: Exit | Plate label | spacer */}
+              <div className="flex shrink-0 items-center justify-between gap-3 px-3 pb-2 sm:px-6">
+                <button
+                  onClick={() => setViewMode('body')}
+                  style={navPillStyle}
+                  aria-label="Exit detail mode"
+                  className="toolbar-action-btn"
+                >
+                  <PrevIcon />
+                  Whole
+                </button>
+                <p
+                  className="shrink-0 text-center"
+                  style={{
+                    fontFamily: 'var(--font-geist-mono), monospace',
+                    fontSize: 10,
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                    color: 'var(--fg-muted)',
+                  }}
+                >
+                  Plate ·{' '}
+                  <span style={{ color: 'var(--fg)' }}>
+                    {side === 'front' ? 'Anterior' : 'Posterior'}
+                  </span>{' '}
+                  ·{' '}
+                  <span style={{ color: 'var(--accent)' }}>
+                    {PART_LABEL[focusPart]}
+                  </span>
+                </p>
+                {/* Spacer balances the Exit pill so the label stays centered */}
+                <span aria-hidden="true" style={{ width: 92, flexShrink: 0 }} />
               </div>
 
-              <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />
-            </>
-          )}
+              {/* Canvas row */}
+              <div className="flex min-h-0 flex-1 items-center justify-center gap-3 overflow-auto px-3 md:px-4">
+                <button
+                  onClick={goPrev}
+                  style={navPillStyle}
+                  className="toolbar-action-btn hidden shrink-0 md:inline-flex"
+                  aria-label={`Previous part: ${PART_LABEL[prevPart]}`}
+                >
+                  <PrevIcon />
+                  {PART_LABEL[prevPart]}
+                </button>
 
-          {/* Copy-front overlay (subsequent back visits) */}
-          {side === 'back' && showCopyFront && (
-            <div className="pointer-events-none absolute top-3 right-0 left-2 z-10 flex justify-start">
-              <div className="bg-surface-raised border-edge-strong pointer-events-auto flex items-center gap-2 rounded-full border px-2 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+                <div className="flex w-full min-w-0 flex-1 flex-col items-center gap-2">
+                  <div
+                    className="bg-surface relative overflow-hidden"
+                    style={{
+                      border: '1px solid var(--border)',
+                      aspectRatio: `${effectiveFocusProps.w} / ${effectiveFocusProps.h}`,
+                      width: `min(${Math.round(zoom * 96)}vw, ${Math.round(zoom * 380)}px)`,
+                    }}
+                  >
+                    {(['front', 'back'] as Side[]).map((s) => (
+                      <div
+                        key={`single-${s}-${focusPart}`}
+                        className="h-full w-full"
+                        style={{ display: s === side ? 'block' : 'none' }}
+                      >
+                        <SketchCanvas
+                          side={s}
+                          part={focusPart}
+                          brushSize={brushSize}
+                          color={color}
+                          isEraser={isEraser}
+                          tool={activeTool}
+                          onMount={setZoomCanvasRef}
+                          onStrokeStart={handleStrokeStart}
+                          onStrokeEnd={handleStrokeEnd}
+                        />
+                      </div>
+                    ))}
+                    <SpecimenBrackets />
+                  </div>
+                  <p
+                    className="shrink-0"
+                    style={{
+                      fontFamily: 'var(--font-geist-mono), monospace',
+                      fontSize: 9,
+                      letterSpacing: '0.14em',
+                      color: 'var(--fg-muted)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {String(focusIdx + 1).padStart(2, '0')} /{' '}
+                    {String(PARTS_ORDER.length).padStart(2, '0')}
+                  </p>
+                </div>
+
                 <button
-                  onClick={() => setShowCopyFront(false)}
-                  className="text-muted hover:text-foreground flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors"
-                  aria-label="Dismiss"
+                  onClick={goNext}
+                  style={navPillStyle}
+                  className="toolbar-action-btn hidden shrink-0 md:inline-flex"
+                  aria-label={`Next part: ${PART_LABEL[nextPart]}`}
                 >
-                  <CloseIcon size={10} />
+                  {PART_LABEL[nextPart]}
+                  <NextIcon />
                 </button>
-                <div className="border-edge h-4 w-px" />
+              </div>
+
+              {/* Mobile prev/next pills */}
+              <div className="flex shrink-0 items-stretch gap-3 px-4 pt-2 md:hidden">
                 <button
-                  onClick={() => {
-                    for (const part of BODY_PARTS) {
-                      const backPart = MIRROR_PART_MAP[part];
-                      mirrorCopyCanvas('front', part, 'back', backPart);
-                    }
-                    setShowCopyFront(false);
-                  }}
-                  className="bg-accent text-overlay hover:bg-accent-hover cursor-pointer rounded-full border-none px-3 py-1 text-[10px] font-bold tracking-widest uppercase transition-colors"
+                  onClick={goPrev}
+                  style={mobileNavPillStyle}
+                  aria-label={`Previous part: ${PART_LABEL[prevPart]}`}
                 >
-                  Copy Front
+                  <PrevIcon />
+                  {PART_LABEL[prevPart]}
                 </button>
+                <button
+                  onClick={goNext}
+                  style={mobileNavPillStyle}
+                  aria-label={`Next part: ${PART_LABEL[nextPart]}`}
+                >
+                  {PART_LABEL[nextPart]}
+                  <NextIcon />
+                </button>
+              </div>
+
+              {/* Inline body map — tap any part to navigate */}
+              <div className="flex shrink-0 items-center justify-center pt-2">
+                <BodyThumbnail focusPart={focusPart} onSelect={selectPart} />
               </div>
             </div>
           )}
         </div>
-      </ToolbarLayout>
+
+        {!isMobile && (
+          <InspectorPanel
+            isMobile={isMobile}
+            collapsed={inspectorCollapsed}
+            onToggleCollapsed={() => setInspectorCollapsed((v) => !v)}
+            color={color}
+            onColorChange={setColor}
+            onEraserOff={() => setIsEraser(false)}
+            usedColors={usedColors}
+            brushSize={brushSize}
+            tool={tool}
+            isEraser={isEraser}
+            side={side}
+            focusPart={focusPart}
+          />
+        )}
+
+        {isMobile && <ToolRail {...railProps} />}
+      </div>
+
+      <StatusStrip
+        isMobile={isMobile}
+        tool={tool}
+        isEraser={isEraser}
+        brushSize={brushSize}
+        color={color}
+      />
     </main>
   );
 }
