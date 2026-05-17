@@ -468,3 +468,307 @@ input[type='range']:hover::-webkit-slider-thumb {
   );
   opacity: 0.35;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Extract page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Step progress strip ── */
+.extract-step-strip {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  gap: 28px;
+}
+
+.extract-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 0 8px;
+  position: relative;
+  opacity: 0.3;
+  transition: opacity 220ms var(--ease-ui);
+}
+
+.extract-step.active,
+.extract-step.done {
+  opacity: 1;
+}
+
+.extract-step-n {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+}
+
+.extract-step.active .extract-step-n {
+  color: var(--accent);
+}
+
+.extract-step-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.extract-step.active .extract-step-label {
+  color: var(--fg);
+}
+
+.extract-step-bar {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--accent);
+  transition: width 400ms var(--ease-ui);
+}
+
+.extract-step.active .extract-step-bar {
+  width: 100%;
+}
+
+.extract-step.done .extract-step-bar {
+  width: 100%;
+  background: var(--fg-muted);
+  opacity: 0.4;
+}
+
+/* ── Source split panel ── */
+.extract-source-split {
+  display: flex;
+  flex-direction: row;
+}
+
+.extract-source-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 48px 40px;
+  text-align: left;
+  transition: background-color var(--duration-normal) var(--ease-ui);
+}
+
+.extract-source-half:hover {
+  background-color: var(--surface-inset);
+}
+
+.extract-source-half:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.extract-source-half:active {
+  background-color: var(--surface-hover);
+}
+
+.extract-source-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 260px;
+}
+
+.extract-source-icon {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.extract-source-heading {
+  font-family: var(--font-space-grotesk, sans-serif);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 0;
+}
+
+.extract-source-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+.extract-source-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-top: 4px;
+  transition: gap var(--duration-normal) var(--ease-ui);
+}
+
+.extract-source-half:hover .extract-source-cta {
+  gap: 8px;
+}
+
+.extract-source-divider {
+  width: 1px;
+  background-color: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Detecting border pulse ── */
+@keyframes detect-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.extract-detecting::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: detect-pulse 1.8s ease-in-out infinite;
+  z-index: 10;
+}
+
+/* ── Frame counter overlay ── */
+.extract-frame-counter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  backdrop-filter: blur(8px);
+  background: var(--overlay-faint);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  z-index: 11;
+}
+
+.extract-frame-n {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.extract-frame-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ── Complete state corner meta ── */
+.extract-capture-meta-tl,
+.extract-capture-meta-tr {
+  position: absolute;
+  top: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  backdrop-filter: blur(8px);
+  background: var(--overlay-faint);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+.extract-capture-meta-tl {
+  left: 12px;
+}
+
+.extract-capture-meta-tr {
+  right: 12px;
+}
+
+@keyframes loop-dot-blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.extract-capture-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: loop-dot-blink 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── Loading brain pulse ── */
+@keyframes brain-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.extract-loading-icon {
+  color: var(--accent);
+  animation: brain-pulse 2.2s ease-in-out infinite;
+}
+
+/* ── Source select fade-up entry ── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up var(--duration-slow) var(--ease-out) both;
+}
+
+/* ── Vital readout (detecting toolbar counter) ── */
+.vital-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}

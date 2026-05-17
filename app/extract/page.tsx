@@ -264,9 +264,26 @@ export default function ExtractPage() {
     }
   }, [croppedFrames, cropDimensions, router]);
   const handleGoBack = useCallback(() => {
+    if (isDetecting) stop();
+    stopWebcam();
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.src = '';
+      videoRef.current.srcObject = null;
+    }
     useLandmarksStore.getState().reset();
-    window.location.reload();
-  }, []);
+    cancelAnimationFrame(previewRafRef.current);
+    setSourceSelected(false);
+    setVideoReady(false);
+    setVideoFileName('');
+    setVideoDims({ w: 0, h: 0 });
+    setPreviewLandmarks(null);
+    setUploadStatus('idle');
+    setErrorMsg('');
+  }, [isDetecting, stop, stopWebcam]);
 
   const handleRecordAgain = useCallback(() => {
     useLandmarksStore.getState().reset();
@@ -287,6 +304,7 @@ export default function ExtractPage() {
   }, [isDetecting, handleStop]);
 
   /* ── Other derived ──────────────────────────────────────────────── */
+
   // Phase-based toolbar state machine
   const extractPhase: ExtractPhase = !sourceSelected
     ? 'source-select'
@@ -300,14 +318,12 @@ export default function ExtractPage() {
   const showToolbar =
     webcamReady || videoReady || isDetecting || captureComplete;
 
-  // Smoothed, filtered frames for preview — computed once after capture completes
+  // Smoothed, filtered frames for preview
   const smoothedBaseFrames = useMemo(() => {
     if (!captureComplete || croppedFrames.length === 0) return croppedFrames;
     return smoothLandmarkFrames(filterAndInterpolateFrames(croppedFrames));
   }, [captureComplete, croppedFrames]);
 
-  // Re-detection is allowed: remove !captureComplete guard so users can
-  // run detection again on the same or a new video after a capture.
   const canStart =
     isModelReady &&
     !isDetecting &&
@@ -341,14 +357,22 @@ export default function ExtractPage() {
     return () => cancelAnimationFrame(previewRafRef.current);
   }, [captureComplete, smoothedBaseFrames]);
 
+  // Step progress helpers
+  const stepActive = (step: 1 | 2 | 3): boolean => {
+    if (step === 1) return extractPhase === 'source-select';
+    if (step === 2)
+      return extractPhase === 'ready' || extractPhase === 'detecting';
+    return extractPhase === 'complete';
+  };
+  const stepDone = (step: 1 | 2 | 3): boolean => {
+    if (step === 1) return extractPhase !== 'source-select';
+    if (step === 2) return extractPhase === 'complete';
+    return false;
+  };
+
   return (
     <main className="flex w-full flex-1 overflow-hidden">
-      {/*
-       * disableAutoCollapse: touch-scroll should not collapse the toolbar here.
-       * noToolbar: no bottom padding when toolbar is hidden (source-select phase).
-       */}
       <ToolbarLayout disableAutoCollapse noToolbar={!showToolbar}>
-        {/* ── Phase-based toolbar ── */}
         {showToolbar && (
           <PageToolbar
             onSave={extractPhase === 'complete' ? handleUpload : undefined}
@@ -363,7 +387,7 @@ export default function ExtractPage() {
             }
             saveDisabled={!canUpload}
           >
-            {/* Back button — always visible when toolbar shown */}
+            {/* Back button */}
             <button
               onClick={handleGoBack}
               className="btn-ghost flex h-full items-center gap-1.5 rounded px-3 text-xs font-bold tracking-widest uppercase"
@@ -377,9 +401,7 @@ export default function ExtractPage() {
               Back
             </button>
 
-            {/* Compact centered action buttons */}
             <div className="flex flex-1 items-center justify-start gap-3 px-4">
-              {/* Phase: ready */}
               {extractPhase === 'ready' && (
                 <button
                   onClick={handleStart}
@@ -392,36 +414,23 @@ export default function ExtractPage() {
                 </button>
               )}
 
-              {/* Phase: detecting */}
               {extractPhase === 'detecting' && (
                 <>
                   <button
                     onClick={handleStop}
-                    className="flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
-                    style={{
-                      backgroundColor: 'var(--danger)',
-                      color: '#fff',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: '0 0 10px rgba(180,0,0,0.25)',
-                    }}
+                    className="btn-danger flex h-8 items-center gap-1.5 rounded px-4 text-xs font-bold tracking-widest uppercase"
                     title="Stop extraction"
                   >
-                    <span aria-hidden="true">■</span>
+                    <span aria-hidden="true">&#9632;</span>
                     Stop
                   </button>
-                  <span
-                    className="flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase"
-                    style={{ color: 'var(--fg-muted)' }}
-                    aria-live="polite"
-                  >
+                  <span className="vital-readout" aria-live="polite">
                     <PulseIcon />
                     {frameCount} frames
                   </span>
                 </>
               )}
 
-              {/* Phase: complete — source-specific re-capture + Save */}
               {extractPhase === 'complete' && (
                 <>
                   {source === 'live' && (
@@ -431,7 +440,7 @@ export default function ExtractPage() {
                       title="Record from webcam again"
                     >
                       <RecordIcon />
-                      Record Again
+                      New Capture
                     </button>
                   )}
                   <button
@@ -442,12 +451,12 @@ export default function ExtractPage() {
                       uploadStatus === 'done'
                         ? 'Motion saved'
                         : uploadStatus === 'uploading'
-                          ? 'Saving…'
+                          ? 'Saving...'
                           : 'Save extracted motion'
                     }
                   >
                     {uploadStatus === 'uploading'
-                      ? 'Saving…'
+                      ? 'Saving...'
                       : uploadStatus === 'done'
                         ? 'Saved!'
                         : 'Save'}
@@ -458,21 +467,45 @@ export default function ExtractPage() {
           </PageToolbar>
         )}
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {/* ── Error banner ── */}
+          {/* Step indicator strip */}
+          {!isLoading && (
+            <div className="extract-step-strip shrink-0">
+              {(
+                [
+                  { n: '01', label: 'Source', step: 1 },
+                  { n: '02', label: 'Capture', step: 2 },
+                  { n: '03', label: 'Export', step: 3 },
+                ] as { n: string; label: string; step: 1 | 2 | 3 }[]
+              ).map(({ n, label, step }) => (
+                <div
+                  key={n}
+                  className={`extract-step${stepActive(step) ? 'active' : ''}${stepDone(step) ? 'done' : ''}`}
+                >
+                  <span className="extract-step-n">{n}</span>
+                  <span className="extract-step-label">{label}</span>
+                  <div className="extract-step-bar" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Error banner */}
           {errorMsg && (
             <div className="alert-danger mx-4 mt-3 shrink-0 px-4 py-2.5 text-xs">
               {errorMsg}
             </div>
           )}
 
-          {/* ── Model loading overlay ── */}
+          {/* Model loading */}
           {isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
-              <div className="border-accent h-10 w-10 animate-spin rounded-full border-2 border-t-transparent" />
+              <div className="extract-loading-icon">
+                <BrainIcon size={36} />
+              </div>
               <p className="font-display text-accent text-center text-sm tracking-widest uppercase">
-                Reanimating neural pathways…
+                Reanimating neural pathways...
               </p>
               <p className="text-3xs text-muted tracking-widest uppercase">
                 Loading pose detection model
@@ -480,73 +513,55 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* ── Source cards (initial state: no source selected) ── */}
+          {/* Source select: full-height split panel */}
           {!isLoading && !sourceSelected && !captureComplete && (
-            <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
-              <div className="flex w-full max-w-2xl flex-col items-center gap-8">
-                {/* Header */}
-                <div className="text-accent mb-2 flex flex-row items-center justify-center gap-2">
-                  <BrainIcon size={24} />
-                  <p className="text-xs font-bold tracking-[0.35em] uppercase">
-                    Select a source.
+            <div className="extract-source-split animate-fade-up flex-1">
+              <button
+                onClick={() => {
+                  setSource('live');
+                  setSourceSelected(true);
+                }}
+                className="extract-source-half group"
+                aria-label="Select live webcam source"
+              >
+                <div className="extract-source-content">
+                  <div className="extract-source-icon">
+                    <RecordIcon />
+                  </div>
+                  <h3 className="extract-source-heading">Live</h3>
+                  <p className="extract-source-desc">
+                    Capture live movement from your webcam.
                   </p>
+                  <span className="extract-source-cta">Start Capture</span>
                 </div>
-                {/* Cards */}
-                <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-                  {/* Live card */}
-                  <button
-                    onClick={() => {
-                      setSource('live');
-                      setSourceSelected(true);
-                    }}
-                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
-                  >
-                    <div>
-                      <div className="text-accent mb-2 flex flex-row items-center gap-2">
-                        <RecordIcon />
-                        <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
-                          Live
-                        </h3>
-                      </div>
-                      <p className="text-muted text-sm leading-relaxed">
-                        Use your webcam to capture live movement.
-                      </p>
-                    </div>
-                    <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
-                      Start Capture →
-                    </span>
-                  </button>
+              </button>
 
-                  {/* Browse card */}
-                  <button
-                    onClick={() => {
-                      setSource('browse');
-                      setSourceSelected(true);
-                      fileInputRef.current?.click();
-                    }}
-                    className="card-themed group focus-visible:ring-accent flex flex-col gap-4 rounded-xl p-6 text-left focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
-                  >
-                    <div>
-                      <div className="text-accent mb-2 flex flex-row items-center gap-2">
-                        <FridgeClosedIcon size={24} />
-                        <h3 className="font-display text-foreground mb-0 text-lg font-bold uppercase">
-                          Browse
-                        </h3>
-                      </div>
-                      <p className="text-muted text-sm leading-relaxed">
-                        Upload a saved video file to extract motion.
-                      </p>
-                    </div>
-                    <span className="text-accent mt-auto inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-transform group-hover:translate-x-1">
-                      Select Recording →
-                    </span>
-                  </button>
+              <div className="extract-source-divider" aria-hidden="true" />
+
+              <button
+                onClick={() => {
+                  setSource('browse');
+                  setSourceSelected(true);
+                  fileInputRef.current?.click();
+                }}
+                className="extract-source-half group"
+                aria-label="Select video file source"
+              >
+                <div className="extract-source-content">
+                  <div className="extract-source-icon">
+                    <FridgeClosedIcon size={20} />
+                  </div>
+                  <h3 className="extract-source-heading">Browse</h3>
+                  <p className="extract-source-desc">
+                    Upload a saved video file to extract motion.
+                  </p>
+                  <span className="extract-source-cta">Select File</span>
                 </div>
-              </div>
+              </button>
             </div>
           )}
 
-          {/* Hidden file input — available at all times for source cards */}
+          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -555,23 +570,10 @@ export default function ExtractPage() {
             className="hidden"
           />
 
-          {/*
-           * ── Video + pose overlay ──
-           * flex-1 + absolute positioning fills available space between navbar
-           * and toolbar without overflowing or causing page scroll on iOS.
-           * object-contain on the video preserves aspect ratio with letterboxing.
-           * PoseCanvas covers the same container; both scale from videoW×videoH
-           * coordinates to CSS container size uniformly, keeping overlay aligned.
-           *
-           * IMPORTANT: this div is always mounted when sourceSelected (not
-           * conditionally on !captureComplete). CSS `hidden` hides it during
-           * the complete phase so the <video> element stays in the DOM and
-           * retains its blob src — required for the "New Video" button to
-           * work correctly (fileInputRef click fires while element is hidden).
-           */}
+          {/* Video + pose overlay */}
           {!isLoading && sourceSelected && !captureComplete && (
             <div
-              className={`bg-surface relative min-h-0 flex-1 overflow-hidden${captureComplete ? 'hidden' : ''}`}
+              className={`relative min-h-0 flex-1 overflow-hidden bg-background${isDetecting ? 'extract-detecting' : ''}`}
             >
               <video
                 ref={videoRef}
@@ -587,6 +589,14 @@ export default function ExtractPage() {
                   landmarks={currentFrame}
                   className="pointer-events-none absolute inset-0 h-full w-full"
                 />
+              )}
+
+              {/* Frame counter during detection */}
+              {isDetecting && (
+                <div className="extract-frame-counter" aria-live="polite">
+                  <span className="extract-frame-n">{frameCount}</span>
+                  <span className="extract-frame-label">frames</span>
+                </div>
               )}
 
               {/* Empty state: camera not yet ready */}
@@ -605,8 +615,8 @@ export default function ExtractPage() {
                   ) : (
                     <p className="text-muted text-sm tracking-widest uppercase">
                       {cameraPermission === 'prompt'
-                        ? 'Allow camera access to continue…'
-                        : 'Starting camera…'}
+                        ? 'Allow camera access to continue...'
+                        : 'Starting camera...'}
                     </p>
                   )}
                 </div>
@@ -623,15 +633,22 @@ export default function ExtractPage() {
             </div>
           )}
 
-          {/* ── Skeleton preview (capture complete) ── */}
+          {/* Skeleton preview (capture complete) */}
           {captureComplete && (
-            <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div className="bg-background relative min-h-0 flex-1 overflow-hidden">
               <PoseCanvas
                 sourceWidth={cropDimensions.width}
                 sourceHeight={cropDimensions.height}
                 landmarks={previewLandmarks}
                 className="absolute inset-0 h-full w-full"
               />
+              <div className="extract-capture-meta-tl">
+                {croppedFrames.length} frames captured
+              </div>
+              <div className="extract-capture-meta-tr">
+                <span className="extract-capture-dot" aria-hidden="true" />
+                looping preview
+              </div>
             </div>
           )}
         </div>

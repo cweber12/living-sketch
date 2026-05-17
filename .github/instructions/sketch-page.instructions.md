@@ -8,6 +8,8 @@ applyTo: 'app/sketch/**,components/sketch/**,hooks/use-sketch-canvas-rig.ts'
 
 The sketch page lets users draw custom artwork onto 14 body-part canvases (× 2 sides = 28 total), then save the result to Supabase for use in the animation pipeline. Every canvas is a fixed 400×400px internal buffer displayed inside a responsive CSS grid. The artwork is composited onto pose-detected skeletons in the console/animation pipeline.
 
+> For the auto-generated dependency graph, entry points, and exclusive dependencies, see [`docs/modules/sketch.md`](../../docs/modules/sketch.md). Run `npm run arch` to refresh.
+
 ## File Map
 
 | Thing                                                                           | Path                                                                                                      |
@@ -21,8 +23,6 @@ The sketch page lets users draw custom artwork onto 14 body-part canvases (× 2 
 | Anchored popover primitive (sketch-local)                                       | `components/sketch/toolbar/popover.tsx`                                                                   |
 | Body thumbnail (single-part nav)                                                | `components/sketch/body-thumbnail.tsx`                                                                    |
 | Specimen plate + corner brackets (decorative frame)                             | `components/sketch/specimen-plate.tsx` (`SpecimenPlate`, `SpecimenBrackets`)                              |
-| Right inspector panel (color presets, part info, state)                         | `components/sketch/inspector-panel.tsx`                                                                   |
-| Bottom status strip (tool / brush / color readouts)                             | `components/sketch/status-strip.tsx`                                                                      |
 | Sketch icons                                                                    | `components/sketch/icons/`                                                                                |
 | Grid areas, part labels, proportions, parts order                               | `components/sketch/sketch-constants.ts`                                                                   |
 | Drawing defaults (`DEFAULT_BRUSH`, `DEFAULT_COLOR_LIGHT`, `DEFAULT_COLOR_DARK`) | `components/sketch/sketch-constants.ts`                                                                   |
@@ -35,7 +35,7 @@ The sketch page lets users draw custom artwork onto 14 body-part canvases (× 2 
 
 ## Toolbar Architecture
 
-Sketch chrome = `OperatingHeader` (top) + `ToolRail` (left rail desktop / bottom strip mobile) + `InspectorPanel` (right rail, desktop only, collapsible to 24 px — state persisted as `inspectorCollapsed`) + `StatusStrip` (bottom 28 px, desktop only, display-only mono `TOOL · BRUSH · COLOR` readouts). Read each component file for current tab/button behavior. Popover open-state (`brushOpen`, `colorOpen`, `zoomOpen`, `partsOpen`) is owned by `page.tsx` and passed as `open` / `onToggle` / `onClose` props; popovers portal to `document.body`.
+Sketch chrome = `OperatingHeader` + `ToolRail`. Read those component files for current tab structure and button behaviors. Popover open-state (`brushOpen`, `colorOpen`, `zoomOpen`, `partsOpen`) is owned by `page.tsx` and passed as `open` / `onToggle` / `onClose` props; popovers portal to `document.body`.
 
 ### `tool` vs `isEraser` — two independent state variables
 
@@ -142,10 +142,10 @@ Toggling pose calls `rotatePartCanvas` on all 6 arm/hand canvases on **both** si
 
 ## Session Persistence
 
-| Key                   | Contents                                                                                                                    | Cleared on |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| `'sketch-page-state'` | UI state JSON: `side`, `viewMode`, `focusIdx`, `zoom`, `brushSize`, `color`, `isEraser`, `usedColors`, `inspectorCollapsed` | Reload     |
-| `'sketch-canvases'`   | Canvas pixel data as WebP data URLs keyed by `'${side}-${part}'`                                                            | Reload     |
+| Key                   | Contents                                                                                              | Cleared on |
+| --------------------- | ----------------------------------------------------------------------------------------------------- | ---------- |
+| `'sketch-page-state'` | UI state JSON: `side`, `viewMode`, `focusIdx`, `zoom`, `brushSize`, `color`, `isEraser`, `usedColors` | Reload     |
+| `'sketch-canvases'`   | Canvas pixel data as WebP data URLs keyed by `'${side}-${part}'`                                      | Reload     |
 
 `armPose` is intentionally **not** persisted — it must always be derived from actual device orientation on mount, never from a stale stored value.
 
