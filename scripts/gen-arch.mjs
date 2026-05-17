@@ -388,6 +388,7 @@ push(`_Generated ${now} — run \`npm run arch\` to refresh._`);
 blank();
 push('> Auto-generated. Do not edit by hand.');
 push('> Maps source files to roles, imports, exports, and reverse dependents.');
+push('> For focused per-module context (Sketch/Extract/Console), see `docs/modules/`.');
 blank();
 push('## Contents');
 blank();
@@ -749,7 +750,8 @@ function writeModuleDoc(mod) {
   for (const rel of ownedFiles) {
     for (const dep of depMap.get(rel)?.internal ?? []) {
       const depOwners = getModuleOwnership(dep);
-      if (depOwners.length > 0 && !depOwners.includes(mod)) {
+      // Skip cosmetic UI-shared files (icons, toolbar chrome) — cross-module icon imports are expected.
+      if (depOwners.length > 0 && !depOwners.includes(mod) && !isUiShared(dep)) {
         warnings.push(`\`${rel}\` imports \`${dep}\` (owned by ${depOwners.join(', ')})`);
       }
     }

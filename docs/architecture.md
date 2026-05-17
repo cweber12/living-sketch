@@ -4,6 +4,7 @@ _Generated 2026-05-17 — run `npm run arch` to refresh._
 
 > Auto-generated. Do not edit by hand.
 > Maps source files to roles, imports, exports, and reverse dependents.
+> For focused per-module context (Sketch/Extract/Console), see `docs/modules/`.
 
 ## Contents
 

@@ -34,8 +34,6 @@ _Generated 2026-05-17 — run `npm run arch` to refresh._
 - `/api/storage/files` — reads file listing
 - `/api/storage/list` — reads file listing
 
-> ⚠️ 1 boundary warning(s) — see [Boundary Warnings](#boundary-warnings).
-
 ## Entry Points
 
 | File                      | Role   | Exports       |
@@ -421,7 +419,3 @@ Module communication happens via HTTP fetch calls to API routes — not in the i
 ## Packages Used
 
 `lucide-react`, `react`, `zustand`
-
-## Boundary Warnings
-
-- ⚠️ `components/console/toolbar/collection.tsx` imports `components/extract/icons/pulse.tsx` (owned by extract)
