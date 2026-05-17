@@ -19,16 +19,11 @@ import {
 import { smoothLandmarkFrames } from '@/lib/utils/landmark-smoother';
 import { TorsoDimensions } from '@/lib/utils/torso-dimensions';
 import AnimationCanvas from '@/components/console/canvas/animation-canvas';
-/* Toolbar components */
-import { useDropdown } from '@/components/shared/toolbar/use-dropdown';
-import { useSectionExpand } from '@/components/shared/toolbar/use-section-expand';
-import {
-  PageToolbar,
-  ToolbarLayout,
-} from '@/components/shared/toolbar/toolbar-main';
-import { CollectionSection } from '@/components/console/toolbar/collection';
-import { ModifySection } from '@/components/console/toolbar/modify';
-import { DisplaySection } from '@/components/console/toolbar/preview';
+import { ConsoleHeader } from '@/components/console/toolbar/console-header';
+import { ConsoleRail } from '@/components/console/toolbar/console-rail';
+import { ViewportPlate } from '@/components/console/canvas/viewport-plate';
+import { ConsoleInspectorPanel } from '@/components/console/inspector-panel';
+import { ConsoleStatusStrip } from '@/components/console/status-strip';
 
 const CANVAS_W = 640;
 const CANVAS_H = 480;
@@ -48,14 +43,9 @@ export default function ConsolePage() {
     'idle' | 'saving' | 'saved' | 'error'
   >('idle');
   const [showAnchors, setShowAnchors] = useState(false);
-  const { isOpen, toggle, close } = useDropdown();
-  const { isExpanded, toggle: toggleSection } = useSectionExpand([
-    'collection',
-    'modifications',
-    'display',
-  ]);
   const [previewBgColor, setPreviewBgColor] = useState('#1a1a1a');
   const [previewScale, setPreviewScale] = useState(1);
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
 
   const [torsoDimsVal] = useState(() => new TorsoDimensions());
   const shifts = useShiftFactorsStore(
@@ -215,77 +205,77 @@ export default function ConsolePage() {
 
   /* ── UI ─────────────────────────────────────────────────────────── */
   return (
-    <main className="flex flex-1 overflow-hidden">
-      <ToolbarLayout>
-        {/* ── Unified toolbar ── */}
-        <PageToolbar
-          onSave={save}
-          saveStatus={saveStatus}
-          saveDisabled={saveStatus === 'saving' || frames.length === 0}
-        >
-          <CollectionSection
-            landmarkFile={landmarkFile}
-            onLandmarkSelect={loadLandmarks}
-            onLandmarkDeselect={() => setLandmarkFile(null)}
-            svgFile={svgFile}
-            onSvgSelect={loadSvgs}
-            onSvgDeselect={() => setSvgFile(null)}
-            expanded={isExpanded('collection')}
-            onToggle={() => toggleSection('collection')}
-            activityDropdownOpen={isOpen('activity')}
-            onActivityDropdownToggle={() => toggle('activity')}
-            onActivityDropdownClose={() => close('activity')}
-            creationsDropdownOpen={isOpen('creations')}
-            onCreationsDropdownToggle={() => toggle('creations')}
-            onCreationsDropdownClose={() => close('creations')}
-          />
-          <ModifySection
-            showAnchors={showAnchors}
-            onShowAnchorsChange={setShowAnchors}
-            expanded={isExpanded('modifications')}
-            onToggle={() => toggleSection('modifications')}
-            shiftDropdownOpen={isOpen('shift')}
-            onShiftDropdownToggle={() => toggle('shift')}
-            onShiftDropdownClose={() => close('shift')}
-            scaleDropdownOpen={isOpen('scale')}
-            onScaleDropdownToggle={() => toggle('scale')}
-            onScaleDropdownClose={() => close('scale')}
-          />
-          <DisplaySection
-            bgColor={previewBgColor}
-            onBgColorChange={setPreviewBgColor}
-            scale={previewScale}
-            onScaleChange={setPreviewScale}
-            expanded={isExpanded('display')}
-            onToggle={() => toggleSection('display')}
-            bgDropdownOpen={isOpen('bg')}
-            onBgDropdownToggle={() => toggle('bg')}
-            onBgDropdownClose={() => close('bg')}
-            zoomDropdownOpen={isOpen('displayZoom')}
-            onZoomDropdownToggle={() => toggle('displayZoom')}
-            onZoomDropdownClose={() => close('displayZoom')}
-          />
-        </PageToolbar>
+    <main className="flex flex-1 flex-col overflow-hidden">
+      {/* Top operating header */}
+      <ConsoleHeader
+        landmarkFile={landmarkFile}
+        svgFile={svgFile}
+        playing={playing}
+        onPlayPause={() => setPlaying((p) => !p)}
+        saveStatus={saveStatus}
+        saveDisabled={saveStatus === 'saving' || frames.length === 0}
+        onSave={save}
+      />
 
-        {/* Canvas area */}
-        <div
-          className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4"
-          style={{ backgroundColor: previewBgColor }}
-        >
-          <AnimationCanvas
-            frames={scaledFrames}
-            svgImages={svgImages}
-            shifts={shifts}
-            scales={scales}
+      {/* Body: rail + canvas stage + inspector */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left icon rail */}
+        <ConsoleRail
+          isMobile={false}
+          landmarkFile={landmarkFile}
+          onLandmarkSelect={loadLandmarks}
+          onLandmarkDeselect={() => setLandmarkFile(null)}
+          svgFile={svgFile}
+          onSvgSelect={loadSvgs}
+          onSvgDeselect={() => setSvgFile(null)}
+          bgColor={previewBgColor}
+          onBgColorChange={setPreviewBgColor}
+          scale={previewScale}
+          onScaleChange={setPreviewScale}
+          showAnchors={showAnchors}
+          onShowAnchorsChange={setShowAnchors}
+        />
+
+        {/* Canvas stage */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Viewport area — themed background */}
+          <div
+            className="flex flex-1 items-center justify-center overflow-hidden"
+            style={{ backgroundColor: 'var(--bg)' }}
+          >
+            <ViewportPlate playing={playing}>
+              <AnimationCanvas
+                frames={scaledFrames}
+                svgImages={svgImages}
+                shifts={shifts}
+                scales={scales}
+                playing={playing}
+                width={CANVAS_W}
+                height={CANVAS_H}
+                showAnchors={showAnchors}
+                bgColor={previewBgColor}
+                previewScale={previewScale}
+              />
+            </ViewportPlate>
+          </div>
+
+          {/* Status strip */}
+          <ConsoleStatusStrip
+            isMobile={false}
+            landmarkFile={landmarkFile}
+            svgFile={svgFile}
+            frameCount={scaledFrames.length}
             playing={playing}
-            width={CANVAS_W}
-            height={CANVAS_H}
-            showAnchors={showAnchors}
-            bgColor={previewBgColor}
-            previewScale={previewScale}
           />
         </div>
-      </ToolbarLayout>
+
+        {/* Right inspector panel */}
+        <ConsoleInspectorPanel
+          isMobile={false}
+          collapsed={inspectorCollapsed}
+          onToggleCollapsed={() => setInspectorCollapsed((v) => !v)}
+        />
+      </div>
     </main>
   );
 }
